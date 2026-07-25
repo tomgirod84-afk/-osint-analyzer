@@ -87,6 +87,29 @@
         .reverse-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px}
         .reverse-links a{display:block;padding:15px;background:rgba(0,0,0,0.3);border-radius:10px;color:#00d4ff;text-decoration:none;text-align:center;transition:all 0.3s;border:1px solid rgba(255,255,255,0.05)}
         .reverse-links a:hover{border-color:#00ff88;background:rgba(0,255,136,0.05)}
+        .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:15px}
+        .dash-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:20px;max-height:420px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#333 transparent}
+        .dash-card::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#333;border-radius:5px}
+        .dash-card h3{color:#00d4ff;margin-bottom:12px;font-size:1em;display:flex;align-items:center;gap:8px}
+        .dash-card h3 .live{width:8px;height:8px;background:#00ff88;border-radius:50%;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+        .feed-item{padding:10px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.85em;transition:background 0.2s}
+        .feed-item:hover{background:rgba(0,255,136,0.03)}
+        .feed-item:last-child{border-bottom:none}
+        .feed-item .ftitle{color:#fff;margin-bottom:3px;line-height:1.3}
+        .feed-item .fmeta{color:#555;font-size:0.8em}
+        .feed-item a{color:#00d4ff;text-decoration:none}
+        .clock-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:15px}
+        .clock-box{background:rgba(0,0,0,0.3);border-radius:12px;padding:15px;text-align:center;border:1px solid rgba(255,255,255,0.05)}
+        .clock-box .city{color:#666;font-size:0.8em;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+        .clock-box .time{color:#00ff88;font-size:1.5em;font-weight:bold;font-family:monospace}
+        .clock-box .date{color:#444;font-size:0.75em;margin-top:3px}
+        .ct-item{padding:8px 12px;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:6px;font-size:0.85em;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px}
+        .ct-item .ct-cn{color:#00d4ff;font-family:monospace;word-break:break-all}
+        .vt-box{margin-top:10px}
+        .vt-box input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:0.9em;outline:none;margin-bottom:10px}
+        .refresh-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+        .refresh-bar .timer{color:#555;font-size:0.8em}
         footer{text-align:center;padding:40px;color:#333;font-size:0.85em;border-top:1px solid rgba(255,255,255,0.05);margin-top:60px}
         @media print{nav,.no-print,footer,.toast{display:none!important}.section{display:block!important;padding:10px 0}.result-box{display:block!important;border:1px solid #ccc}body{background:#fff;color:#000}.result-item{border-left-color:#333}.result-item .value{color:#000}.result-item .label{color:#666}h2,h3{color:#333!important;-webkit-text-fill-color:#333!important}.badge-ok{color:#0a0!important}.badge-danger{color:#c00!important}.badge-warn{color:#a50!important}.badge-info{color:#00d!important}}
         @media(max-width:768px){
@@ -107,6 +130,7 @@
         <button class="hamburger" id="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')"><span></span><span></span><span></span></button>
         <div class="nav-links" id="navLinks">
             <a href="#" class="active" onclick="showSection('home',this)">Accueil</a>
+            <a href="#" onclick="showSection('dashboard',this)">Dashboard</a>
             <a href="#" onclick="showSection('investigation',this)">Investigation</a>
             <a href="#" onclick="showSection('domain',this)">Domain</a>
             <a href="#" onclick="showSection('image',this)">Image</a>
@@ -167,6 +191,45 @@
             </div>
         </div>
 
+        <!-- DASHBOARD -->
+        <div class="section" id="dashboard">
+            <div class="refresh-bar">
+                <h2>&#128640; Dashboard temps reel</h2>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span class="timer" id="dashTimer">Auto-refresh: 60s</span>
+                    <button class="btn btn-secondary btn-sm" onclick="refreshDashboard()" style="padding:8px 15px;font-size:0.8em;">&#8635; Actualiser</button>
+                </div>
+            </div>
+
+            <div class="clock-grid" id="worldClocks">
+                <div class="clock-box"><div class="city">Paris</div><div class="time" id="clock-paris">--:--:--</div><div class="date" id="date-paris"></div></div>
+                <div class="clock-box"><div class="city">La Reunion</div><div class="time" id="clock-reunion">--:--:--</div><div class="date" id="date-reunion"></div></div>
+                <div class="clock-box"><div class="city">New York</div><div class="time" id="clock-newyork">--:--:--</div><div class="date" id="date-newyork"></div></div>
+                <div class="clock-box"><div class="city">Londres</div><div class="time" id="clock-london">--:--:--</div><div class="date" id="date-london"></div></div>
+                <div class="clock-box"><div class="city">Tokyo</div><div class="time" id="clock-tokyo">--:--:--</div><div class="date" id="date-tokyo"></div></div>
+                <div class="clock-box"><div class="city">Sydney</div><div class="time" id="clock-sydney">--:--:--</div><div class="date" id="date-sydney"></div></div>
+            </div>
+
+            <div class="dash-grid">
+                <div class="dash-card" id="cveFeed">
+                    <h3><span class="live"></span> CVE Recentes</h3>
+                    <div id="cveList"><p style="color:#555;">Chargement...</p></div>
+                </div>
+                <div class="dash-card" id="malwareFeed">
+                    <h3><span class="live"></span> Malware Recents (MalwareBazaar)</h3>
+                    <div id="malwareList"><p style="color:#555;">Chargement...</p></div>
+                </div>
+                <div class="dash-card" id="urlhausFeed">
+                    <h3><span class="live"></span> Menaces URLhaus</h3>
+                    <div id="urlhausList"><p style="color:#555;">Chargement...</p></div>
+                </div>
+                <div class="dash-card" id="threatFoxFeed">
+                    <h3><span class="live"></span> ThreatFox IOCs</h3>
+                    <div id="threatFoxList"><p style="color:#555;">Chargement...</p></div>
+                </div>
+            </div>
+        </div>
+
         <!-- INVESTIGATION -->
         <div class="section" id="investigation">
             <h2>&#128269; Investigation CSINT</h2>
@@ -209,6 +272,7 @@
                 <button class="active" onclick="switchTab('whois',this)">WHOIS</button>
                 <button onclick="switchTab('dns',this)">DNS</button>
                 <button onclick="switchTab('headers',this)">Headers</button>
+                <button onclick="switchTab('ctlogs',this)">CT Logs</button>
             </div>
             <div class="tab-content active" id="tab-whois">
                 <div class="loading" id="whoisLoading"><div class="spinner"></div><p style="color:#666;">WHOIS en cours...</p></div>
@@ -221,6 +285,11 @@
             <div class="tab-content" id="tab-headers">
                 <div class="loading" id="headersLoading"><div class="spinner"></div><p style="color:#666;">Headers en cours...</p></div>
                 <div class="result-box" id="headersResults"><h3>HTTP Headers</h3><div class="result-grid" id="headersData"></div></div>
+            </div>
+            <div class="tab-content" id="tab-ctlogs">
+                <p style="color:#666;margin-bottom:10px;">Certificate Transparency - certificats SSL/TLS emis publiquement pour ce domaine.</p>
+                <div class="loading" id="ctLoading"><div class="spinner"></div><p style="color:#666;">Recherche CT...</p></div>
+                <div class="result-box" id="ctResults"><h3>Certificats trouves</h3><div id="ctData"></div></div>
             </div>
         </div>
 
@@ -292,6 +361,7 @@
             <div class="tabs" id="ipTabs">
                 <button class="active" onclick="switchTab('iplookup',this)">Geolocation</button>
                 <button onclick="switchTab('portscan',this)">Port Scan</button>
+                <button onclick="switchTab('virustotal',this)">VirusTotal</button>
             </div>
             <div class="tab-content active" id="tab-iplookup">
                 <div class="loading" id="ipLoading"><div class="spinner"></div><p style="color:#666;">Analyse en cours...</p></div>
@@ -302,6 +372,15 @@
                 <button class="btn btn-primary btn-sm" onclick="scanPorts()">Lancer le scan</button>
                 <div class="loading" id="portLoading"><div class="spinner"></div><p style="color:#666;">Scan en cours...</p></div>
                 <div class="result-box" id="portResults"><h3>Ports ouverts</h3><div id="portData"></div></div>
+            </div>
+            <div class="tab-content" id="tab-virustotal">
+                <div class="vt-box">
+                    <p style="color:#666;margin-bottom:10px;">Verifie la reputation d'une IP sur VirusTotal (necessite API key gratuite).</p>
+                    <input type="text" id="vtApiKey" placeholder="Cle API VirusTotal (optionnel, stockee localement)" value="">
+                    <button class="btn btn-primary btn-sm" onclick="checkVirusTotal()">Verifier</button>
+                    <div class="loading" id="vtLoading"><div class="spinner"></div><p style="color:#666;">Verification VirusTotal...</p></div>
+                    <div class="result-box" id="vtResults"><h3>VirusTotal</h3><div class="result-grid" id="vtData"></div></div>
+                </div>
             </div>
         </div>
 
@@ -396,6 +475,8 @@
         if(el) el.classList.add('active');
         document.getElementById('navLinks').classList.remove('open');
         if(id==='history') renderHistory();
+        if(id==='dashboard'){refreshDashboard();startDashAutoRefresh()}
+        else if(dashInterval){clearInterval(dashInterval);dashInterval=null}
     }
     function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
     function switchTab(name,btn){
@@ -591,7 +672,7 @@
         addHistory('Domain',domain);
         document.getElementById('domain').querySelectorAll('.result-box').forEach(r=>r.classList.remove('active'));
         document.getElementById('domain').querySelectorAll('.loading').forEach(l=>l.classList.add('active'));
-        await Promise.all([doWhois(domain),doDNS(domain),doHeaders(domain)]);
+        await Promise.all([doWhois(domain),doDNS(domain),doHeaders(domain),doCTLogs(domain)]);
         document.getElementById('domain').querySelectorAll('.loading').forEach(l=>l.classList.remove('active'));
     }
     async function doWhois(domain){
@@ -899,8 +980,154 @@
         document.getElementById('pasteLoading').classList.remove('active');
     }
 
+    // === WORLD CLOCKS ===
+    const clocks=[
+        {id:'paris',tz:'Europe/Paris'},{id:'reunion',tz:'Indian/Reunion'},{id:'newyork',tz:'America/New_York'},
+        {id:'london',tz:'Europe/London'},{id:'tokyo',tz:'Asia/Tokyo'},{id:'sydney',tz:'Australia/Sydney'}
+    ];
+    function updateClocks(){
+        const now=new Date();
+        clocks.forEach(c=>{
+            const opts={timeZone:c.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false};
+            const dateOpts={timeZone:c.tz,weekday:'short',day:'numeric',month:'short',year:'numeric'};
+            document.getElementById('clock-'+c.id).textContent=now.toLocaleTimeString('fr-FR',opts);
+            document.getElementById('date-'+c.id).textContent=now.toLocaleDateString('fr-FR',dateOpts);
+        });
+    }
+    setInterval(updateClocks,1000);
+    updateClocks();
+
+    // === DASHBOARD FEEDS ===
+    let dashInterval=null,dashCountdown=60;
+
+    async function fetchCVE(){
+        try{
+            const r=await fetch('https://cve.circl.lu/api/last/10');
+            const data=await r.json();
+            let html='';
+            data.forEach(cve=>{
+                const score=cve.cvss||0;
+                const color=score>=9?'badge-danger':score>=7?'badge-warn':score>=4?'badge-info':'badge-ok';
+                html+=`<div class="feed-item"><div class="ftitle"><a href="https://nvd.nist.gov/vuln/detail/${cve.id}" target="_blank">${cve.id}</a></div><div class="fmeta"><span class="badge ${color}">CVSS ${score}</span> ${cve.summary?cve.summary.substring(0,100)+'...':''}</div></div>`;
+            });
+            document.getElementById('cveList').innerHTML=html||'<p style="color:#555;">Aucune CVE.</p>';
+        }catch(e){document.getElementById('cveList').innerHTML='<p style="color:#555;">Erreur de chargement.</p>'}
+    }
+
+    async function fetchMalware(){
+        try{
+            const r=await fetch('https://mb-api.abuse.ch/api/v1/',{method:'POST',body:new URLSearchParams({query:'get_recent',selector:'100'})});
+            const data=await r.json();
+            let html='';
+            (data.data||[]).slice(0,15).forEach(m=>{
+                const color=m.file_type==='exe'?'badge-danger':m.file_type==='dll'?'badge-warn':'badge-info';
+                html+=`<div class="feed-item"><div class="ftitle" style="font-family:monospace;font-size:0.8em;">${m.md5_hash||'N/A'}</div><div class="fmeta"><span class="badge ${color}">${m.file_type||'?'}</span> ${m.signature||m.file_name||''} - ${m.first_seen||''}</div></div>`;
+            });
+            document.getElementById('malwareList').innerHTML=html||'<p style="color:#555;">Aucun malware.</p>';
+        }catch(e){document.getElementById('malwareList').innerHTML='<p style="color:#555;">Erreur de chargement.</p>'}
+    }
+
+    async function fetchURLhaus(){
+        try{
+            const r=await fetch('https://urlhaus-api.abuse.ch/v1/urls/recent/limit/15/');
+            const data=await r.json();
+            let html='';
+            (data.urls||[]).forEach(u=>{
+                html+=`<div class="feed-item"><div class="ftitle" style="font-size:0.8em;word-break:break-all;">${u.url}</div><div class="fmeta"><span class="badge badge-danger">${u.threat||'malicious'}</span> ${u.date_added||''} - ${u.tags?u.tags.join(', '):''}</div></div>`;
+            });
+            document.getElementById('urlhausList').innerHTML=html||'<p style="color:#555;">Aucune menace.</p>';
+        }catch(e){document.getElementById('urlhausList').innerHTML='<p style="color:#555;">Erreur de chargement.</p>'}
+    }
+
+    async function fetchThreatFox(){
+        try{
+            const r=await fetch('https://threatfox-api.abuse.ch/api/v1/',{method:'POST',body:new URLSearchParams({query:'tag:botnet_cc',limit:15})});
+            const data=await r.json();
+            let html='';
+            (data.data||[]).forEach(i=>{
+                html+=`<div class="feed-item"><div class="ftitle" style="font-family:monospace;font-size:0.85em;">${i.ioc}</div><div class="fmeta"><span class="badge badge-danger">${i.ioc_type||'IP'}</span> ${i.malware||''} ${i.confidence_level?'('+i.confidence_level+'%)':''} - ${i.first_seen_utc||''}</div></div>`;
+            });
+            document.getElementById('threatFoxList').innerHTML=html||'<p style="color:#555;">Aucun IOC.</p>';
+        }catch(e){document.getElementById('threatFoxList').innerHTML='<p style="color:#555;">Erreur de chargement.</p>'}
+    }
+
+    function refreshDashboard(){dashCountdown=60;fetchCVE();fetchMalware();fetchURLhaus();fetchThreatFox()}
+    function startDashAutoRefresh(){
+        if(dashInterval)clearInterval(dashInterval);
+        dashCountdown=60;
+        dashInterval=setInterval(()=>{dashCountdown--;document.getElementById('dashTimer').textContent='Auto-refresh: '+dashCountdown+'s';if(dashCountdown<=0)refreshDashboard()},1000);
+    }
+
+    // === CT LOGS ===
+    async function doCTLogs(domain){
+        document.getElementById('ctLoading').classList.add('active');
+        document.getElementById('ctResults').classList.remove('active');
+        try{
+            const r=await fetch(`https://crt.sh/?q=${encodeURIComponent(domain)}&output=json`);
+            const data=await r.json();
+            const seen=new Set();
+            let html='';
+            (data||[]).forEach(c=>{
+                const cn=c.common_name||'';
+                if(!seen.has(cn)){seen.add(cn);
+                    html+=`<div class="ct-item"><span class="ct-cn">${cn}</span><span class="badge badge-info">${c.not_before||'?'} - ${c.not_after||'?'}</span></div>`;
+                }
+            });
+            document.getElementById('ctData').innerHTML=html||`<p style="color:#555;">Aucun certificat CT trouve pour ${domain}.</p>`;
+            document.getElementById('ctResults').classList.add('active');
+        }catch(e){
+            document.getElementById('ctData').innerHTML=`<p style="color:#555;">Erreur de chargement CT.</p>`;
+            document.getElementById('ctResults').classList.add('active');
+        }
+        document.getElementById('ctLoading').classList.remove('active');
+    }
+
+    // === VIRUSTOTAL ===
+    async function checkVirusTotal(){
+        const ip=document.getElementById('ipInput').value.trim();
+        if(!ip){showToast('Entrez une IP dans le champ IP d\'abord');return}
+        const apiKey=document.getElementById('vtApiKey').value.trim()||localStorage.getItem('vt_api_key')||'';
+        if(!apiKey){showToast('Cle API requise (gratuite sur virustotal.com)');return}
+        localStorage.setItem('vt_api_key',apiKey);
+        addHistory('VirusTotal',ip);
+        document.getElementById('vtLoading').classList.add('active');document.getElementById('vtResults').classList.remove('active');
+        try{
+            const r=await fetch(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`,{headers:{'x-apikey':apiKey}});
+            const d=await r.json();
+            if(!r.ok)throw new Error(d.error?.message||'Erreur API');
+            const attrs=d.data.attributes;
+            const stats=attrs.last_analysis_stats;
+            const malicious=stats.malicious||0;
+            const suspicious=stats.suspicious||0;
+            const harmless=stats.harmless||0;
+            const undetected=stats.undetected||0;
+            const total=malicious+suspicious+harmless+undetected;
+            const ratio=total>0?((malicious+suspicious)/total*100).toFixed(1):0;
+            const color=malicious>5?'badge-danger':malicious>0?'badge-warn':'badge-ok';
+            document.getElementById('vtData').innerHTML=`
+                <div class="result-item"><div class="label">IP</div><div class="value">${ip}</div></div>
+                <div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge ${color}">${malicious>0?'MALVEILLANT':'Propre'}</span></div></div>
+                <div class="result-item"><div class="label">Malveillants</div><div class="value" style="color:#ff6b6b;">${malicious} / ${total}</div></div>
+                <div class="result-item"><div class="label">Suspects</div><div class="value" style="color:#ffa500;">${suspicious} / ${total}</div></div>
+                <div class="result-item"><div class="label">Inoffensifs</div><div class="value">${harmless} / ${total}</div></div>
+                <div class="result-item"><div class="label">Ratio</div><div class="value"><span class="badge ${color}">${ratio}%</span></div></div>
+                <div class="result-item"><div class="label">AS Owner</div><div class="value">${attrs.as_owner||'N/A'}</div></div>
+                <div class="result-item"><div class="label">Pays</div><div class="value">${attrs.country||'N/A'}</div></div>
+                <div class="result-item"><div class="label">Reputation</div><div class="value">${attrs.reputation||'N/A'}</div></div>
+                <div class="result-item"><div class="label">Lien VT</div><div class="value"><a href="https://www.virustotal.com/gui/ip-address/${ip}" target="_blank" style="color:#00d4ff;">Voir sur VirusTotal &rarr;</a></div></div>`;
+            document.getElementById('vtResults').classList.add('active');
+        }catch(e){
+            document.getElementById('vtData').innerHTML=`<div class="result-item"><div class="label">Erreur</div><div class="value"><span class="badge badge-warn">${e.message||'Erreur API'}</span></div></div>
+            <div class="result-item"><div class="label">Aide</div><div class="value">Creez une cle gratuite sur <a href="https://www.virustotal.com/gui/my-apikey" target="_blank" style="color:#00d4ff;">virustotal.com</a></div></div>`;
+            document.getElementById('vtResults').classList.add('active');
+        }
+        document.getElementById('vtLoading').classList.remove('active');
+    }
+
     // === URL DATA LOADER ===
     window.onload=function(){
+        updateClocks();
+        const savedVT=localStorage.getItem('vt_api_key');if(savedVT)document.getElementById('vtApiKey').value=savedVT;
         document.getElementById('logo').addEventListener('click',function(){
             logoClicks++;clearTimeout(this._t);this._t=setTimeout(()=>logoClicks=0,1500);
             if(logoClicks>=3){logoClicks=0;const b=document.getElementById('adminBtn');b.classList.toggle('visible');showToast(b.classList.contains('visible')?'Mode admin ON':'Mode admin OFF')}
