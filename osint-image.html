@@ -388,6 +388,7 @@
 
             <div style="margin-top:20px;display:flex;gap:10px;">
                 <button class="btn btn-primary" onclick="launchInvestigation()" style="font-size:1.1em;">Lancer l'investigation</button>
+                <button class="btn btn-secondary" onclick="generateAdminLink()" style="font-size:1.1em;background:linear-gradient(90deg,#ff6b6b,#ffa500);color:#000;border:none;">Generer lien admin</button>
                 <button class="btn btn-secondary" onclick="resetInvestigation()">Reinitialiser</button>
             </div>
 
@@ -810,6 +811,120 @@
             document.getElementById('invResults').classList.remove('active');
         }
 
+        // === ADMIN LINK ===
+        function generateAdminLink() {
+            const data = {
+                n: document.getElementById('inv-nom').value.trim(),
+                p: document.getElementById('inv-prenom').value.trim(),
+                na: document.getElementById('inv-naissance').value,
+                t: document.getElementById('inv-telephone').value.trim(),
+                e: document.getElementById('inv-email').value.trim(),
+                v: document.getElementById('inv-ville').value.trim(),
+                c: document.getElementById('inv-cp').value.trim(),
+                a: document.getElementById('inv-adresse').value.trim(),
+                i: document.getElementById('inv-immat').value.trim(),
+                s: document.getElementById('inv-nir').value.trim()
+            };
+
+            if (!data.n && !data.p && !data.t && !data.e && !data.s && !data.i) {
+                showToast('Remplis au moins un champ');
+                return;
+            }
+
+            const enc = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+            const fullURL = location.origin + location.pathname + '#admin:' + enc;
+
+            (async () => {
+                try {
+                    const r = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(fullURL));
+                    if (r.ok) { const short = await r.text(); showShareModal(short); return; }
+                } catch(e) {}
+                showShareModal(fullURL);
+            })();
+        }
+
+        function loadAdminView(data) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelector('nav').style.display = 'none';
+            document.querySelector('.legal-box').style.display = 'none';
+            document.querySelector('footer').style.display = 'none';
+
+            const hero = document.querySelector('.hero');
+            if (hero) hero.style.display = 'none';
+
+            const inv = document.getElementById('investigation');
+            inv.classList.add('active');
+            inv.innerHTML = `
+                <div style="text-align:center;margin-bottom:30px;">
+                    <h2 style="color:#ff6b6b;font-size:1.5em;">Rapport d'investigation CSINT</h2>
+                    <p style="color:#555;">Genere par un administrateur - Mode lecture seule</p>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;pointer-events:none;">
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:25px;">
+                        <h3 style="color:#00ff88;margin-bottom:20px;">Identification</h3>
+                        ${data.p ? `<div style="margin-bottom:12px;"><div style="color:#666;font-size:0.8em;">PRENOM</div><div style="color:#fff;font-size:1.1em;">${data.p}</div></div>` : ''}
+                        ${data.n ? `<div style="margin-bottom:12px;"><div style="color:#666;font-size:0.8em;">NOM</div><div style="color:#fff;font-size:1.1em;">${data.n}</div></div>` : ''}
+                        ${data.na ? `<div style="margin-bottom:12px;"><div style="color:#666;font-size:0.8em;">DATE DE NAISSANCE</div><div style="color:#fff;font-size:1.1em;">${data.na}</div></div>` : ''}
+                        ${data.t ? `<div style="margin-bottom:12px;"><div style="color:#666;font-size:0.8em;">TELEPHONE</div><div style="color:#fff;font-size:1.1em;">${data.t}</div></div>` : ''}
+                        ${data.e ? `<div style="margin-bottom:12px;"><div style="color:#666;font-size:0.8em;">EMAIL</div><div style="color:#fff;font-size:1.1em;">${data.e}</div></div>` : ''}
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:25px;">
+                        <h3 style="color:#00ff88;margin-bottom:20px;">Complement</h3>
+                        ${data.v ? `<div style="margin-bottom:12px;"><div style="color:#666;font-size:0.8em;">VILLE</div><div style="color:#fff;font-size:1.1em;">${data.v}</div></div>` : ''}
+                        ${data.c ? `<div style="margin-bottom:12px;"><div style="color:#666;font-size:0.8em;">CODE POSTAL</div><div style="color:#fff;font-size:1.1em;">${data.c}</div></div>` : ''}
+                        ${data.a ? `<div style="margin-bottom:12px;"><div style="color:#666;font-size:0.8em;">ADRESSE</div><div style="color:#fff;font-size:1.1em;">${data.a}</div></div>` : ''}
+                        ${data.i ? `<div style="margin-bottom:12px;"><div style="color:#666;font-size:0.8em;">IMMATRICULATION</div><div style="color:#fff;font-size:1.1em;">${data.i}</div></div>` : ''}
+                        ${data.s ? `<div style="margin-bottom:12px;"><div style="color:#666;font-size:0.8em;">NIR</div><div style="color:#ff6b6b;font-size:1.1em;">*** PROTEGE ***</div></div>` : ''}
+                    </div>
+                </div>
+                <div id="adminResults" style="margin-top:25px;"></div>
+                <div style="text-align:center;margin-top:30px;padding:15px;border:1px solid rgba(255,107,107,0.2);border-radius:10px;background:rgba(255,107,107,0.05);">
+                    <p style="color:#ff6b6b;font-size:0.9em;">Mode lecture seule - Aucune action disponible</p>
+                    <p style="color:#555;font-size:0.8em;margin-top:5px;">Sentinel OSINT - CSINT Investigation</p>
+                </div>
+            `;
+
+            (async () => {
+                let items = [];
+                if (data.e) {
+                    try {
+                        const r = await fetch('https://haveibeenpwned.com/api/v3/breachedaccount/' + encodeURIComponent(data.e), { headers: { 'hibp-api-key': 'breachedaccount' } });
+                        if (r.status === 200) { const d = await r.json(); items.push({ t: 'Email', s: 'COMPROMIS', d: `${d.length} fuite(s)`, c: 'danger' }); }
+                        else items.push({ t: 'Email', s: 'NON TROUVE', d: 'Aucune fuite detectee', c: 'ok' });
+                    } catch(e) { items.push({ t: 'Email', s: 'VERIFICATION MANUELLE', d: 'haveibeenpwned.com', c: 'warn' }); }
+                }
+                if (data.t) {
+                    const cl = data.t.replace(/\s/g,'');
+                    let info = cl.startsWith('+33') ? 'France - ' + (cl.match(/(?:\+33|0033)([67])/) ? 'Mobile' : 'Fixe') : cl.startsWith('+262') ? 'La Reunion' : 'International';
+                    items.push({ t: 'Telephone', s: 'IDENTIFIE', d: info, c: 'ok' });
+                }
+                if (data.s) {
+                    const nirClean = data.s.replace(/\s/g,'');
+                    if (/^[12]\d{13}\d{2}$/.test(nirClean)) {
+                        const sexe = nirClean[0] === '1' ? 'Homme' : 'Femme';
+                        const dept = nirClean.substring(3,5);
+                        items.push({ t: 'NIR', s: 'VALIDE', d: `${sexe} | Dept ${dept}`, c: 'warn' });
+                    } else items.push({ t: 'NIR', s: 'FORMAT INCORRECT', d: data.s, c: 'danger' });
+                }
+                if (data.i) items.push({ t: 'Immatriculation', s: 'ENREGISTREE', d: data.i, c: 'info' });
+                if (data.n || data.p) {
+                    const name = ((data.p||'')+' '+(data.n||'')).trim();
+                    items.push({ t: 'Identite', s: 'INDEXEE', d: name, c: 'info', link: `https://www.google.com/search?q=%22${encodeURIComponent(name)}%22` });
+                }
+                if (data.v) items.push({ t: 'Localisation', s: 'INDEXEE', d: data.v + (data.c ? ' '+data.c : ''), c: 'info', link: `https://www.google.com/search?q=%22${encodeURIComponent(data.v)}%22` });
+
+                let html = '<div class="result-grid">';
+                items.forEach(it => {
+                    html += `<div class="result-item"><div class="label">${it.t}</div><div class="value"><span class="badge badge-${it.c}">${it.s}</span><br><span style="color:#aaa;font-size:0.9em;">${it.d}</span>${it.link ? `<br><a href="${it.link}" target="_blank" style="color:#00d4ff;font-size:0.85em;">Recherche Google &rarr;</a>` : ''}</div></div>`;
+                });
+                html += '</div>';
+                const dc = items.filter(i=>i.c==='danger').length;
+                const wc = items.filter(i=>i.c==='warn').length;
+                html += `<div style="margin-top:20px;padding:15px;background:rgba(0,0,0,0.3);border-radius:10px;"><span class="badge badge-${dc>0?'danger':wc>0?'warn':'ok'}" style="font-size:1em;">Score: ${dc>0?'ELEVE':wc>0?'MODERE':'FAIBLE'}</span></div>`;
+                document.getElementById('adminResults').innerHTML = html;
+            })();
+        }
+
         // === IP ===
         async function lookupIP() {
             const ip = document.getElementById('ipInput').value.trim();
@@ -1082,12 +1197,17 @@
         // === URL SHARED DATA ===
         window.onload = function() {
             const hash = location.hash.substring(1);
-            if (hash.startsWith('img:')) {
+            if (hash.startsWith('admin:')) {
+                try {
+                    const data = JSON.parse(decodeURIComponent(escape(atob(hash.substring(6)))));
+                    loadAdminView(data);
+                } catch(e) { console.log('Admin link error:', e); }
+            } else if (hash.startsWith('img:')) {
                 try {
                     const data = JSON.parse(decodeURIComponent(escape(atob(hash.substring(4)))));
                     showSection('image');
                     document.querySelector('.nav-links a').classList.remove('active');
-                    document.querySelectorAll('.nav-links a')[1].classList.add('active');
+                    document.querySelectorAll('.nav-links a')[2].classList.add('active');
                     imgData = data;
                     if (data.width) {
                         document.getElementById('imgDimensions').textContent = `${data.width} x ${data.height} px (${data.megapixels} MP)`;
