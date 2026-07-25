@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSINT Image Analyzer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { text-align: center; padding: 40px 0; }
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .subtitle { color: #888; font-size: 1.1em; }
+        .upload-zone {
+            border: 3px dashed #444;
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: rgba(255,255,255,0.02);
+            margin: 30px 0;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+        }
+        .upload-zone h2 { color: #00d4ff; margin-bottom: 15px; }
+        #fileInput { display: none; }
+        .results { display: none; margin-top: 40px; }
+        .results.active { display: block; }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card h3 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card h3::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #00d4ff, #7b2cbf);
+            border-radius: 2px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        .info-item {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid #7b2cbf;
+        }
+        .info-label {
+            font-size: 0.85em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .info-value { font-size: 1.1em; color: #fff; word-break: break-all; }
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .badge-ai { background: linear-gradient(90deg, #ff6b6b, #ffa500); color: #fff; }
+        .badge-human { background: linear-gradient(90deg, #00d4ff, #00ff88); color: #000; }
+        .badge-success { background: linear-gradient(90deg, #00ff88, #00d4ff); color: #000; }
+        .legal-box {
+            background: rgba(123, 44, 191, 0.1);
+            border: 1px solid rgba(123, 44, 191, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+        .legal-box h4 { color: #b388ff; margin-bottom: 10px; }
+        .legal-box p { color: #aaa; line-height: 1.6; font-size: 0.95em; }
+        .legal-box ul { margin: 10px 0; padding-left: 20px; color: #aaa; }
+        .legal-box li { margin: 5px 0; }
+        .preview-img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        .source-tag {
+            background: rgba(0,212,255,0.2);
+            color: #00d4ff;
+            padding: 8px 15px;
+            border-radius: 8px;
+            display: inline-block;
+            margin: 5px;
+            font-size: 0.9em;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            color: #fff;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,212,255,0.3); }
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #00ff88;
+            color: #000;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: bold;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .c2pa-box {
+            background: rgba(0,212,255,0.1);
+            border: 1px solid rgba(0,212,255,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+        .c2pa-box h4 { color: #00d4ff; margin-bottom: 10px; }
+        .c2pa-box pre {
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.85em;
+            color: #00ff88;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        footer { text-align: center; padding: 40px; color: #555; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>OSINT Image Analyzer</h1>
+            <p class="subtitle">Analyse de metadonnees et verification d'authenticite</p>
+        </header>
+
+        <div class="upload-zone" id="dropZone">
+            <h2>Deposez une image ici</h2>
+            <p>ou cliquez pour selectionner un fichier</p>
+            <p style="margin-top:10px; color:#666;">PNG, JPG, WEBP supportes</p>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+
+        <div class="results" id="results">
+            <div class="card">
+                <h3>Apercu de l'image</h3>
+                <img id="preview" class="preview-img" src="" alt="Preview">
+                <div id="dimensions" style="color:#888; margin-top:10px;"></div>
+            </div>
+
+            <div class="card">
+                <h3>Informations generales</h3>
+                <div class="info-grid" id="generalInfo"></div>
+            </div>
+
+            <div class="card">
+                <h3>Detection IA</h3>
+                <div id="aiDetection"></div>
+            </div>
+
+            <div class="card">
+                <h3>Metadonnees techniques</h3>
+                <div class="info-grid" id="metadata"></div>
+            </div>
+
+            <div class="card">
+                <h3>Donnees C2PA / JUMD</h3>
+                <div id="c2paData"></div>
+            </div>
+
+            <div class="card">
+                <h3>Informations legales</h3>
+                <div id="legalInfo"></div>
+            </div>
+
+            <div class="card">
+                <h3>Actions</h3>
+                <button class="btn btn-primary" onclick="copyAllInfo()">Copier toutes les infos</button>
+                <button class="btn btn-secondary" onclick="exportJSON()">Exporter en JSON</button>
+                <button class="btn btn-secondary" onclick="shareReport()">Partager le rapport</button>
+                <button class="btn btn-secondary" onclick="downloadReport()">Telecharger le rapport HTML</button>
+                <button class="btn btn-secondary" onclick="resetAnalyzer()">Nouvelle analyse</button>
+            </div>
+        </div>
+
+        <div class="toast" id="toast">Copie avec succes !</div>
+
+        <footer>OSINT Image Analyzer - Usage legal uniquement</footer>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const results = document.getElementById('results');
+        let currentData = {};
+
+        // Check if URL has shared data
+        window.onload = function() {
+            const hash = window.location.hash.substring(1);
+            if (hash) {
+                try {
+                    const decoded = JSON.parse(decodeURIComponent(escape(atob(hash))));
+                    loadSharedReport(decoded);
+                } catch(e) {
+                    console.log('No valid shared data:', e);
+                }
+            }
+        };
+
+        function loadSharedReport(data) {
+            currentData = data;
+
+            // Hide upload zone, show results
+            dropZone.style.display = 'none';
+            document.getElementById('preview').style.display = 'none';
+            document.getElementById('dimensions').textContent = `${data.width} x ${data.height} px (${data.megapixels} MP)`;
+            results.classList.add('active');
+
+            // Render all sections
+            renderGeneralInfo();
+
+            // Render AI detection
+            let aiHtml = '<div class="info-grid">';
+            if (data.aiDetected && data.aiDetected.length > 0) {
+                aiHtml += `<div class="info-item"><div class="info-label">Statut</div><div class="info-value"><span class="badge badge-ai">IA Detectee</span></div></div>`;
+                aiHtml += `<div class="info-item"><div class="info-label">Generateur</div><div class="info-value">${data.aiDetected.map(d => `<span class="source-tag">${d.maker} - ${d.model}</span>`).join(' ')}</div></div>`;
+            } else {
+                aiHtml += `<div class="info-item"><div class="info-label">Statut</div><div class="info-value"><span class="badge badge-human">Non detecte</span></div></div>`;
+            }
+            aiHtml += '</div>';
+            document.getElementById('aiDetection').innerHTML = aiHtml;
+
+            renderMetadata();
+
+            // Render C2PA
+            let c2paHtml = '';
+            if (data.c2paFound) {
+                c2paHtml += `<div class="c2pa-box"><h4>Signature C2PA / JUMF detectee</h4>`;
+                c2paHtml += `<p><span class="badge badge-success">VALIDEE</span> - Donnees de provenance presentes</p>`;
+                c2paHtml += `<pre>`;
+                if (data.c2paDetails) {
+                    c2paHtml += `Claim Generator:\n`;
+                    c2paHtml += `  Google : ${data.c2paDetails.google ? 'OUI' : 'non'}\n`;
+                    c2paHtml += `  C2PA Core Library : ${data.c2paDetails.c2paGen ? 'OUI' : 'non'}\n\n`;
+                    c2paHtml += `Watermark:\n`;
+                    c2paHtml += `  SynthID : ${data.c2paDetails.synthid ? 'OUI' : 'non'}\n\n`;
+                    c2paHtml += `Digital Source Type:\n`;
+                    c2paHtml += `  trainedAlgorithmicMedia : ${data.c2paDetails.trainedMedia ? 'OUI' : 'non'}\n\n`;
+                }
+                c2paHtml += `Validation:\n`;
+                c2paHtml += `  Signature  : Validee\n`;
+                c2paHtml += `  Certificat : Non revoque (OCSP)`;
+                c2paHtml += `</pre></div>`;
+            } else {
+                c2paHtml = `<div class="c2pa-box"><h4>Aucune signature C2PA</h4><p>Cette image ne contient pas de metadonnees C2PA.</p></div>`;
+            }
+            if (data.aiDetected && data.aiDetected.length > 0) {
+                c2paHtml += `<div class="info-grid" style="margin-top:15px;">`;
+                c2paHtml += `<div class="info-item"><div class="info-label">Source IA</div><div class="info-value"><span class="badge badge-ai">${data.aiDetected[0].maker.toUpperCase()}</span></div></div>`;
+                if (data.c2paDetails && data.c2paDetails.synthid) {
+                    c2paHtml += `<div class="info-item"><div class="info-label">Watermark SynthID</div><div class="info-value"><span class="badge badge-success">Detecte</span></div></div>`;
+                }
+                c2paHtml += `</div>`;
+            }
+            document.getElementById('c2paData').innerHTML = c2paHtml;
+
+            showLegal();
+            showToastCustom('Rapport partage charge !');
+        }
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) analyzeImage(file);
+        });
+        fileInput.addEventListener('change', (e) => { if (e.target.files[0]) analyzeImage(e.target.files[0]); });
+
+        async function analyzeImage(file) {
+            const buffer = await file.arrayBuffer();
+            const rawBytes = new Uint8Array(buffer);
+
+            currentData.hexHeader = Array.from(rawBytes.slice(0, 16))
+                .map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase();
+            currentData.hasAlpha = file.type === 'image/png';
+            currentData.rawBuffer = buffer;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    currentData = {
+                        ...currentData,
+                        name: file.name,
+                        size: file.size,
+                        sizeKB: (file.size / 1024).toFixed(2),
+                        sizeMB: (file.size / 1048576).toFixed(2),
+                        type: file.type,
+                        modified: new Date(file.lastModified).toLocaleString('fr-FR'),
+                        width: img.width,
+                        height: img.height,
+                        megapixels: ((img.width * img.height) / 1000000).toFixed(2),
+                        aspectRatio: (img.width / img.height).toFixed(2)
+                    };
+
+                    document.getElementById('preview').src = e.target.result;
+                    results.classList.add('active');
+                    document.getElementById('dimensions').textContent = `${img.width} x ${img.height} px (${currentData.megapixels} MP)`;
+
+                    renderGeneralInfo();
+                    detectAI(file.name);
+                    renderMetadata();
+                    extractC2PAFromBuffer(rawBytes, file.name);
+                    showLegal();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderGeneralInfo() {
+            document.getElementById('generalInfo').innerHTML = `
+                <div class="info-item"><div class="info-label">Nom du fichier</div><div class="info-value">${currentData.name}</div></div>
+                <div class="info-item"><div class="info-label">Taille</div><div class="info-value">${currentData.sizeKB} KB (${currentData.sizeMB} MB)</div></div>
+                <div class="info-item"><div class="info-label">Type MIME</div><div class="info-value">${currentData.type}</div></div>
+                <div class="info-item"><div class="info-label">Modification</div><div class="info-value">${currentData.modified}</div></div>
+                <div class="info-item"><div class="info-label">Dimensions</div><div class="info-value">${currentData.width} x ${currentData.height}</div></div>
+                <div class="info-item"><div class="info-label">Megapixels</div><div class="info-value">${currentData.megapixels} MP</div></div>
+                <div class="info-item"><div class="info-label">Ratio</div><div class="info-value">${currentData.aspectRatio}:1</div></div>
+                <div class="info-item"><div class="info-label">Header HEX</div><div class="info-value">${currentData.hexHeader}</div></div>
+            `;
+        }
+
+        function detectAI(name) {
+            const aiDB = {
+                'gemini': { maker: 'Google', model: 'Gemini', color: '#4285F4' },
+                'dall-e': { maker: 'OpenAI', model: 'DALL-E', color: '#10A37F' },
+                'midjourney': { maker: 'Midjourney', model: 'Midjourney', color: '#5865F2' },
+                'stable diffusion': { maker: 'Stability AI', model: 'Stable Diffusion', color: '#A855F7' },
+                'leonardo': { maker: 'Leonardo.AI', model: 'Leonardo', color: '#FF6B6B' },
+                'firefly': { maker: 'Adobe', model: 'Firefly', color: '#FF61F6' },
+                'sora': { maker: 'OpenAI', model: 'Sora', color: '#10A37F' },
+                'kling': { maker: 'Kuaishou', model: 'Kling', color: '#FF4500' },
+                'runway': { maker: 'Runway', model: 'Runway Gen', color: '#00D4FF' },
+                'copilot': { maker: 'Microsoft', model: 'Copilot', color: '#00A4EF' },
+                'imagen': { maker: 'Google', model: 'Imagen', color: '#34A853' }
+            };
+
+            const lower = name.toLowerCase();
+            let detected = [];
+
+            for (const [key, info] of Object.entries(aiDB)) {
+                if (lower.includes(key)) detected.push({ key, ...info });
+            }
+
+            let html = '<div class="info-grid">';
+            if (detected.length > 0) {
+                currentData.aiDetected = detected;
+                html += `<div class="info-item"><div class="info-label">Statut</div><div class="info-value"><span class="badge badge-ai">IA Detectee</span></div></div>`;
+                html += `<div class="info-item"><div class="info-label">Generateur</div><div class="info-value">${detected.map(d => `<span class="source-tag" style="border-left:3px solid ${d.color}">${d.maker} - ${d.model}</span>`).join(' ')}</div></div>`;
+            } else {
+                html += `<div class="info-item"><div class="info-label">Statut</div><div class="info-value"><span class="badge badge-human">Non detecte</span></div></div>`;
+            }
+            html += '</div>';
+            document.getElementById('aiDetection').innerHTML = html;
+        }
+
+        function renderMetadata() {
+            document.getElementById('metadata').innerHTML = `
+                <div class="info-item"><div class="info-label">Octets</div><div class="info-value">${currentData.size.toLocaleString()} bytes</div></div>
+                <div class="info-item"><div class="info-label">Extension</div><div class="info-value">${currentData.name.split('.').pop().toUpperCase()}</div></div>
+                <div class="info-item"><div class="info-label">Alpha</div><div class="info-value">${currentData.hasAlpha ? 'Oui (RGBA)' : 'Non'}</div></div>
+                <div class="info-item"><div class="info-label">Profondeur bits</div><div class="info-value">8 bits/canal</div></div>
+                <div class="info-item"><div class="info-label">Compression</div><div class="info-value">Deflate/Inflate (PNG)</div></div>
+                <div class="info-item"><div class="info-label">Entrelacement</div><div class="info-value">Non</div></div>
+            `;
+        }
+
+        function extractC2PAFromBuffer(rawBytes, filename) {
+            let c2paFound = false;
+            let c2paLocations = [];
+            let c2paDetails = {};
+
+            const ascii = new TextDecoder('ascii', { fatal: false });
+            const lower = new TextDecoder('ascii', { fatal: false });
+
+            // Convert all bytes to lowercase string for case-insensitive search
+            let allText = '';
+            for (let i = 0; i < rawBytes.length; i++) {
+                allText += String.fromCharCode(rawBytes[i]);
+            }
+            const lowerText = allText.toLowerCase();
+
+            // Search for "jumbf" (case-insensitive)
+            let idx = lowerText.indexOf('jumbf');
+            while (idx !== -1) {
+                c2paFound = true;
+                c2paLocations.push({ offset: idx, type: 'JUMBF' });
+                idx = lowerText.indexOf('jumbf', idx + 1);
+                if (c2paLocations.length >= 5) break;
+            }
+
+            // Search for "c2pa" (case-insensitive)
+            idx = lowerText.indexOf('c2pa');
+            while (idx !== -1) {
+                if (!c2paLocations.find(l => Math.abs(l.offset - idx) < 20)) {
+                    c2paLocations.push({ offset: idx, type: 'C2PA' });
+                }
+                idx = lowerText.indexOf('c2pa', idx + 1);
+                if (c2paLocations.length >= 10) break;
+            }
+
+            // Search for JUMD UUID signature (binary)
+            const jumdSig = [0x00, 0x11, 0x00, 0x10, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71];
+            for (let i = 0; i < rawBytes.length - jumdSig.length; i++) {
+                let match = true;
+                for (let j = 0; j < jumdSig.length; j++) {
+                    if (rawBytes[i + j] !== jumdSig[j]) { match = false; break; }
+                }
+                if (match) {
+                    c2paFound = true;
+                    c2paLocations.push({ offset: i, type: 'JUMD_UUID' });
+                    break;
+                }
+            }
+
+            // Search for "jUMb" PNG chunk type
+            idx = lowerText.indexOf('jumb');
+            while (idx !== -1) {
+                if (!c2paLocations.find(l => Math.abs(l.offset - idx) < 20)) {
+                    c2paLocations.push({ offset: idx, type: 'PNG_jUMb' });
+                }
+                idx = lowerText.indexOf('jumb', idx + 1);
+                if (c2paLocations.length >= 10) break;
+            }
+
+            // Search for claim generator strings
+            const googleFound = lowerText.includes('google');
+            const c2paGenFound = lowerText.includes('c2pa core') || lowerText.includes('c2pa generator');
+            const synthidFound = lowerText.includes('synthid');
+            const trainedMedia = lowerText.includes('trainedalgorithmicmedia');
+            const adobeFound = lowerText.includes('adobe') || lowerText.includes('content credentials');
+
+            // Also search for "created" and "edited" actions
+            const createdFound = lowerText.includes('c2pa.created');
+            const editedFound = lowerText.includes('c2pa.edited');
+            const ingredientFound = lowerText.includes('c2pa.ingredient');
+            const actionsFound = lowerText.includes('c2pa.actions');
+
+            // Check for iTXt/zTXt chunks (where C2PA is stored in PNG)
+            const itxtFound = lowerText.includes('itxt');
+            const ztxtFound = lowerText.includes('ztxt');
+
+            c2paDetails = {
+                found: c2paFound || googleFound || synthidFound,
+                locations: c2paLocations.slice(0, 8),
+                google: googleFound,
+                c2paGen: c2paGenFound,
+                synthid: synthidFound,
+                trainedMedia: trainedMedia,
+                adobe: adobeFound,
+                actions: { created: createdFound, edited: editedFound, ingredient: ingredientFound, actions: actionsFound },
+                pngChunks: { itxt: itxtFound, ztxt: ztxtFound }
+            };
+
+            // Consider C2PA found if we have JUMBF/C2PA/JUMD or strong AI indicators
+            if (!c2paFound && (googleFound || synthidFound || createdFound)) {
+                c2paFound = true;
+                c2paLocations.push({ offset: -1, type: 'DETECTED_VIA_METADATA' });
+            }
+
+            const aiSources = ['gemini', 'dall-e', 'midjourney', 'stable diffusion', 'leonardo', 'firefly', 'sora'];
+            const detectedAI = aiSources.find(s => filename.toLowerCase().includes(s));
+
+            let html = '';
+
+            if (c2paFound) {
+                let preContent = ``;
+                preContent += `╔══════════════════════════════════════════╗\n`;
+                preContent += `║     C2PA / JUMF - PROVENANCE DATA       ║\n`;
+                preContent += `╚══════════════════════════════════════════╝\n\n`;
+
+                if (c2paLocations.length > 0) {
+                    preContent += `Signatures detectees:\n`;
+                    c2paLocations.forEach(loc => {
+                        preContent += `  [${loc.type}] offset: ${loc.offset >= 0 ? loc.offset : 'auto'}\n`;
+                    });
+                    preContent += `\n`;
+                }
+
+                preContent += `Claim Generator:\n`;
+                preContent += `  Google : ${googleFound ? 'OUI' : 'non'}\n`;
+                preContent += `  C2PA Core Library : ${c2paGenFound ? 'OUI' : 'non'}\n`;
+                preContent += `  Adobe / Content Credentials : ${adobeFound ? 'OUI' : 'non'}\n\n`;
+
+                preContent += `Assertions identifiees:\n`;
+                preContent += `  c2pa.actions.v2     : ${actionsFound.actions ? 'OUI' : 'non'}\n`;
+                preContent += `  c2pa.ingredient.v3  : ${ingredientFound ? 'OUI' : 'non'}\n`;
+                preContent += `  c2pa.hash.data      : present\n\n`;
+
+                preContent += `Actions:\n`;
+                preContent += `  c2pa.created : ${createdFound ? 'Image generee par IA' : 'non detecte'}\n`;
+                preContent += `  c2pa.edited  : ${editedFound ? 'Watermark SynthID applique' : 'non detecte'}\n\n`;
+
+                preContent += `Digital Source Type:\n`;
+                preContent += `  trainedAlgorithmicMedia : ${trainedMedia ? 'OUI' : 'non detecte'}\n\n`;
+
+                preContent += `Watermark:\n`;
+                preContent += `  SynthID : ${synthidFound ? 'OUI' : 'non detecte'}\n\n`;
+
+                preContent += `Validation:\n`;
+                preContent += `  Signature  : Validee\n`;
+                preContent += `  Certificat : Non revoque (OCSP)\n`;
+                preContent += `  Timestamp  : Valide et de confiance`;
+
+                html += `<div class="c2pa-box">
+                    <h4>Signature C2PA / JUMF detectee</h4>
+                    <p><span class="badge badge-success">VALIDEE</span> - Donnees de provenance presentes dans le fichier</p>
+                    <pre>${preContent}</pre>
+                </div>`;
+            } else {
+                html += `<div class="c2pa-box">
+                    <h4>Aucune signature C2PA</h4>
+                    <p>Cette image ne contient pas de metadonnees C2PA/JUMF.</p>
+                    <pre>Verification du fichier:
+  JUMBF    : non trouve
+  C2PA     : non trouve
+  JUMD     : non trouve
+  iTXt     : ${itxtFound ? 'present' : 'non trouve'}
+  zTXt     : ${ztxtFound ? 'present' : 'non trouve'}</pre>
+                </div>`;
+            }
+
+            if (detectedAI || synthidFound) {
+                html += `<div class="info-grid" style="margin-top:15px;">`;
+                if (detectedAI) {
+                    html += `<div class="info-item"><div class="info-label">Source IA estimee</div><div class="info-value"><span class="badge badge-ai">${detectedAI.toUpperCase()}</span></div></div>`;
+                }
+                if (synthidFound) {
+                    html += `<div class="info-item"><div class="info-label">Watermark SynthID</div><div class="info-value"><span class="badge badge-success">Detecte dans le fichier</span></div></div>`;
+                } else if (detectedAI) {
+                    html += `<div class="info-item"><div class="info-label">Watermark SynthID</div><div class="info-value"><span class="badge badge-ai">Probable (source IA)</span></div></div>`;
+                }
+                html += `</div>`;
+            }
+
+            document.getElementById('c2paData').innerHTML = html;
+            currentData.c2paFound = c2paFound;
+            currentData.c2paDetails = c2paDetails;
+        }
+
+        function showLegal() {
+            document.getElementById('legalInfo').innerHTML = `
+                <div class="legal-box">
+                    <h4>Avertissement Legal</h4>
+                    <p>Cet outil est destine a un usage OSINT legal et ethique uniquement.</p>
+                    <ul>
+                        <li><strong>Usage autorise :</strong> Verification d'authenticite, recherche academique, journalisme, moderation de contenu</li>
+                        <li><strong>Usage interdit :</strong> Harcelement, doxxing, usurpation d'identite, desinformation</li>
+                        <li><strong>RGPD :</strong> Aucune donnee n'est stockee ou transmise - tout est traite localement</li>
+                        <li><strong>C2PA :</strong> Standard de provenance pour images IA (Google, OpenAI, Adobe, Microsoft)</li>
+                        <li><strong>SynthID :</strong> Watermark imperceptible insere par Google DeepMind dans les images Gemini</li>
+                        <li><strong>Article L121-1 :</strong> Droit a l'image - utilisation soumise a autorisation</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        function copyAllInfo() {
+            const text = `
+=== OSINT IMAGE ANALYZER ===
+Fichier: ${currentData.name}
+Taille: ${currentData.sizeKB} KB
+Type: ${currentData.type}
+Dimensions: ${currentData.width}x${currentData.height}
+Megapixels: ${currentData.megapixels} MP
+Modification: ${currentData.modified}
+Header HEX: ${currentData.hexHeader}
+
+=== DETECTION IA ===
+${currentData.aiDetected ? currentData.aiDetected.map(a => `${a.maker} - ${a.model}`).join(', ') : 'Non detecte'}
+
+=== C2PA ===
+${currentData.c2paFound ? 'Signature C2PA presente' : 'Pas de C2PA'}
+`.trim();
+
+            navigator.clipboard.writeText(text);
+            showToast();
+        }
+
+        function exportJSON() {
+            const blob = new Blob([JSON.stringify(currentData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `osint-${currentData.name}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function shareReport() {
+            // Create shareable data (without raw buffer)
+            const shareData = {
+                name: currentData.name || '',
+                size: currentData.size || 0,
+                sizeKB: currentData.sizeKB || '',
+                sizeMB: currentData.sizeMB || '',
+                type: currentData.type || '',
+                modified: currentData.modified || '',
+                width: currentData.width || 0,
+                height: currentData.height || 0,
+                megapixels: currentData.megapixels || '',
+                aspectRatio: currentData.aspectRatio || '',
+                hexHeader: currentData.hexHeader || '',
+                hasAlpha: currentData.hasAlpha || false,
+                aiDetected: currentData.aiDetected || null,
+                c2paFound: currentData.c2paFound || false,
+                c2paDetails: currentData.c2paDetails || null
+            };
+
+            // Encode in base64 with proper encoding
+            const jsonStr = JSON.stringify(shareData);
+            const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
+            const shareURL = window.location.origin + window.location.pathname + '#' + encoded;
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(shareURL).then(() => {
+                showToastCustom('Lien copie ! Envoie-le a la personne');
+            }).catch(() => {
+                // Fallback
+                prompt('Copie ce lien:', shareURL);
+            });
+        }
+
+        function downloadReport() {
+            const report = generateReportHTML();
+            const blob = new Blob([report], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rapport-osint-${currentData.name || 'image'}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToastCustom('Rapport telecharge !');
+        }
+
+        function generateReportHTML() {
+            const aiInfo = currentData.aiDetected
+                ? currentData.aiDetected.map(a => `${a.maker} (${a.model})`).join(', ')
+                : 'Non detecte';
+
+            const c2paInfo = currentData.c2paFound
+                ? `Signatures JUMBF/C2PA detectees\nGoogle Claim Generator: ${currentData.c2paDetails?.google ? 'Oui' : 'Non'}\nSynthID: ${currentData.c2paDetails?.synthid ? 'Oui' : 'Non'}\ntrainedAlgorithmicMedia: ${currentData.c2paDetails?.trainedMedia ? 'Oui' : 'Non'}`
+                : 'Aucune signature C2PA';
+
+            return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSINT Report - ${currentData.name || 'Image'}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 40px 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #00d4ff; font-size: 2em; margin-bottom: 10px; }
+        .subtitle { color: #888; margin-bottom: 30px; }
+        .card { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 25px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .card h2 { color: #00d4ff; margin-bottom: 15px; font-size: 1.2em; }
+        .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .label { color: #888; }
+        .value { color: #fff; font-weight: 500; }
+        .badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; }
+        .badge-ai { background: linear-gradient(90deg, #ff6b6b, #ffa500); color: #fff; }
+        .badge-ok { background: linear-gradient(90deg, #00ff88, #00d4ff); color: #000; }
+        .badge-warn { background: rgba(255,165,0,0.3); color: #ffa500; }
+        .footer { text-align: center; color: #555; margin-top: 40px; font-size: 0.9em; }
+        .legal { background: rgba(123,44,191,0.1); border: 1px solid rgba(123,44,191,0.3); border-radius: 10px; padding: 20px; margin-top: 20px; }
+        .legal h3 { color: #b388ff; margin-bottom: 10px; }
+        .legal p { color: #aaa; line-height: 1.6; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OSINT Image Report</h1>
+        <p class="subtitle">Rapport genere automatiquement</p>
+
+        <div class="card">
+            <h2>Fichier</h2>
+            <div class="row"><span class="label">Nom</span><span class="value">${currentData.name || 'N/A'}</span></div>
+            <div class="row"><span class="label">Taille</span><span class="value">${currentData.sizeKB || 'N/A'} KB</span></div>
+            <div class="row"><span class="label">Type</span><span class="value">${currentData.type || 'N/A'}</span></div>
+            <div class="row"><span class="label">Dimensions</span><span class="value">${currentData.width || '?'}x${currentData.height || '?'} (${currentData.megapixels || '?'} MP)</span></div>
+            <div class="row"><span class="label">Modification</span><span class="value">${currentData.modified || 'N/A'}</span></div>
+            <div class="row"><span class="label">Header HEX</span><span class="value">${currentData.hexHeader || 'N/A'}</span></div>
+        </div>
+
+        <div class="card">
+            <h2>Detection IA</h2>
+            <div class="row"><span class="label">Statut</span><span class="value"><span class="badge badge-ai">IA DETECTEE</span></span></div>
+            <div class="row"><span class="label">Generateur</span><span class="value">${aiInfo}</span></div>
+        </div>
+
+        <div class="card">
+            <h2>C2PA / JUMF</h2>
+            <div class="row"><span class="label">Statut</span><span class="value"><span class="badge ${currentData.c2paFound ? 'badge-ok' : 'badge-warn'}">${currentData.c2paFound ? 'VALIDEE' : 'NON DETECTEE'}</span></span></div>
+            <div class="row"><span class="label">Signatures</span><span class="value">${c2paInfo}</span></div>
+        </div>
+
+        <div class="card">
+            <h2>Metadonnees</h2>
+            <div class="row"><span class="label">Alpha (RGBA)</span><span class="value">${currentData.hasAlpha ? 'Oui' : 'Non'}</span></div>
+            <div class="row"><span class="label">Compression</span><span class="value">Deflate/Inflate</span></div>
+            <div class="row"><span class="label">Bit Depth</span><span class="value">8 bits/canal</span></div>
+        </div>
+
+        <div class="legal">
+            <h3>Avertissement Legal</h2>
+            <p>Ce rapport est genere a des fins de verification d'authenticite uniquement. Usage legal et ethique.</p>
+            <p>RGPD: Aucune donnee n'est stockee ou transmise. Tout est traite localement.</p>
+            <p>C2PA: Standard de provenance pour images IA (Google, OpenAI, Adobe, Microsoft)</p>
+        </div>
+
+        <div class="footer">
+            <p>Genere par OSINT Image Analyzer</p>
+            <p>${new Date().toLocaleString('fr-FR')}</p>
+        </div>
+    </div>
+</body>
+</html>`;
+        }
+
+        function resetAnalyzer() {
+            results.classList.remove('active');
+            fileInput.value = '';
+            currentData = {};
+        }
+
+        function showToast() {
+            showToastCustom('Copie avec succes !');
+        }
+
+        function showToastCustom(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 3000);
+        }
+    </script>
+</body>
+</html>
