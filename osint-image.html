@@ -639,11 +639,11 @@
             const data = { name:imgData.name, sizeKB:imgData.sizeKB, type:imgData.type, width:imgData.width, height:imgData.height, megapixels:imgData.megapixels, hexHeader:imgData.hexHeader, aiDetected:imgData.aiDetected||null, c2paFound:imgData.c2paFound||false };
             const enc = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
             const full = location.origin + location.pathname + '#img:' + enc;
-            try {
-                const r = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(full));
-                if (r.ok) { const short = await r.text(); showShareModal(short); return; }
-            } catch(e) {}
-            showShareModal(full);
+            navigator.clipboard.writeText(full).then(() => {
+                showToast('Lien copie !');
+            }).catch(() => {
+                prompt('Copie ce lien:', full);
+            });
         }
 
         function showShareModal(url) {
@@ -834,13 +834,11 @@
             const enc = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
             const fullURL = location.origin + location.pathname + '#admin:' + enc;
 
-            (async () => {
-                try {
-                    const r = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(fullURL));
-                    if (r.ok) { const short = await r.text(); showShareModal(short); return; }
-                } catch(e) {}
-                showShareModal(fullURL);
-            })();
+            navigator.clipboard.writeText(fullURL).then(() => {
+                showToast('Lien copie !');
+            }).catch(() => {
+                prompt('Copie ce lien:', fullURL);
+            });
         }
 
         function loadAdminView(data) {
@@ -870,6 +868,12 @@
                     btn.style.cursor = 'not-allowed';
                 }
             });
+
+            // Show a banner
+            const banner = document.createElement('div');
+            banner.style.cssText = 'background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:10px;padding:12px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;';
+            banner.innerHTML = '<span style="color:#ff6b6b;">Lien admin - Champs en lecture seule</span><span style="color:#555;font-size:0.85em;">Les autres outils restent utilisables</span>';
+            document.getElementById('investigation').prepend(banner);
 
             // Auto-run investigation
             launchInvestigation();
