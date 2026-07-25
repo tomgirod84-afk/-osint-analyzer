@@ -3,131 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentinel OSINT</title>
+    <title>STRYX - OSINT Investigation</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
+        :root{--bg:#080b12;--bg2:#0d1117;--bg3:#161b22;--bg4:#1c2333;--border:#21262d;--border2:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#484f58;--accent:#00ff88;--accent2:#00d4ff;--danger:#ff6b6b;--warn:#ffa500;--purple:#a371f7;--card:rgba(22,27,34,0.8)}
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0a0a0a;color:#e0e0e0;min-height:100vh}
-        nav{background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.1);padding:15px 30px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
-        .logo{font-size:1.5em;font-weight:bold;background:linear-gradient(90deg,#00d4ff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;cursor:default}
-        .nav-links{display:flex;gap:3px;overflow-x:auto;scrollbar-width:none}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+        ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+        nav{background:rgba(8,11,18,0.85);border-bottom:1px solid var(--border);padding:0 30px;display:flex;align-items:center;height:60px;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
+        .logo{font-size:1.3em;font-weight:800;color:#fff;letter-spacing:3px;cursor:default;display:flex;align-items:center;gap:10px}
+        .logo span{background:var(--accent);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
+        .nav-links{display:flex;gap:2px;margin-left:30px;overflow-x:auto;scrollbar-width:none}
         .nav-links::-webkit-scrollbar{display:none}
-        .nav-links a{color:#888;text-decoration:none;padding:8px 12px;border-radius:8px;transition:all 0.3s;font-size:0.85em;white-space:nowrap}
-        .nav-links a:hover,.nav-links a.active{color:#00ff88;background:rgba(0,255,136,0.1)}
-        .container{max-width:1200px;margin:0 auto;padding:30px 20px}
-        .hero{text-align:center;padding:60px 0}
-        .hero h1{font-size:3em;background:linear-gradient(90deg,#00d4ff,#00ff88,#7b2cbf);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:15px}
-        .hero p{color:#666;font-size:1.2em}
-        .tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px;margin-top:40px}
-        .tool-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:25px;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden}
-        .tool-card:hover{border-color:#00ff88;transform:translateY(-3px);box-shadow:0 10px 40px rgba(0,255,136,0.1)}
-        .tool-card .icon{font-size:2em;margin-bottom:10px}
-        .tool-card h3{color:#fff;margin-bottom:5px;font-size:1.1em}
-        .tool-card p{color:#666;font-size:0.85em;line-height:1.4}
-        .badge-new{position:absolute;top:12px;right:12px;background:linear-gradient(90deg,#ff6b6b,#ffa500);color:#fff;padding:3px 8px;border-radius:10px;font-size:0.65em;font-weight:bold}
-        .section{display:none;padding:40px 0}.section.active{display:block}
-        .section h2{font-size:1.6em;color:#00ff88;margin-bottom:20px}
+        .nav-links a{color:var(--text2);text-decoration:none;padding:8px 14px;border-radius:6px;transition:all 0.2s;font-size:0.82em;font-weight:500;white-space:nowrap}
+        .nav-links a:hover{color:var(--text);background:rgba(255,255,255,0.05)}
+        .nav-links a.active{color:var(--accent);background:rgba(0,255,136,0.08)}
+        .nav-right{margin-left:auto;display:flex;align-items:center;gap:15px}
+        .nav-right .badge-live{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);font-size:0.75em;color:var(--accent);font-weight:600}
+        .nav-right .badge-live::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
+        .container{max-width:1300px;margin:0 auto;padding:30px 25px}
+        .hero{text-align:center;padding:80px 0 50px;position:relative}
+        .hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(0,255,136,0.03) 0%,transparent 70%);pointer-events:none}
+        .hero h1{font-size:3.5em;font-weight:900;color:#fff;margin-bottom:10px;letter-spacing:-1px}
+        .hero h1 span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .hero p{color:var(--text2);font-size:1.1em;font-weight:300}
+        .hero .subtitle{color:var(--text3);font-size:0.85em;margin-top:8px}
+        .tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:40px}
+        .tool-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden}
+        .tool-card:hover{border-color:rgba(0,255,136,0.3);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.3)}
+        .tool-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transition:opacity 0.3s}
+        .tool-card:hover::after{opacity:1}
+        .tool-card .icon{font-size:1.8em;margin-bottom:12px}
+        .tool-card h3{color:#fff;margin-bottom:6px;font-size:1.05em;font-weight:600}
+        .tool-card p{color:var(--text2);font-size:0.82em;line-height:1.5}
+        .badge-new{position:absolute;top:14px;right:14px;background:linear-gradient(135deg,#ff6b6b,#ff8e53);color:#fff;padding:3px 10px;border-radius:8px;font-size:0.65em;font-weight:700;letter-spacing:0.5px}
+        .badge-csint{position:absolute;top:14px;right:14px;background:linear-gradient(135deg,var(--accent2),var(--purple));color:#fff;padding:3px 10px;border-radius:8px;font-size:0.65em;font-weight:700;letter-spacing:0.5px}
+        .section{display:none;padding:30px 0}.section.active{display:block}
+        .section-header{margin-bottom:25px}
+        .section-header h2{font-size:1.4em;color:#fff;font-weight:700;display:flex;align-items:center;gap:10px}
+        .section-header h2 .emoji{font-size:1.2em}
+        .section-header p{color:var(--text2);font-size:0.9em;margin-top:5px}
         .input-group{display:flex;gap:10px;margin-bottom:20px}
-        .input-group input,.input-group select{flex:1;padding:15px 20px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;transition:border-color 0.3s}
-        .input-group input:focus{border-color:#00ff88}
-        .input-group input::placeholder{color:#555}
-        .btn{padding:15px 30px;border-radius:12px;border:none;font-size:1em;font-weight:bold;cursor:pointer;transition:all 0.3s}
-        .btn-primary{background:linear-gradient(90deg,#00d4ff,#00ff88);color:#000}
-        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 5px 20px rgba(0,255,136,0.3)}
-        .btn-secondary{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2)}
-        .btn-danger{background:rgba(255,107,107,0.2);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3)}
-        .btn-sm{padding:10px 20px;font-size:0.9em;border-radius:8px}
-        .result-box{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:25px;margin-top:20px;display:none}
+        .input-group input,.input-group select{flex:1;padding:12px 16px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:0.95em;font-family:'Inter',sans-serif;outline:none;transition:all 0.2s}
+        .input-group input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,255,136,0.1)}
+        .input-group input::placeholder{color:var(--text3)}
+        .btn{padding:12px 24px;border-radius:10px;border:none;font-size:0.9em;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif}
+        .btn-primary{background:var(--accent);color:#000}
+        .btn-primary:hover{background:#00e67a;transform:translateY(-1px);box-shadow:0 4px 15px rgba(0,255,136,0.3)}
+        .btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+        .btn-secondary:hover{border-color:var(--border2);background:var(--bg4)}
+        .btn-danger{background:rgba(255,107,107,0.1);color:var(--danger);border:1px solid rgba(255,107,107,0.2)}
+        .btn-sm{padding:8px 16px;font-size:0.82em;border-radius:8px}
+        .result-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-top:20px;display:none}
         .result-box.active{display:block}
-        .result-box h3{color:#00d4ff;margin-bottom:15px;display:flex;align-items:center;gap:10px}
-        .result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-        .result-item{background:rgba(0,0,0,0.3);padding:12px;border-radius:10px;border-left:3px solid #7b2cbf}
-        .result-item .label{font-size:0.75em;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
-        .result-item .value{color:#fff;font-size:0.95em;word-break:break-all}
-        .badge{display:inline-block;padding:4px 10px;border-radius:16px;font-size:0.8em;font-weight:bold}
-        .badge-ok{background:rgba(0,255,136,0.2);color:#00ff88}
-        .badge-warn{background:rgba(255,165,0,0.2);color:#ffa500}
-        .badge-danger{background:rgba(255,107,107,0.2);color:#ff6b6b}
-        .badge-info{background:rgba(0,212,255,0.2);color:#00d4ff}
-        .upload-zone{border:2px dashed #333;border-radius:16px;padding:40px;text-align:center;cursor:pointer;transition:all 0.3s}
-        .upload-zone:hover{border-color:#00ff88;background:rgba(0,255,136,0.03)}
-        .preview-img{max-width:100%;max-height:300px;border-radius:12px;margin:15px 0;border:2px solid rgba(255,255,255,0.1)}
-        .c2pa-box{background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:12px;padding:15px;margin-top:10px}
-        .c2pa-box pre{background:rgba(0,0,0,0.4);padding:12px;border-radius:8px;overflow-x:auto;font-size:0.8em;color:#00ff88;max-height:200px;overflow-y:auto}
+        .result-box h3{color:var(--accent2);margin-bottom:15px;font-size:1em;font-weight:600;display:flex;align-items:center;gap:8px}
+        .result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+        .result-item{background:var(--bg);padding:14px;border-radius:10px;border:1px solid var(--border)}
+        .result-item .label{font-size:0.7em;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-weight:600}
+        .result-item .value{color:var(--text);font-size:0.9em;word-break:break-all;line-height:1.4}
+        .badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:0.78em;font-weight:600}
+        .badge-ok{background:rgba(0,255,136,0.1);color:var(--accent)}
+        .badge-warn{background:rgba(255,165,0,0.1);color:var(--warn)}
+        .badge-danger{background:rgba(255,107,107,0.1);color:var(--danger)}
+        .badge-info{background:rgba(0,212,255,0.1);color:var(--accent2)}
+        .badge-purple{background:rgba(163,113,247,0.1);color:var(--purple)}
+        .upload-zone{border:2px dashed var(--border);border-radius:16px;padding:50px;text-align:center;cursor:pointer;transition:all 0.3s}
+        .upload-zone:hover{border-color:var(--accent);background:rgba(0,255,136,0.02)}
+        .preview-img{max-width:100%;max-height:300px;border-radius:12px;margin:15px 0;border:1px solid var(--border)}
+        .c2pa-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:15px;margin-top:10px}
+        .c2pa-box pre{background:var(--bg2);padding:12px;border-radius:8px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:0.8em;color:var(--accent);max-height:200px;overflow-y:auto}
         .loading{display:none;text-align:center;padding:25px}.loading.active{display:block}
-        .spinner{width:35px;height:35px;border:3px solid rgba(0,255,136,0.2);border-top:3px solid #00ff88;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px}
+        .spinner{width:32px;height:32px;border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .toast{position:fixed;bottom:30px;right:30px;background:#00ff88;color:#000;padding:12px 20px;border-radius:10px;font-weight:bold;display:none;z-index:9999;font-size:0.9em}
-        .tabs{display:flex;gap:5px;margin-bottom:20px;flex-wrap:wrap}
-        .tabs button{padding:10px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:#888;cursor:pointer;transition:all 0.3s;font-size:0.9em}
-        .tabs button.active{color:#00ff88;background:rgba(0,255,136,0.1);border-color:rgba(0,255,136,0.3)}
-        .tab-content{display:none}.tab-content.active{display:block}
-        .inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
-        .inv-box{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px}
-        .inv-field{margin-bottom:12px}
-        .inv-field label{color:#666;font-size:0.8em;display:block;margin-bottom:4px}
-        .inv-field input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:0.95em;outline:none}
-        .inv-field input:focus{border-color:#00ff88}
-        #adminBtn{display:none}#adminBtn.visible{display:inline-block !important}
-        .hamburger{display:none;background:none;border:none;cursor:pointer;padding:8px;z-index:200}
-        .hamburger span{display:block;width:25px;height:3px;background:#00ff88;margin:5px 0;border-radius:3px;transition:0.3s}
-        .qr-box{background:rgba(0,0,0,0.3);border-radius:12px;padding:20px;margin-top:15px;min-height:200px}
-        .hash-input{font-family:monospace !important;font-size:0.9em !important;letter-spacing:0.5px}
-        .port-bar{display:flex;align-items:center;gap:10px;margin:5px 0;padding:8px 12px;background:rgba(0,0,0,0.3);border-radius:8px}
-        .port-bar .pname{color:#fff;font-size:0.9em;min-width:120px}
-        .port-bar .pstatus{font-size:0.85em}
-        .history-item{display:flex;justify-content:space-between;align-items:center;padding:12px 15px;background:rgba(0,0,0,0.3);border-radius:8px;margin-bottom:8px;cursor:pointer;transition:background 0.2s}
-        .history-item:hover{background:rgba(0,255,136,0.05)}
-        .history-item .htool{color:#00ff88;font-size:0.8em;font-weight:bold}
-        .history-item .hquery{color:#fff;font-size:0.95em}
-        .history-item .htime{color:#555;font-size:0.8em}
-        .admin-card{background:rgba(0,0,0,0.3);border-radius:12px;padding:20px;text-align:center}
-        .admin-card .big-num{font-size:2.5em;font-weight:bold;background:linear-gradient(90deg,#00d4ff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-        .admin-card .acl{color:#666;font-size:0.9em}
-        .reverse-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px}
-        .reverse-links a{display:block;padding:15px;background:rgba(0,0,0,0.3);border-radius:10px;color:#00d4ff;text-decoration:none;text-align:center;transition:all 0.3s;border:1px solid rgba(255,255,255,0.05)}
-        .reverse-links a:hover{border-color:#00ff88;background:rgba(0,255,136,0.05)}
-        .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:15px}
-        .dash-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:20px;max-height:420px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#333 transparent}
-        .dash-card::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#333;border-radius:5px}
-        .dash-card h3{color:#00d4ff;margin-bottom:12px;font-size:1em;display:flex;align-items:center;gap:8px}
-        .dash-card h3 .live{width:8px;height:8px;background:#00ff88;border-radius:50%;animation:pulse 2s infinite}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-        .feed-item{padding:10px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.85em;transition:background 0.2s}
-        .feed-item:hover{background:rgba(0,255,136,0.03)}
+        .toast{position:fixed;bottom:20px;right:20px;background:var(--accent);color:#000;padding:10px 18px;border-radius:8px;font-weight:600;display:none;z-index:9999;font-size:0.85em}
+        .tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);padding:4px;border-radius:10px;border:1px solid var(--border)}
+        .tabs button{flex:1;padding:10px 16px;border-radius:8px;border:none;background:transparent;color:var(--text2);cursor:pointer;transition:all 0.2s;font-size:0.85em;font-weight:500;font-family:'Inter',sans-serif}
+        .tabs button.active{color:#fff;background:var(--bg4);box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+        .tab-content{display:none}.tab-content.active{display:block}
+        .inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .inv-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px}
+        .inv-box h3{color:var(--accent);margin-bottom:15px;font-size:0.95em;font-weight:600}
+        .inv-field{margin-bottom:10px}
+        .inv-field label{color:var(--text2);font-size:0.75em;display:block;margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+        .inv-field input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.9em;font-family:'Inter',sans-serif;outline:none;transition:all 0.2s}
+        .inv-field input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,255,136,0.1)}
+        #adminBtn{display:none}#adminBtn.visible{display:inline-flex !important}
+        .hamburger{display:none;background:none;border:none;cursor:pointer;padding:8px;z-index:200}
+        .hamburger span{display:block;width:22px;height:2px;background:var(--text);margin:5px 0;border-radius:2px;transition:0.3s}
+        .qr-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:10px;min-height:200px}
+        .hash-input{font-family:'JetBrains Mono',monospace !important;font-size:0.85em !important}
+        .port-bar{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);margin-bottom:6px}
+        .port-bar .pname{color:var(--text);font-size:0.88em;min-width:120px;font-weight:500}
+        .port-bar .pstatus{font-size:0.82em}
+        .history-item{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all 0.2s}
+        .history-item:hover{border-color:rgba(0,255,136,0.2);background:var(--bg3)}
+        .history-item .htool{color:var(--accent);font-size:0.75em;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+        .history-item .hquery{color:var(--text);font-size:0.9em;margin-top:2px}
+        .history-item .htime{color:var(--text3);font-size:0.78em}
+        .reverse-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px}
+        .reverse-links a{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--accent2);text-decoration:none;transition:all 0.2s;font-size:0.88em;font-weight:500}
+        .reverse-links a:hover{border-color:var(--accent);background:rgba(0,255,136,0.03)}
+        .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+        .dash-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;max-height:400px;overflow-y:auto;scrollbar-width:thin}
+        .dash-card h3{color:var(--text);margin-bottom:12px;font-size:0.9em;font-weight:600;display:flex;align-items:center;gap:8px}
+        .dash-card h3 .live{width:7px;height:7px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
+        .feed-item{padding:10px 0;border-bottom:1px solid var(--border);font-size:0.82em;transition:background 0.2s}
         .feed-item:last-child{border-bottom:none}
-        .feed-item .ftitle{color:#fff;margin-bottom:3px;line-height:1.3}
-        .feed-item .fmeta{color:#555;font-size:0.8em}
-        .feed-item a{color:#00d4ff;text-decoration:none}
-        .clock-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:15px}
-        .clock-box{background:rgba(0,0,0,0.3);border-radius:12px;padding:15px;text-align:center;border:1px solid rgba(255,255,255,0.05)}
-        .clock-box .city{color:#666;font-size:0.8em;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
-        .clock-box .time{color:#00ff88;font-size:1.5em;font-weight:bold;font-family:monospace}
-        .clock-box .date{color:#444;font-size:0.75em;margin-top:3px}
-        .ct-item{padding:8px 12px;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:6px;font-size:0.85em;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px}
-        .ct-item .ct-cn{color:#00d4ff;font-family:monospace;word-break:break-all}
-        .vt-box{margin-top:10px}
-        .vt-box input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:0.9em;outline:none;margin-bottom:10px}
-        .refresh-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
-        .refresh-bar .timer{color:#555;font-size:0.8em}
-        footer{text-align:center;padding:40px;color:#333;font-size:0.85em;border-top:1px solid rgba(255,255,255,0.05);margin-top:60px}
-        @media print{nav,.no-print,footer,.toast{display:none!important}.section{display:block!important;padding:10px 0}.result-box{display:block!important;border:1px solid #ccc}body{background:#fff;color:#000}.result-item{border-left-color:#333}.result-item .value{color:#000}.result-item .label{color:#666}h2,h3{color:#333!important;-webkit-text-fill-color:#333!important}.badge-ok{color:#0a0!important}.badge-danger{color:#c00!important}.badge-warn{color:#a50!important}.badge-info{color:#00d!important}}
+        .feed-item .ftitle{color:var(--text);margin-bottom:3px;line-height:1.3}
+        .feed-item .ftitle a{color:var(--accent2);text-decoration:none}
+        .feed-item .ftitle a:hover{text-decoration:underline}
+        .feed-item .fmeta{color:var(--text3);font-size:0.85em}
+        .clock-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px}
+        .clock-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+        .clock-box .city{color:var(--text3);font-size:0.72em;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-weight:600}
+        .clock-box .time{color:var(--accent);font-size:1.4em;font-weight:700;font-family:'JetBrains Mono',monospace}
+        .clock-box .date{color:var(--text3);font-size:0.72em;margin-top:4px}
+        .refresh-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .refresh-bar .timer{color:var(--text3);font-size:0.8em}
+        .ct-item{padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:0.85em;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px}
+        .ct-item .ct-cn{color:var(--accent2);font-family:'JetBrains Mono',monospace;word-break:break-all;font-size:0.85em}
+        .vt-box input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.9em;outline:none;margin-bottom:10px;font-family:'Inter',sans-serif}
+        .status-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:20px}
+        .status-bar .dot{width:8px;height:8px;border-radius:50%}
+        .status-bar .dot.green{background:var(--accent)}
+        .status-bar .dot.red{background:var(--danger)}
+        .status-bar .dot.yellow{background:var(--warn)}
+        .status-bar .text{color:var(--text2);font-size:0.85em}
+        .search-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+        .search-grid a{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text2);text-decoration:none;font-size:0.82em;font-weight:500;transition:all 0.2s}
+        .search-grid a:hover{border-color:var(--accent);color:var(--accent)}
+        .section-tag{display:inline-block;padding:3px 8px;border-radius:4px;font-size:0.7em;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+        .section-tag.tag-id{background:rgba(0,212,255,0.1);color:var(--accent2)}
+        .section-tag.tag-loc{background:rgba(0,255,136,0.1);color:var(--accent)}
+        .section-tag.tag-cross{background:rgba(163,113,247,0.1);color:var(--purple)}
+        .section-tag.tag-ent{background:rgba(255,165,0,0.1);color:var(--warn)}
+        .section-tag.tag-web{background:rgba(255,107,107,0.1);color:var(--danger)}
+        .section-tag.tag-geo{background:rgba(0,212,255,0.1);color:var(--accent2)}
+        .footer{border-top:1px solid var(--border);padding:30px;text-align:center;margin-top:60px}
+        .footer p{color:var(--text3);font-size:0.8em}
+        .footer a{color:var(--accent2);text-decoration:none}
+        @media print{nav,.no-print,.toast,.footer{display:none!important}.section{display:block!important;padding:10px 0}.result-box{display:block!important;border:1px solid #ccc}body{background:#fff;color:#000}.result-item{border-color:#ddd}.result-item .value{color:#000}.result-item .label{color:#666}h2,h3{color:#000!important;-webkit-text-fill-color:#000!important}a{color:#0066cc!important}}
         @media(max-width:768px){
-            .hero h1{font-size:2em}.hero p{font-size:1em}
+            .hero h1{font-size:2.2em}.hero p{font-size:0.95em}
             .hamburger{display:block}
-            .nav-links{display:none;position:fixed;top:0;left:0;width:100%;height:100vh;background:rgba(10,10,10,0.97);flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:150;backdrop-filter:blur(10px)}
-            .nav-links.open{display:flex}.nav-links a{font-size:1.1em;padding:10px 20px}
+            .nav-links{display:none;position:fixed;top:60px;left:0;width:100%;height:calc(100vh - 60px);background:rgba(8,11,18,0.98);flex-direction:column;padding:20px;gap:4px;z-index:150;backdrop-filter:blur(20px);overflow-y:auto}
+            .nav-links.open{display:flex}.nav-links a{padding:12px 16px;font-size:0.95em}
             .input-group{flex-direction:column}.tools-grid{grid-template-columns:1fr}.result-grid{grid-template-columns:1fr}
-            .inv-grid{grid-template-columns:1fr}.hero{padding:25px 0}.btn{padding:12px 18px;font-size:0.9em}
-            .section{padding:15px 0}.container{padding:10px}
-            .tabs{gap:3px}.tabs button{padding:8px 12px;font-size:0.8em}
+            .inv-grid{grid-template-columns:1fr}.hero{padding:40px 0 20px}.btn{padding:10px 18px;font-size:0.88em}
+            .section{padding:15px 0}.container{padding:15px 10px}
+            .tabs{flex-wrap:wrap}.tabs button{padding:8px 12px;font-size:0.8em}
+            .nav-right .badge-live{display:none}
+            .dash-grid{grid-template-columns:1fr}
         }
     </style>
 </head>
 <body>
     <nav>
-        <div class="logo" id="logo">Sentinel OSINT</div>
-        <button class="hamburger" id="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')"><span></span><span></span><span></span></button>
+        <div class="logo"><span class="logo-dot"></span>STRYX</div>
+        <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')"><span></span><span></span><span></span></button>
         <div class="nav-links" id="navLinks">
             <a href="#" class="active" onclick="showSection('home',this)">Accueil</a>
             <a href="#" onclick="showSection('dashboard',this)">Dashboard</a>
@@ -142,51 +179,59 @@
             <a href="#" onclick="showSection('paste',this)">Paste</a>
             <a href="#" onclick="showSection('history',this)">Historique</a>
         </div>
+        <div class="nav-right">
+            <div class="badge-live">OSINT LIVE</div>
+        </div>
     </nav>
 
     <div class="container">
         <!-- HOME -->
         <div class="section active" id="home">
             <div class="hero">
-                <h1>Sentinel OSINT</h1>
-                <p>Plateforme d'analyse Open Source Intelligence</p>
+                <h1><span>STRYX</span></h1>
+                <p>Outil d'investigation CSINT pour la detection et l'analyse de fuites de donnees.</p>
+                <p class="subtitle">Diagnostics &middot; Outils Avanc&eacute;s &middot; Sources Publiques</p>
             </div>
             <div class="tools-grid">
                 <div class="tool-card" onclick="showSection('investigation',null,true)">
-                    <div class="badge-new">CSINT</div><div class="icon">&#128269;</div>
-                    <h3>Investigation</h3><p>Filtres CSINT - verification d'identite et sources publiques.</p>
+                    <div class="badge-csint">CSINT</div><div class="icon">&#128269;</div>
+                    <h3>Investigation</h3><p>Filtres d'investigation CSINT - verification d'identite, fuites de donnees, sources publiques.</p>
+                </div>
+                <div class="tool-card" onclick="showSection('dashboard',null,true)">
+                    <div class="badge-new">LIVE</div><div class="icon">&#128640;</div>
+                    <h3>Dashboard</h3><p>Menaces temps reel, CVE, malware, horloges mondiales.</p>
                 </div>
                 <div class="tool-card" onclick="showSection('domain',null,true)">
                     <div class="icon">&#127760;</div>
-                    <h3>Domain Analysis</h3><p>WHOIS, DNS records, headers HTTP d'un domaine.</p>
+                    <h3>Domain Analysis</h3><p>WHOIS, DNS records, headers HTTP, Certificate Transparency.</p>
                 </div>
                 <div class="tool-card" onclick="showSection('image',null,true)">
                     <div class="badge-new">C2PA</div><div class="icon">&#128247;</div>
-                    <h3>Analyse Image</h3><p>Detecte IA, C2PA, QR codes, reverse image search.</p>
+                    <h3>Analyse Image</h3><p>Detection IA, C2PA, SynthID, QR Code, reverse image search.</p>
                 </div>
                 <div class="tool-card" onclick="showSection('ip',null,true)">
                     <div class="icon">&#127760;</div>
-                    <h3>IP / Port Scan</h3><p>Geolocation, ISP, scan de ports ouverts.</p>
+                    <h3>IP / Port Scan</h3><p>Geolocation, ISP, scan de ports ouverts, VirusTotal.</p>
                 </div>
                 <div class="tool-card" onclick="showSection('email',null,true)">
                     <div class="icon">&#128231;</div>
-                    <h3>Email Analyze</h3><p>DNS, MX, SPF, DMARC, detection jetables.</p>
+                    <h3>Email Analyze</h3><p>Verification DNS, MX, SPF, DMARC, detection emails jetables.</p>
                 </div>
                 <div class="tool-card" onclick="showSection('phone',null,true)">
                     <div class="icon">&#128241;</div>
-                    <h3>Phone Lookup</h3><p>Operateur, pays, type de ligne, validation.</p>
+                    <h3>Phone Lookup</h3><p>Operateur, pays, type de ligne, fuseaux horaires.</p>
                 </div>
                 <div class="tool-card" onclick="showSection('username',null,true)">
                     <div class="badge-new">NEW</div><div class="icon">&#128100;</div>
-                    <h3>Username Search</h3><p>Cherche un username sur les reseaux sociaux.</p>
+                    <h3>Username Search</h3><p>Cherche un username sur les reseaux sociaux et plateformes.</p>
                 </div>
                 <div class="tool-card" onclick="showSection('hash',null,true)">
                     <div class="icon">&#128274;</div>
-                    <h3>Hash Cracker</h3><p>Identifie un hash MD5, SHA1, SHA256.</p>
+                    <h3>Hash Cracker</h3><p>Identifie un hash MD5, SHA1, SHA256 par dictionnaire.</p>
                 </div>
                 <div class="tool-card" onclick="showSection('paste',null,true)">
                     <div class="icon">&#128203;</div>
-                    <h3>Paste Search</h3><p>Cherche un email/username sur les pastebins.</p>
+                    <h3>Paste Search</h3><p>Cherche un email/username sur les pastebins publics.</p>
                 </div>
             </div>
         </div>
@@ -194,13 +239,12 @@
         <!-- DASHBOARD -->
         <div class="section" id="dashboard">
             <div class="refresh-bar">
-                <h2>&#128640; Dashboard temps reel</h2>
+                <div class="section-header"><h2><span class="emoji">&#128640;</span> Dashboard temps reel</h2></div>
                 <div style="display:flex;align-items:center;gap:10px;">
-                    <span class="timer" id="dashTimer">Auto-refresh: 60s</span>
-                    <button class="btn btn-secondary btn-sm" onclick="refreshDashboard()" style="padding:8px 15px;font-size:0.8em;">&#8635; Actualiser</button>
+                    <span class="timer" id="dashTimer">60s</span>
+                    <button class="btn btn-secondary btn-sm" onclick="refreshDashboard()">&#8635; Actualiser</button>
                 </div>
             </div>
-
             <div class="clock-grid" id="worldClocks">
                 <div class="clock-box"><div class="city">Paris</div><div class="time" id="clock-paris">--:--:--</div><div class="date" id="date-paris"></div></div>
                 <div class="clock-box"><div class="city">La Reunion</div><div class="time" id="clock-reunion">--:--:--</div><div class="date" id="date-reunion"></div></div>
@@ -209,63 +253,53 @@
                 <div class="clock-box"><div class="city">Tokyo</div><div class="time" id="clock-tokyo">--:--:--</div><div class="date" id="date-tokyo"></div></div>
                 <div class="clock-box"><div class="city">Sydney</div><div class="time" id="clock-sydney">--:--:--</div><div class="date" id="date-sydney"></div></div>
             </div>
-
             <div class="dash-grid">
-                <div class="dash-card" id="cveFeed">
-                    <h3><span class="live"></span> CVE Recentes</h3>
-                    <div id="cveList"><p style="color:#555;">Chargement...</p></div>
-                </div>
-                <div class="dash-card" id="malwareFeed">
-                    <h3><span class="live"></span> Malware Recents (MalwareBazaar)</h3>
-                    <div id="malwareList"><p style="color:#555;">Chargement...</p></div>
-                </div>
-                <div class="dash-card" id="urlhausFeed">
-                    <h3><span class="live"></span> Menaces URLhaus</h3>
-                    <div id="urlhausList"><p style="color:#555;">Chargement...</p></div>
-                </div>
-                <div class="dash-card" id="threatFoxFeed">
-                    <h3><span class="live"></span> ThreatFox IOCs</h3>
-                    <div id="threatFoxList"><p style="color:#555;">Chargement...</p></div>
-                </div>
+                <div class="dash-card"><h3><span class="live"></span> CVE Recentes</h3><div id="cveList"><p style="color:var(--text3)">Chargement...</p></div></div>
+                <div class="dash-card"><h3><span class="live"></span> Malware Recents</h3><div id="malwareList"><p style="color:var(--text3)">Chargement...</p></div></div>
+                <div class="dash-card"><h3><span class="live"></span> URLhaus Menaces</h3><div id="urlhausList"><p style="color:var(--text3)">Chargement...</p></div></div>
+                <div class="dash-card"><h3><span class="live"></span> ThreatFox IOCs</h3><div id="threatFoxList"><p style="color:var(--text3)">Chargement...</p></div></div>
             </div>
         </div>
 
         <!-- INVESTIGATION -->
         <div class="section" id="investigation">
-            <h2>&#128269; Investigation CSINT</h2>
-            <p style="color:#666;margin-bottom:20px;">Filtres d'investigation CSINT.</p>
+            <div class="section-header">
+                <h2><span class="emoji">&#128269;</span> Investigation CSINT</h2>
+                <p>Filtres d'investigation pour identifier si des informations ont ete compromisees ou indexees dans des sources publiques.</p>
+            </div>
+            <div class="status-bar"><div class="dot green"></div><span class="text">Analyse securisee &middot; Aucune donnee n'est stockee ou transmise</span></div>
             <div class="inv-grid">
                 <div class="inv-box">
-                    <h3 style="color:#00ff88;margin-bottom:15px;">Identification</h3>
-                    <div class="inv-field"><label>Nom</label><input type="text" id="inv-nom" placeholder="Dupont"></div>
+                    <h3>Filtres d'identification</h3>
+                    <div class="inv-field"><label>Nom de famille</label><input type="text" id="inv-nom" placeholder="Dupont"></div>
                     <div class="inv-field"><label>Prenom</label><input type="text" id="inv-prenom" placeholder="Jean"></div>
-                    <div class="inv-field"><label>Date naissance</label><input type="date" id="inv-naissance"></div>
+                    <div class="inv-field"><label>Date de naissance</label><input type="date" id="inv-naissance"></div>
                     <div class="inv-field"><label>Telephone</label><input type="tel" id="inv-telephone" placeholder="+33 6 12 34 56 78"></div>
                     <div class="inv-field"><label>Email</label><input type="email" id="inv-email" placeholder="jean@email.com"></div>
                 </div>
                 <div class="inv-box">
-                    <h3 style="color:#00ff88;margin-bottom:15px;">Complementaires</h3>
-                    <div class="inv-field"><label>Ville</label><input type="text" id="inv-ville" placeholder="Paris"></div>
+                    <h3>Filtres complementaires</h3>
+                    <div class="inv-field"><label>Ville / Commune</label><input type="text" id="inv-ville" placeholder="Paris"></div>
                     <div class="inv-field"><label>Code Postal</label><input type="text" id="inv-cp" placeholder="75001"></div>
                     <div class="inv-field"><label>Adresse</label><input type="text" id="inv-adresse" placeholder="12 rue de la Paix"></div>
                     <div class="inv-field"><label>Immatriculation</label><input type="text" id="inv-immat" placeholder="AB-123-CD"></div>
-                    <div class="inv-field"><label>NIR</label><input type="text" id="inv-nir" placeholder="1 XX XX XX XXX XXX XX"></div>
+                    <div class="inv-field"><label>Numero de Secu (NIR)</label><input type="text" id="inv-nir" placeholder="1 XX XX XX XXX XXX XX"></div>
                 </div>
             </div>
-            <div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap;">
-                <button class="btn btn-primary btn-sm" onclick="launchInvestigation()">Lancer</button>
+            <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm" onclick="launchInvestigation()">Lancer l'investigation</button>
                 <button class="btn btn-secondary btn-sm" id="adminBtn" onclick="generateAdminLink()">Generer lien admin</button>
                 <button class="btn btn-secondary btn-sm" onclick="resetInvestigation()">Reinitialiser</button>
             </div>
-            <div class="loading" id="invLoading"><div class="spinner"></div><p style="color:#666;">Investigation en cours...</p></div>
+            <div class="loading" id="invLoading"><div class="spinner"></div><p style="color:var(--text2)">Analyse en cours...</p></div>
             <div class="result-box" id="invResults"><h3>&#128269; Resultats</h3><div id="invResultsContent"></div></div>
         </div>
 
         <!-- DOMAIN -->
         <div class="section" id="domain">
-            <h2>&#127760; Domain Analysis</h2>
+            <div class="section-header"><h2><span class="emoji">&#127760;</span> Domain Analysis</h2><p>WHOIS, DNS, headers HTTP et Certificate Transparency.</p></div>
             <div class="input-group">
-                <input type="text" id="domainInput" placeholder="Entrer un domaine (ex: google.com)">
+                <input type="text" id="domainInput" placeholder="Entrez un domaine (ex: google.com)">
                 <button class="btn btn-primary" onclick="analyzeDomain()">Analyser</button>
             </div>
             <div class="tabs" id="domainTabs">
@@ -274,49 +308,30 @@
                 <button onclick="switchTab('headers',this)">Headers</button>
                 <button onclick="switchTab('ctlogs',this)">CT Logs</button>
             </div>
-            <div class="tab-content active" id="tab-whois">
-                <div class="loading" id="whoisLoading"><div class="spinner"></div><p style="color:#666;">WHOIS en cours...</p></div>
-                <div class="result-box" id="whoisResults"><h3>WHOIS</h3><div class="result-grid" id="whoisData"></div></div>
-            </div>
-            <div class="tab-content" id="tab-dns">
-                <div class="loading" id="dnsLoading"><div class="spinner"></div><p style="color:#666;">DNS en cours...</p></div>
-                <div class="result-box" id="dnsResults"><h3>DNS Records</h3><div id="dnsData"></div></div>
-            </div>
-            <div class="tab-content" id="tab-headers">
-                <div class="loading" id="headersLoading"><div class="spinner"></div><p style="color:#666;">Headers en cours...</p></div>
-                <div class="result-box" id="headersResults"><h3>HTTP Headers</h3><div class="result-grid" id="headersData"></div></div>
-            </div>
-            <div class="tab-content" id="tab-ctlogs">
-                <p style="color:#666;margin-bottom:10px;">Certificate Transparency - certificats SSL/TLS emis publiquement pour ce domaine.</p>
-                <div class="loading" id="ctLoading"><div class="spinner"></div><p style="color:#666;">Recherche CT...</p></div>
-                <div class="result-box" id="ctResults"><h3>Certificats trouves</h3><div id="ctData"></div></div>
-            </div>
+            <div class="tab-content active" id="tab-whois"><div class="loading" id="whoisLoading"><div class="spinner"></div></div><div class="result-box" id="whoisResults"><h3>WHOIS</h3><div class="result-grid" id="whoisData"></div></div></div>
+            <div class="tab-content" id="tab-dns"><div class="loading" id="dnsLoading"><div class="spinner"></div></div><div class="result-box" id="dnsResults"><h3>DNS Records</h3><div id="dnsData"></div></div></div>
+            <div class="tab-content" id="tab-headers"><div class="loading" id="headersLoading"><div class="spinner"></div></div><div class="result-box" id="headersResults"><h3>HTTP Headers</h3><div class="result-grid" id="headersData"></div></div></div>
+            <div class="tab-content" id="tab-ctlogs"><div class="loading" id="ctLoading"><div class="spinner"></div></div><div class="result-box" id="ctResults"><h3>Certificate Transparency</h3><div id="ctData"></div></div></div>
         </div>
 
         <!-- IMAGE -->
         <div class="section" id="image">
-            <h2>&#128247; Analyse Image OSINT</h2>
+            <div class="section-header"><h2><span class="emoji">&#128247;</span> Analyse Image OSINT</h2></div>
             <div class="tabs" id="imageTabs">
                 <button class="active" onclick="switchTab('imgupload',this)">Analyse</button>
                 <button onclick="switchTab('qrcode',this)">QR Code</button>
                 <button onclick="switchTab('reverse',this)">Reverse Image</button>
             </div>
             <div class="tab-content active" id="tab-imgupload">
-                <div class="upload-zone" id="dropZone">
-                    <h3 style="color:#00ff88;margin-bottom:8px;">Deposez une image</h3>
-                    <p style="color:#555;">PNG, JPG, WEBP - C2PA, SynthID</p>
-                </div>
-                <input type="file" id="fileInput" accept="image/*" style="display:none;">
+                <div class="upload-zone" id="dropZone"><h3 style="color:var(--accent);margin-bottom:8px">Deposez une image</h3><p style="color:var(--text3)">PNG, JPG, WEBP</p></div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none">
                 <div class="result-box" id="imageResults">
                     <img id="preview" class="preview-img" src="" alt="">
-                    <div id="imgDimensions" style="color:#666;margin-bottom:10px;"></div>
-                    <h3>&#128196; Informations</h3>
+                    <div id="imgDimensions" style="color:var(--text2);margin-bottom:10px;font-size:0.88em"></div>
                     <div class="result-grid" id="imgGeneral"></div>
-                    <h3 style="margin-top:15px;">&#129302; Detection IA</h3>
-                    <div id="imgAI"></div>
-                    <h3 style="margin-top:15px;">&#128274; C2PA / JUMF</h3>
-                    <div id="imgC2PA"></div>
-                    <div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap;">
+                    <h3 style="margin-top:15px">&#129302; Detection IA</h3><div id="imgAI"></div>
+                    <h3 style="margin-top:15px">&#128274; C2PA / JUMF</h3><div id="imgC2PA"></div>
+                    <div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap">
                         <button class="btn btn-primary btn-sm" onclick="copyImageReport()">Copier</button>
                         <button class="btn btn-secondary btn-sm" onclick="shareImageReport()">Partager</button>
                         <button class="btn btn-secondary btn-sm" onclick="downloadImageReport()">HTML</button>
@@ -326,19 +341,19 @@
                 </div>
             </div>
             <div class="tab-content" id="tab-qrcode">
-                <p style="color:#666;margin-bottom:15px;">Scannez un QR code ou code barre depuis votre camera ou un fichier image.</p>
-                <div style="display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap;">
-                    <button class="btn btn-primary btn-sm" onclick="startQRScan()">Scanner avec camera</button>
-                    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('qrFileInput').click()">Deposer une image</button>
-                    <button class="btn btn-danger btn-sm" onclick="stopQRScan()" style="display:none;" id="stopQRBtn">Arreter</button>
+                <p style="color:var(--text2);margin-bottom:12px">Scannez un QR code depuis votre camera ou un fichier.</p>
+                <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+                    <button class="btn btn-primary btn-sm" onclick="startQRScan()">Camera</button>
+                    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('qrFileInput').click()">Fichier image</button>
+                    <button class="btn btn-danger btn-sm" onclick="stopQRScan()" style="display:none" id="stopQRBtn">Arreter</button>
                 </div>
-                <input type="file" id="qrFileInput" accept="image/*" style="display:none;" onchange="scanQRFile(this)">
+                <input type="file" id="qrFileInput" accept="image/*" style="display:none" onchange="scanQRFile(this)">
                 <div class="qr-box" id="qrReader"></div>
                 <div class="result-box" id="qrResults"><h3>Resultat QR Code</h3><div class="result-grid" id="qrData"></div></div>
             </div>
             <div class="tab-content" id="tab-reverse">
-                <p style="color:#666;margin-bottom:15px;">Recherche inverse d'image sur les moteurs populaires.</p>
-                <div id="reverseImgInfo" style="color:#555;margin-bottom:15px;"></div>
+                <p style="color:var(--text2);margin-bottom:12px">Recherche inverse d'image sur les moteurs populaires.</p>
+                <div id="reverseImgInfo" style="color:var(--text3);margin-bottom:12px"></div>
                 <div class="reverse-links" id="reverseLinks">
                     <a href="#" target="_blank" id="revGoogle">Google Images</a>
                     <a href="#" target="_blank" id="revTinEye">TinEye</a>
@@ -347,13 +362,12 @@
                     <a href="#" target="_blank" id="revPinterest">Pinterest</a>
                     <a href="#" target="_blank" id="revImgur">Imgur</a>
                 </div>
-                <p style="color:#444;font-size:0.8em;margin-top:15px;">* Telechargez d'abord l'image puis uploadez-la sur ces sites pour la recherche inverse.</p>
             </div>
         </div>
 
         <!-- IP -->
         <div class="section" id="ip">
-            <h2>&#127760; IP / Domain Lookup</h2>
+            <div class="section-header"><h2><span class="emoji">&#127760;</span> IP / Domain Lookup</h2></div>
             <div class="input-group">
                 <input type="text" id="ipInput" placeholder="IP ou domaine (ex: 8.8.8.8)">
                 <button class="btn btn-primary" onclick="lookupIP()">Analyser</button>
@@ -363,972 +377,252 @@
                 <button onclick="switchTab('portscan',this)">Port Scan</button>
                 <button onclick="switchTab('virustotal',this)">VirusTotal</button>
             </div>
-            <div class="tab-content active" id="tab-iplookup">
-                <div class="loading" id="ipLoading"><div class="spinner"></div><p style="color:#666;">Analyse en cours...</p></div>
-                <div class="result-box" id="ipResults"><h3>&#127760; Resultats IP</h3><div class="result-grid" id="ipData"></div></div>
-            </div>
+            <div class="tab-content active" id="tab-iplookup"><div class="loading" id="ipLoading"><div class="spinner"></div></div><div class="result-box" id="ipResults"><h3>&#127760; Resultats IP</h3><div class="result-grid" id="ipData"></div></div></div>
             <div class="tab-content" id="tab-portscan">
-                <p style="color:#666;margin-bottom:10px;">Scan basique des ports communs (browser - limité).</p>
-                <button class="btn btn-primary btn-sm" onclick="scanPorts()">Lancer le scan</button>
-                <div class="loading" id="portLoading"><div class="spinner"></div><p style="color:#666;">Scan en cours...</p></div>
+                <button class="btn btn-primary btn-sm" onclick="scanPorts()" style="margin-bottom:12px">Lancer le scan</button>
+                <div class="loading" id="portLoading"><div class="spinner"></div></div>
                 <div class="result-box" id="portResults"><h3>Ports ouverts</h3><div id="portData"></div></div>
             </div>
             <div class="tab-content" id="tab-virustotal">
-                <div class="vt-box">
-                    <p style="color:#666;margin-bottom:10px;">Verifie la reputation d'une IP sur VirusTotal (necessite API key gratuite).</p>
-                    <input type="text" id="vtApiKey" placeholder="Cle API VirusTotal (optionnel, stockee localement)" value="">
-                    <button class="btn btn-primary btn-sm" onclick="checkVirusTotal()">Verifier</button>
-                    <div class="loading" id="vtLoading"><div class="spinner"></div><p style="color:#666;">Verification VirusTotal...</p></div>
-                    <div class="result-box" id="vtResults"><h3>VirusTotal</h3><div class="result-grid" id="vtData"></div></div>
-                </div>
+                <p style="color:var(--text2);margin-bottom:10px">Reputation VirusTotal (API key gratuite sur virustotal.com).</p>
+                <input type="text" id="vtApiKey" placeholder="API Key VirusTotal (optionnel)" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.9em;outline:none;margin-bottom:10px;font-family:'Inter',sans-serif">
+                <button class="btn btn-primary btn-sm" onclick="checkVirusTotal()">Verifier</button>
+                <div class="loading" id="vtLoading"><div class="spinner"></div></div>
+                <div class="result-box" id="vtResults"><h3>VirusTotal</h3><div class="result-grid" id="vtData"></div></div>
             </div>
         </div>
 
         <!-- EMAIL -->
         <div class="section" id="email">
-            <h2>&#128231; Email Analyze</h2>
+            <div class="section-header"><h2><span class="emoji">&#128231;</span> Email Analyze</h2></div>
             <div class="input-group">
                 <input type="email" id="emailInput" placeholder="test@gmail.com">
                 <button class="btn btn-primary" onclick="analyzeEmail()">Analyser</button>
             </div>
-            <div class="loading" id="emailLoading"><div class="spinner"></div><p style="color:#666;">Analyse en cours...</p></div>
+            <div class="loading" id="emailLoading"><div class="spinner"></div></div>
             <div class="result-box" id="emailResults"><h3>&#128231; Resultats Email</h3><div class="result-grid" id="emailData"></div></div>
         </div>
 
         <!-- PHONE -->
         <div class="section" id="phone">
-            <h2>&#128241; Phone Lookup</h2>
+            <div class="section-header"><h2><span class="emoji">&#128241;</span> Phone Lookup</h2></div>
             <div class="input-group">
                 <input type="tel" id="phoneInput" placeholder="+33 6 12 34 56 78 (France) ou +262 (Reunion)">
                 <button class="btn btn-primary" onclick="lookupPhone()">Analyser</button>
             </div>
-            <div class="loading" id="phoneLoading"><div class="spinner"></div><p style="color:#666;">Analyse en cours...</p></div>
+            <div class="loading" id="phoneLoading"><div class="spinner"></div></div>
             <div class="result-box" id="phoneResults"><h3>&#128241; Resultats Phone</h3><div class="result-grid" id="phoneData"></div></div>
         </div>
 
         <!-- USERNAME -->
         <div class="section" id="username">
-            <h2>&#128100; Username Search</h2>
+            <div class="section-header"><h2><span class="emoji">&#128100;</span> Username Search</h2></div>
             <div class="input-group">
                 <input type="text" id="usernameInput" placeholder="john_doe">
                 <button class="btn btn-primary" onclick="searchUsername()">Rechercher</button>
             </div>
-            <div class="loading" id="usernameLoading"><div class="spinner"></div><p style="color:#666;">Recherche en cours...</p></div>
+            <div class="loading" id="usernameLoading"><div class="spinner"></div></div>
             <div class="result-box" id="usernameResults"><h3>&#128100; Resultats</h3><div id="usernameData"></div></div>
         </div>
 
-        <!-- HASH CRACKER -->
+        <!-- HASH -->
         <div class="section" id="hash">
-            <h2>&#128274; Hash Cracker</h2>
-            <p style="color:#666;margin-bottom:15px;">Identifie un hash en le comparant a des mots de passe courants.</p>
+            <div class="section-header"><h2><span class="emoji">&#128274;</span> Hash Cracker</h2><p>Identifie un hash MD5, SHA1, SHA256 par dictionnaire.</p></div>
             <div class="input-group">
-                <input type="text" id="hashInput" class="hash-input" placeholder="Entrez un hash (MD5, SHA1, SHA256...)">
-                <select id="hashType" style="padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;">
-                    <option value="auto">Auto-detect</option>
-                    <option value="md5">MD5</option>
-                    <option value="sha1">SHA-1</option>
-                    <option value="sha256">SHA-256</option>
+                <input type="text" id="hashInput" class="hash-input" placeholder="Entrez un hash">
+                <select id="hashType" style="padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:0.9em;outline:none;font-family:'Inter',sans-serif">
+                    <option value="auto">Auto-detect</option><option value="md5">MD5</option><option value="sha1">SHA-1</option><option value="sha256">SHA-256</option>
                 </select>
                 <button class="btn btn-primary" onclick="crackHash()">Cracker</button>
             </div>
-            <div class="loading" id="hashLoading"><div class="spinner"></div><p style="color:#666;">Test en cours...</p></div>
+            <div class="loading" id="hashLoading"><div class="spinner"></div></div>
             <div class="result-box" id="hashResults"><h3>&#128274; Resultats</h3><div class="result-grid" id="hashData"></div></div>
         </div>
 
-        <!-- PASTE SEARCH -->
+        <!-- PASTE -->
         <div class="section" id="paste">
-            <h2>&#128203; Paste Search</h2>
-            <p style="color:#666;margin-bottom:15px;">Cherche un email ou username sur les pastebins et GitHub gists publics.</p>
+            <div class="section-header"><h2><span class="emoji">&#128203;</span> Paste Search</h2><p>Cherche un email ou username sur les pastebins et GitHub gists.</p></div>
             <div class="input-group">
                 <input type="text" id="pasteInput" placeholder="email@exemple.com ou username">
                 <button class="btn btn-primary" onclick="searchPaste()">Rechercher</button>
             </div>
-            <div class="loading" id="pasteLoading"><div class="spinner"></div><p style="color:#666;">Recherche en cours...</p></div>
+            <div class="loading" id="pasteLoading"><div class="spinner"></div></div>
             <div class="result-box" id="pasteResults"><h3>&#128203; Resultats</h3><div id="pasteData"></div></div>
         </div>
 
         <!-- HISTORY -->
         <div class="section" id="history">
-            <h2>&#128214; Historique local</h2>
-            <p style="color:#666;margin-bottom:15px;">Vos dernieres recherches (stockees localement, rien n'est transmis).</p>
-            <div style="display:flex;gap:8px;margin-bottom:15px;">
-                <button class="btn btn-danger btn-sm" onclick="clearHistory()">Effacer tout</button>
-            </div>
+            <div class="section-header"><h2><span class="emoji">&#128214;</span> Historique local</h2><p>Vos dernieres recherches (stockees localement).</p></div>
+            <div style="margin-bottom:15px"><button class="btn btn-danger btn-sm" onclick="clearHistory()">Effacer tout</button></div>
             <div id="historyList"></div>
         </div>
     </div>
 
-    <div style="max-width:1200px;margin:0 auto 30px;padding:15px;background:rgba(123,44,191,0.05);border:1px solid rgba(123,44,191,0.2);border-radius:12px;">
-        <p style="color:#666;font-size:0.8em;line-height:1.5;">Avertissement: Usage legal et ethique uniquement. RGPD: aucune donnee n'est stockee ou transmise. Analyses effectuees localement dans votre navigateur.</p>
+    <div class="footer">
+        <p>STRYX v3.0 &middot; Usage legal uniquement &middot; <a href="https://discord.gg/9Hyuy68SrB" target="_blank">Discord</a></p>
     </div>
 
-    <footer>Sentinel OSINT v3.0 - Usage legal uniquement<br><br><a href="https://discord.gg/9Hyuy68SrB" target="_blank" style="color:#5865F2;text-decoration:none;">Discord</a></footer>
     <div class="toast" id="toast"></div>
 
     <script>
-    let imgData={}, logoClicks=0, qrScanner=null;
+    let imgData={},logoClicks=0,qrScanner=null;
 
-    function showSection(id,el,closeNav){
+    function showSection(id,el){
         document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         document.querySelectorAll('.nav-links a').forEach(a=>a.classList.remove('active'));
-        if(el) el.classList.add('active');
+        if(el)el.classList.add('active');
         document.getElementById('navLinks').classList.remove('open');
-        if(id==='history') renderHistory();
+        if(id==='history')renderHistory();
         if(id==='dashboard'){refreshDashboard();startDashAutoRefresh()}
         else if(dashInterval){clearInterval(dashInterval);dashInterval=null}
     }
-    function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
-    function switchTab(name,btn){
-        const section=btn.closest('.section');
-        section.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-        section.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
-        document.getElementById('tab-'+name).classList.add('active');
-        btn.classList.add('active');
-    }
-
-    // === COMPRESS ===
+    function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
+    function switchTab(n,b){const s=b.closest('.section');s.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));s.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+n).classList.add('active');b.classList.add('active')}
     function compressURI(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/g,'')}
     function decompressURI(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return decodeURIComponent(escape(atob(s)))}
 
-    // === HISTORY ===
-    function addHistory(tool,query){
-        let h=JSON.parse(localStorage.getItem('osint_history')||'[]');
-        h.unshift({tool,query,time:Date.now()});
-        if(h.length>50)h=h.slice(0,50);
-        localStorage.setItem('osint_history',JSON.stringify(h));
-    }
-    function renderHistory(){
-        let h=JSON.parse(localStorage.getItem('osint_history')||'[]');
-        const el=document.getElementById('historyList');
-        if(!h.length){el.innerHTML='<p style="color:#555;">Aucun historique.</p>';return}
-        el.innerHTML=h.map(i=>{
-            const d=new Date(i.time);
-            return `<div class="history-item" onclick="replayHistory('${i.tool}','${i.query.replace(/'/g,"\\'")}')"><span><span class="htool">${i.tool}</span> <span class="hquery">${i.query}</span></span><span class="htime">${d.toLocaleDateString('fr-FR')} ${d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>`;
-        }).join('');
-    }
-    function replayHistory(tool,query){
-        const map={'Investigation':'investigation','Domain':'domain','Image':'image','IP':'ip','Email':'email','Phone':'phone','Username':'username','Hash':'hash','Paste':'paste'};
-        const sec=map[tool]||'home';
-        showSection(sec,null,true);
-        document.querySelectorAll('.nav-links a').forEach(a=>{if(a.textContent.toLowerCase().includes(sec.substring(0,4)))a.classList.add('active')});
-        if(tool==='Email')document.getElementById('emailInput').value=query;
-        if(tool==='Phone')document.getElementById('phoneInput').value=query;
-        if(tool==='IP')document.getElementById('ipInput').value=query;
-        if(tool==='Username')document.getElementById('usernameInput').value=query;
-        if(tool==='Domain')document.getElementById('domainInput').value=query;
-        if(tool==='Hash')document.getElementById('hashInput').value=query;
-        if(tool==='Paste')document.getElementById('pasteInput').value=query;
-    }
+    function addHistory(tool,query){let h=JSON.parse(localStorage.getItem('osint_history')||'[]');h.unshift({tool,query,time:Date.now()});if(h.length>50)h=h.slice(0,50);localStorage.setItem('osint_history',JSON.stringify(h))}
+    function renderHistory(){let h=JSON.parse(localStorage.getItem('osint_history')||'[]');const el=document.getElementById('historyList');if(!h.length){el.innerHTML='<p style="color:var(--text3)">Aucun historique.</p>';return}el.innerHTML=h.map(i=>{const d=new Date(i.time);return`<div class="history-item" onclick="replayHistory('${i.tool}','${i.query.replace(/'/g,"\\'")}')"><span><span class="htool">${i.tool}</span><div class="hquery">${i.query}</div></span><span class="htime">${d.toLocaleDateString('fr-FR')} ${d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>`}).join('')}
+    function replayHistory(tool,query){const map={'Investigation':'investigation','Domain':'domain','Image':'image','IP':'ip','Email':'email','Phone':'phone','Username':'username','Hash':'hash','Paste':'paste'};const sec=map[tool]||'home';showSection(sec,null);if(tool==='Email')document.getElementById('emailInput').value=query;if(tool==='Phone')document.getElementById('phoneInput').value=query;if(tool==='IP')document.getElementById('ipInput').value=query;if(tool==='Username')document.getElementById('usernameInput').value=query;if(tool==='Domain')document.getElementById('domainInput').value=query;if(tool==='Hash')document.getElementById('hashInput').value=query;if(tool==='Paste')document.getElementById('pasteInput').value=query}
     function clearHistory(){localStorage.removeItem('osint_history');renderHistory();showToast('Historique efface')}
 
-    // === ADMIN ===
-    document.getElementById('logo').addEventListener('click',function(){
-        logoClicks++;clearTimeout(this._t);this._t=setTimeout(()=>logoClicks=0,1500);
-        if(logoClicks>=3){logoClicks=0;const b=document.getElementById('adminBtn');b.classList.toggle('visible');showToast(b.classList.contains('visible')?'Mode admin ON':'Mode admin OFF')}
-    });
+    document.getElementById('logo').addEventListener('click',function(){logoClicks++;clearTimeout(this._t);this._t=setTimeout(()=>logoClicks=0,1500);if(logoClicks>=3){logoClicks=0;const b=document.getElementById('adminBtn');b.classList.toggle('visible');showToast(b.classList.contains('visible')?'Mode admin ON':'Mode admin OFF')}});
 
-    // === IMAGE ===
+    // IMAGE
     const dropZone=document.getElementById('dropZone'),fileInput=document.getElementById('fileInput');
     dropZone.addEventListener('click',()=>fileInput.click());
-    dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.style.borderColor='#00ff88'});
-    dropZone.addEventListener('dragleave',()=>dropZone.style.borderColor='#333');
-    dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.style.borderColor='#333';if(e.dataTransfer.files[0])analyzeImage(e.dataTransfer.files[0])});
+    dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.style.borderColor='var(--accent)'});
+    dropZone.addEventListener('dragleave',()=>dropZone.style.borderColor='var(--border)');
+    dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.style.borderColor='var(--border)';if(e.dataTransfer.files[0])analyzeImage(e.dataTransfer.files[0])});
     fileInput.addEventListener('change',e=>{if(e.target.files[0])analyzeImage(e.target.files[0])});
 
-    async function analyzeImage(file){
-        const buffer=await file.arrayBuffer(),rawBytes=new Uint8Array(buffer);
-        const hexHeader=Array.from(rawBytes.slice(0,16)).map(b=>b.toString(16).padStart(2,'0')).join(' ').toUpperCase();
-        const reader=new FileReader();
-        reader.onload=function(e){
-            const img=new Image();
-            img.onload=function(){
-                imgData={name:file.name,sizeKB:(file.size/1024).toFixed(2),sizeMB:(file.size/1048576).toFixed(2),type:file.type,width:img.width,height:img.height,megapixels:((img.width*img.height)/1000000).toFixed(2),hexHeader,hasAlpha:file.type==='image/png'};
-                document.getElementById('preview').src=e.target.result;
-                document.getElementById('imgDimensions').textContent=`${img.width} x ${img.height} px (${imgData.megapixels} MP)`;
-                document.getElementById('imageResults').classList.add('active');
-                renderImgGeneral();detectImgAI(file.name);extractC2PA(rawBytes);
-                addHistory('Image',file.name);
-            };img.src=e.target.result;
-        };reader.readAsDataURL(file);
-    }
-    function renderImgGeneral(){
-        document.getElementById('imgGeneral').innerHTML=`
-            <div class="result-item"><div class="label">Fichier</div><div class="value">${imgData.name}</div></div>
-            <div class="result-item"><div class="label">Taille</div><div class="value">${imgData.sizeKB} KB</div></div>
-            <div class="result-item"><div class="label">Type</div><div class="value">${imgData.type}</div></div>
-            <div class="result-item"><div class="label">Dimensions</div><div class="value">${imgData.width}x${imgData.height}</div></div>
-            <div class="result-item"><div class="label">HEX</div><div class="value" style="font-family:monospace;font-size:0.85em;">${imgData.hexHeader}</div></div>
-            <div class="result-item"><div class="label">Alpha</div><div class="value">${imgData.hasAlpha?'Oui (RGBA)':'Non'}</div></div>`;
-    }
-    function detectImgAI(name){
-        const aiDB={gemini:{maker:'Google',model:'Gemini'},'dall-e':{maker:'OpenAI',model:'DALL-E'},midjourney:{maker:'Midjourney',model:'Midjourney'},'stable diffusion':{maker:'Stability AI',model:'Stable Diffusion'},leonardo:{maker:'Leonardo.AI',model:'Leonardo'},firefly:{maker:'Adobe',model:'Firefly'},copilot:{maker:'Microsoft',model:'Copilot'}};
-        const found=[];for(const[k,v]of Object.entries(aiDB)){if(name.toLowerCase().includes(k))found.push(v)}
-        if(found.length){imgData.aiDetected=found;document.getElementById('imgAI').innerHTML=`<div class="result-grid"><div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge badge-danger">IA DETECTEE</span></div></div><div class="result-item"><div class="label">Generateur</div><div class="value">${found.map(a=>`<span class="badge badge-info">${a.maker} ${a.model}</span>`).join(' ')}</div></div></div>`}
-        else{document.getElementById('imgAI').innerHTML=`<div class="result-grid"><div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge badge-ok">Non detecte</span></div></div></div>`}
-    }
-    function extractC2PA(rawBytes){
-        const lt=Array.from(rawBytes).map(b=>String.fromCharCode(b)).join('').toLowerCase();
-        const found=lt.includes('jumbf')||lt.includes('c2pa')||lt.includes('synthid')||lt.includes('trainedalgorithmicmedia');
-        if(found){let pre='Signature C2PA / JUMF detectee\n═══════════════════════════\n\n';if(lt.includes('google'))pre+='Google Claim Generator: OUI\n';if(lt.includes('synthid'))pre+='SynthID Watermark: OUI\n';if(lt.includes('trainedalgorithmicmedia'))pre+='trainedAlgorithmicMedia: OUI\n';pre+='\nValidation:\n  Signature: Validee\n  Certificat: Non revoque';imgData.c2paFound=true;document.getElementById('imgC2PA').innerHTML=`<span class="badge badge-ok">VALIDEE</span><div class="c2pa-box"><pre>${pre}</pre></div>`}
-        else{imgData.c2paFound=false;document.getElementById('imgC2PA').innerHTML=`<span class="badge badge-warn">Non detecte</span>`}
-    }
-    function copyImageReport(){navigator.clipboard.writeText(`=== OSINT IMAGE ===\nFichier: ${imgData.name}\nTaille: ${imgData.sizeKB} KB\nType: ${imgData.type}\nDims: ${imgData.width}x${imgData.height}\nHEX: ${imgData.hexHeader}\nIA: ${imgData.aiDetected?imgData.aiDetected.map(a=>a.maker+' '+a.model).join(', '):'Non detecte'}\nC2PA: ${imgData.c2paFound?'Oui':'Non'}`);showToast('Copie !')}
+    async function analyzeImage(file){const buffer=await file.arrayBuffer(),rawBytes=new Uint8Array(buffer);const hexHeader=Array.from(rawBytes.slice(0,16)).map(b=>b.toString(16).padStart(2,'0')).join(' ').toUpperCase();const reader=new FileReader();reader.onload=function(e){const img=new Image();img.onload=function(){imgData={name:file.name,sizeKB:(file.size/1024).toFixed(2),type:file.type,width:img.width,height:img.height,megapixels:((img.width*img.height)/1000000).toFixed(2),hexHeader,hasAlpha:file.type==='image/png'};document.getElementById('preview').src=e.target.result;document.getElementById('imgDimensions').textContent=`${img.width} x ${img.height} px (${imgData.megapixels} MP)`;document.getElementById('imageResults').classList.add('active');renderImgGeneral();detectImgAI(file.name);extractC2PA(rawBytes);addHistory('Image',file.name)};img.src=e.target.result};reader.readAsDataURL(file)}
+    function renderImgGeneral(){document.getElementById('imgGeneral').innerHTML=`<div class="result-item"><div class="label">Fichier</div><div class="value">${imgData.name}</div></div><div class="result-item"><div class="label">Taille</div><div class="value">${imgData.sizeKB} KB</div></div><div class="result-item"><div class="label">Type</div><div class="value">${imgData.type}</div></div><div class="result-item"><div class="label">Dimensions</div><div class="value">${imgData.width}x${imgData.height}</div></div><div class="result-item"><div class="label">HEX</div><div class="value" style="font-family:'JetBrains Mono',monospace;font-size:0.85em">${imgData.hexHeader}</div></div><div class="result-item"><div class="label">Alpha</div><div class="value">${imgData.hasAlpha?'Oui (RGBA)':'Non'}</div></div>`}
+    function detectImgAI(name){const aiDB={gemini:{maker:'Google',model:'Gemini'},'dall-e':{maker:'OpenAI',model:'DALL-E'},midjourney:{maker:'Midjourney',model:'Midjourney'},'stable diffusion':{maker:'Stability AI',model:'Stable Diffusion'},firefly:{maker:'Adobe',model:'Firefly'}};const found=[];for(const[k,v]of Object.entries(aiDB)){if(name.toLowerCase().includes(k))found.push(v)}if(found.length){imgData.aiDetected=found;document.getElementById('imgAI').innerHTML=`<div class="result-grid"><div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge badge-danger">IA DETECTEE</span></div></div><div class="result-item"><div class="label">Generateur</div><div class="value">${found.map(a=>`<span class="badge badge-info">${a.maker} ${a.model}</span>`).join(' ')}</div></div></div>`}else{document.getElementById('imgAI').innerHTML=`<span class="badge badge-ok">Non detecte</span>`}}
+    function extractC2PA(rawBytes){const lt=Array.from(rawBytes).map(b=>String.fromCharCode(b)).join('').toLowerCase();const found=lt.includes('jumbf')||lt.includes('c2pa')||lt.includes('synthid')||lt.includes('trainedalgorithmicmedia');if(found){let pre='Signature C2PA / JUMF detectee\n---\n\n';if(lt.includes('google'))pre+='Google: OUI\n';if(lt.includes('synthid'))pre+='SynthID: OUI\n';if(lt.includes('trainedalgorithmicmedia'))pre+='trainedAlgorithmicMedia: OUI\n';imgData.c2paFound=true;document.getElementById('imgC2PA').innerHTML=`<span class="badge badge-ok">VALIDEE</span><div class="c2pa-box"><pre>${pre}</pre></div>`}else{imgData.c2paFound=false;document.getElementById('imgC2PA').innerHTML=`<span class="badge badge-warn">Non detecte</span>`}}
+    function copyImageReport(){navigator.clipboard.writeText(`OSINT IMAGE\nFichier: ${imgData.name}\nTaille: ${imgData.sizeKB} KB\nType: ${imgData.type}\nDims: ${imgData.width}x${imgData.height}\nHEX: ${imgData.hexHeader}\nIA: ${imgData.aiDetected?imgData.aiDetected.map(a=>a.maker).join(', '):'Non'}\nC2PA: ${imgData.c2paFound?'Oui':'Non'}`);showToast('Copie !')}
     async function shareImageReport(){const d={name:imgData.name,sizeKB:imgData.sizeKB,type:imgData.type,width:imgData.width,height:imgData.height,megapixels:imgData.megapixels,hexHeader:imgData.hexHeader,aiDetected:imgData.aiDetected||null,c2paFound:imgData.c2paFound||false};const u=location.origin+location.pathname+'#I:'+compressURI(JSON.stringify(d));navigator.clipboard.writeText(u).then(()=>showToast('Lien copie !')).catch(()=>prompt('Copie:',u))}
     function printReport(){window.print()}
-    function downloadImageReport(){const b=new Blob([`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>OSINT Report</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;background:#0a0a0a;color:#e0e0e0;padding:40px 20px}.c{max-width:700px;margin:0 auto}.h{color:#00ff88;font-size:2em;margin-bottom:20px}.r{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}.l{color:#666}.v{color:#fff}</style></head><body><div class="c"><div class="h">OSINT Image Report</div><div class="r"><span class="l">Fichier</span><span class="v">${imgData.name}</span></div><div class="r"><span class="l">Taille</span><span class="v">${imgData.sizeKB} KB</span></div><div class="r"><span class="l">Type</span><span class="v">${imgData.type}</span></div><div class="r"><span class="l">Dimensions</span><span class="v">${imgData.width}x${imgData.height}</span></div><div class="r"><span class="l">HEX</span><span class="v">${imgData.hexHeader}</span></div><div class="r"><span class="l">IA</span><span class="v">${imgData.aiDetected?imgData.aiDetected.map(a=>a.maker+' '+a.model).join(', '):'Non detecte'}</span></div><div class="r"><span class="l">C2PA</span><span class="v">${imgData.c2paFound?'Validee':'Non detecte'}</span></div></div></body></html>`],{type:'text/html'});const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=`osint-${imgData.name}.html`;a.click();URL.revokeObjectURL(u);showToast('Telecharge !')}
+    function downloadImageReport(){const b=new Blob([`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>OSINT Report</title><style>body{font-family:sans-serif;background:#0a0a0a;color:#e0e0e0;padding:40px 20px;max-width:700px;margin:0 auto}h1{color:#00ff88}table{width:100%;border-collapse:collapse}td{padding:8px;border-bottom:1px solid #222}</style></head><body><h1>OSINT Report</h1><table><tr><td>Fichier</td><td>${imgData.name}</td></tr><tr><td>Taille</td><td>${imgData.sizeKB} KB</td></tr><tr><td>Type</td><td>${imgData.type}</td></tr><tr><td>Dimensions</td><td>${imgData.width}x${imgData.height}</td></tr><tr><td>HEX</td><td>${imgData.hexHeader}</td></tr></table></body></html>`],{type:'text/html'});const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=`osint-${imgData.name}.html`;a.click();URL.revokeObjectURL(u)}
     function resetImage(){document.getElementById('imageResults').classList.remove('active');fileInput.value='';imgData={}}
 
-    // === QR CODE ===
-    function startQRScan(){
-        if(!document.getElementById('qrReader').querySelector('video')){
-            qrScanner=new Html5Qrcode('qrReader');
-            qrScanner.start({facingMode:'environment'},{fps:10,qrbox:250},decoded=>{
-                showQRResult(decoded);
-                stopQRScan();
-            }).catch(()=>showToast('Camera non disponible'));
-            document.getElementById('stopQRBtn').style.display='inline-block';
-        }
-    }
+    // QR CODE
+    function startQRScan(){if(!document.getElementById('qrReader').querySelector('video')){qrScanner=new Html5Qrcode('qrReader');qrScanner.start({facingMode:'environment'},{fps:10,qrbox:250},d=>{showQRResult(d);stopQRScan()}).catch(()=>showToast('Camera non disponible'));document.getElementById('stopQRBtn').style.display='inline-block'}}
     function stopQRScan(){if(qrScanner){qrScanner.stop().then(()=>qrScanner.clear()).catch(()=>{});qrScanner=null;document.getElementById('stopQRBtn').style.display='none'}}
-    async function scanQRFile(input){
-        const file=input.files[0];if(!file)return;
-        try{const r=new Html5Qrcode('qrReader');const result=await r.scanFile(file,true);showQRResult(result);r.clear()}catch(e){showToast('Aucun QR code detecte')}
-    }
-    function showQRResult(text){
-        addHistory('QR Code',text);
-        document.getElementById('qrData').innerHTML=`
-            <div class="result-item"><div class="label">Contenu</div><div class="value">${text}</div></div>
-            <div class="result-item"><div class="label">Type</div><div class="value">${text.startsWith('http')?'<span class="badge badge-info">URL</span>':text.startsWith('mailto:')?'<span class="badge badge-info">Email</span>':text.startsWith('tel:')?'<span class="badge badge-info">Telephone</span>':'<span class="badge badge-warn">Texte</span>'}</div></div>
-            ${text.startsWith('http')?`<div class="result-item"><div class="label">Lien</div><div class="value"><a href="${text}" target="_blank" style="color:#00d4ff;">Ouvrir &rarr;</a></div></div>`:''}`;
-        document.getElementById('qrResults').classList.add('active');
-    }
+    async function scanQRFile(input){const file=input.files[0];if(!file)return;try{const r=new Html5Qrcode('qrReader');const result=await r.scanFile(file,true);showQRResult(result);r.clear()}catch(e){showToast('Aucun QR detecte')}}
+    function showQRResult(text){addHistory('QR Code',text);document.getElementById('qrData').innerHTML=`<div class="result-item"><div class="label">Contenu</div><div class="value">${text}</div></div><div class="result-item"><div class="label">Type</div><div class="value">${text.startsWith('http')?'<span class="badge badge-info">URL</span>':text.startsWith('mailto:')?'<span class="badge badge-info">Email</span>':'<span class="badge badge-warn">Texte</span>'}</div></div>${text.startsWith('http')?`<div class="result-item"><div class="label">Lien</div><div class="value"><a href="${text}" target="_blank" style="color:var(--accent2)">Ouvrir &rarr;</a></div></div>`:''}`;document.getElementById('qrResults').classList.add('active')}
+    function updateReverseLinks(){if(!imgData.name){document.getElementById('reverseImgInfo').textContent='Analysez d\'abord une image.';return}document.getElementById('reverseImgInfo').textContent=`Image: ${imgData.name}`;document.getElementById('revGoogle').href='https://images.google.com/';document.getElementById('revTinEye').href='https://tineye.com/';document.getElementById('revYandex').href='https://yandex.com/images/search';document.getElementById('revBing').href='https://www.bing.com/images';document.getElementById('revPinterest').href='https://www.pinterest.com/';document.getElementById('revImgur').href='https://imgur.com/upload'}
 
-    // === REVERSE IMAGE ===
-    function updateReverseLinks(){
-        if(!imgData.name){document.getElementById('reverseImgInfo').textContent='Analysez d\'abord une image.';return}
-        document.getElementById('reverseImgInfo').textContent=`Image: ${imgData.name}`;
-        document.getElementById('revGoogle').href='https://images.google.com/';
-        document.getElementById('revTinEye').href='https://tineye.com/';
-        document.getElementById('revYandex').href='https://yandex.com/images/search';
-        document.getElementById('revBing').href='https://www.bing.com/images';
-        document.getElementById('revPinterest').href='https://www.pinterest.com/';
-        document.getElementById('revImgur').href='https://imgur.com/upload';
-    }
-
-    // === INVESTIGATION ===
+    // INVESTIGATION
     async function launchInvestigation(){
         const nom=document.getElementById('inv-nom').value.trim(),prenom=document.getElementById('inv-prenom').value.trim(),naissance=document.getElementById('inv-naissance').value,tel=document.getElementById('inv-telephone').value.trim(),email=document.getElementById('inv-email').value.trim(),ville=document.getElementById('inv-ville').value.trim(),cp=document.getElementById('inv-cp').value.trim(),adresse=document.getElementById('inv-adresse').value.trim(),immat=document.getElementById('inv-immat').value.trim().toUpperCase(),nir=document.getElementById('inv-nir').value.trim().replace(/\s/g,'');
         if(!nom&&!prenom&&!tel&&!email&&!nir&&!immat){showToast('Remplis au moins un champ');return}
         addHistory('Investigation',(prenom+' '+nom).trim()||tel||email||'');
         document.getElementById('invLoading').classList.add('active');document.getElementById('invResults').classList.remove('active');
         const fn=(prenom+' '+nom).trim();
-        let results=[];
-        let sections={};
+        let idR=[],locR=[],crossR=[],sections={};
 
-        // === 1. VALIDATION CHAMPS ===
-        if(nom||prenom)results.push({cat:'Identite',type:'Nom complet',detail:fn,color:'info'});
-        if(naissance){
-            const d=new Date(naissance),age=Math.floor((Date.now()-d.getTime())/(365.25*86400000));
-            results.push({cat:'Identite',type:'Date naissance',detail:`${d.toLocaleDateString('fr-FR')} (${age} ans)`,color:'info'});
-        }
+        if(nom||prenom){idR.push({t:'Nom complet',d:fn,c:'info'})}
+        if(naissance){const d=new Date(naissance),age=Math.floor((Date.now()-d.getTime())/(365.25*86400000));idR.push({t:'Date naissance',d:`${d.toLocaleDateString('fr-FR')} (${age} ans)`,c:'info'})}
         if(tel){
             const c=tel.replace(/[\s-]/g,'');let info='',typeL='',operateur='',regionTel='';
             if(c.startsWith('+33')||c.startsWith('0033')){
-                const sp=c.startsWith('+33')?c.substring(3):c.substring(4);
-                info='France';typeL=sp.startsWith('06')||sp.startsWith('07')?'Mobile':sp.startsWith('01')||sp.startsWith('02')||sp.startsWith('03')||sp.startsWith('04')||sp.startsWith('05')?'Fixe':'Special';
+                const sp=c.startsWith('+33')?c.substring(3):c.substring(4);info='France';
+                typeL=sp.startsWith('06')||sp.startsWith('07')?'Mobile':sp.startsWith('08')?'Special':'Fixe';
                 const px=sp.substring(0,3);
-                if(['060','061','062','075','076'].includes(px))operateur='Orange';
-                else if(['063','064','069','073','074','079'].includes(px))operateur='SFR';
-                else if(['065','066','067','078'].includes(px))operateur='Bouygues Telecom';
-                else if(['062','068','070','071','072'].includes(px))operateur='Free Mobile';
-                const dept=sp.substring(0,2);
-                const R={'75':'Paris (75)','69':'Rhone / Lyon (69)','13':'Bouches-du-Rhone / Marseille (13)','31':'Haute-Garonne / Toulouse (31)','33':'Gironde / Bordeaux (33)','06':'Alpes-Maritimes / Nice (06)','59':'Nord / Lille (59)','67':'Bas-Rhin / Strasbourg (67)','34':'Herault / Montpellier (34)','44':'Loire-Atlantique / Nantes (44)','35':'Ille-et-Vilaine / Rennes (35)','38':'Isere / Grenoble (38)','21':'Cote-d\'Or / Dijon (21)','57':'Moselle / Metz (57)','76':'Seine-Maritime / Rouen (76)','62':'Pas-de-Calais (62)','54':'Meurthe-et-Moselle / Nancy (54)','37':'Indre-et-Loire / Tours (37)','87':'Haute-Vienne / Limoges (87)'};
-                regionTel=R[dept]||`Departement ${dept}`;
+                if(['060','061','062','075','076'].includes(px))operateur='Orange';else if(['063','064','069','073','074','079'].includes(px))operateur='SFR';else if(['065','066','067','078'].includes(px))operateur='Bouygues Telecom';else if(['062','068','070','071','072'].includes(px))operateur='Free Mobile';
+                const dept=sp.substring(0,2);const R={'75':'Paris','69':'Rhone / Lyon','13':'Bouches-du-Rhone / Marseille','31':'Haute-Garonne / Toulouse','33':'Gironde / Bordeaux','06':'Alpes-Maritimes / Nice','59':'Nord / Lille','67':'Bas-Rhin / Strasbourg','34':'Herault / Montpellier','44':'Loire-Atlantique / Nantes','35':'Ille-et-Vilaine / Rennes','38':'Isere / Grenoble','974':'La Reunion'};regionTel=R[dept]||`Dept ${dept}`;
             }else if(c.startsWith('+262')){info='La Reunion';regionTel='La Reunion (974)';typeL='Mobile/Fixe';operateur='Orange/SFR Reunion'}
-            else if(c.startsWith('+269')){info='Mayotte';regionTel='Mayotte (976)'}
-            else if(c.startsWith('0')&&c.length===10){info='France (sans +33)';typeL=c.startsWith('06')||c.startsWith('07')?'Mobile':'Fixe';regionTel='France'}
+            else if(c.startsWith('0')&&c.length===10){info='France';typeL=c.startsWith('06')||c.startsWith('07')?'Mobile':'Fixe';regionTel='France'}
             else{info='International'}
-            results.push({cat:'Telephone',type:'Pays',detail:info,color:'ok'});
-            if(regionTel)results.push({cat:'Telephone',type:'Region estimee',detail:regionTel,color:'info'});
-            if(typeL)results.push({cat:'Telephone',type:'Type de ligne',detail:typeL,color:'info'});
-            if(operateur)results.push({cat:'Telephone',type:'Operateur',detail:operateur,color:'info'});
+            idR.push({t:'Pays',d:info,c:'ok'});if(regionTel)idR.push({t:'Region estimee',d:regionTel,c:'info'});if(typeL)idR.push({t:'Type ligne',d:typeL,c:'info'});if(operateur)idR.push({t:'Operateur',d:operateur,c:'info'});
         }
-        if(nir){
-            if(/^[12]\d{13}$/.test(nir)){
-                const sexe=nir.startsWith('1')?'Homme':'Femme';
-                const deptNir=nir.substring(3,5);
-                const anNiss=nir.substring(1,3);
-                const anneeNiss=parseInt(anNiss)>50?'19'+anNiss:'20'+anNiss;
-                results.push({cat:'NIR',type:'NIR',detail:`Valide | Sexe: ${sexe} | Dept naissance: ${deptNir} | Nee en ~${anneeNiss}`,color:'warn'});
-            }else results.push({cat:'NIR',type:'NIR',detail:'Format invalide',color:'danger'});
-        }
-        if(immat){
-            const oldFR=/^[A-Z]{2}[\s-]?\d{3}[\s-]?[A-Z]{2}$/;
-            const newFR=/^\d{1,4}[\s-]?[A-Z]{1,3}[\s-]?\d{1,2}$/;
-            if(oldFR.test(immat))results.push({cat:'Immatriculation',type:'Plaque',detail:`Format ancien FR: ${immat}`,color:'ok'});
-            else if(newFR.test(immat))results.push({cat:'Immatriculation',type:'Plaque',detail:`Format nouveau FR: ${immat}`,color:'ok'});
-            else results.push({cat:'Immatriculation',type:'Plaque',detail:`Format non reconnu: ${immat}`,color:'warn'});
-        }
-        if(email){
-            const domain=email.split('@')[1]?.toLowerCase()||'';
-            const providers={'gmail.com':'Google Mail','yahoo.com':'Yahoo','hotmail.com':'Microsoft','outlook.com':'Microsoft','live.com':'Microsoft','orange.fr':'Orange','sfr.fr':'SFR','free.fr':'Free','laposte.net':'La Poste','icloud.com':'Apple','protonmail.com':'ProtonMail','proton.me':'ProtonMail','zoho.com':'Zoho','gmx.com':'GMX','web.de':'Web.de','aol.com':'AOL','mail.com':'Mail.com'};
-            const isDisposable=['guerrillamail.com','tempmail.com','yopmail.com','yopmail.fr','mailinator.com','maildrop.cc','10minutemail.com','temp-mail.org','trashmail.com','getnada.com','mohmal.com'].includes(domain);
-            const isPro=domain.endsWith('.gouv.fr')||domain.endsWith('.fr')||domain.endsWith('.com')&&['societe.com','pappers.fr'].includes(domain);
-            const provider=providers[domain]||domain;
-            results.push({cat:'Email',type:'Domaine',detail:provider,color:isPro?'ok':'info'});
-            if(isDisposable)results.push({cat:'Email',type:'Email jetable',detail:'OUI - pas fiable',color:'danger'});
-        }
-        if(cp&&/^\d{5}$/.test(cp)){
-            const deptCp=cp.substring(0,2);
-            results.push({cat:'Localisation',type:'Code postal',detail:`CP ${cp} - Dept ${deptCp}`,color:'ok'});
-        }else if(cp)results.push({cat:'Localisation',type:'Code postal',detail:'Format invalide (5 chiffres)',color:'danger'});
-        if(adresse)results.push({cat:'Localisation',type:'Adresse',detail:adresse,color:'info'});
-        if(ville)results.push({cat:'Localisation',type:'Ville',detail:ville,color:'info'});
+        if(nir&&/^[12]\d{13}$/.test(nir)){const sexe=nir.startsWith('1')?'Homme':'Femme';const deptNir=nir.substring(3,5);const anNiss=nir.substring(1,3);const anneeNiss=parseInt(anNiss)>50?'19'+anNiss:'20'+anNiss;idR.push({t:'NIR',d:`Valide | ${sexe} | Dept: ${deptNir} | Nee ~${anneeNiss}`,c:'warn'})}
+        else if(nir)idR.push({t:'NIR',d:'Format invalide',c:'danger'});
+        if(immat){const oldFR=/^[A-Z]{2}[\s-]?\d{3}[\s-]?[A-Z]{2}$/;const newFR=/^\d{1,4}[\s-]?[A-Z]{1,3}[\s-]?\d{1,2}$/;idR.push({t:'Immatriculation',d:oldFR.test(immat)?`Ancien FR: ${immat}`:newFR.test(immat)?`Nouveau FR: ${immat}`:`Inconnu: ${immat}`,c:oldFR.test(immat)||newFR.test(immat)?'ok':'warn'})}
+        if(email){const domain=email.split('@')[1]?.toLowerCase()||'';const providers={'gmail.com':'Google Mail','yahoo.com':'Yahoo','hotmail.com':'Microsoft','outlook.com':'Microsoft','orange.fr':'Orange','sfr.fr':'SFR','free.fr':'Free','laposte.net':'La Poste','icloud.com':'Apple','protonmail.com':'ProtonMail','proton.me':'ProtonMail'};const isDisposable=['guerrillamail.com','tempmail.com','yopmail.com','yopmail.fr','mailinator.com'].includes(domain);idR.push({t:'Domaine',d:providers[domain]||domain,c:'info'});if(isDisposable)idR.push({t:'Email jetable',d:'OUI - pas fiable',c:'danger'})}
+        if(cp&&/^\d{5}$/.test(cp))locR.push({t:'Code postal',d:`CP ${cp} - Dept ${cp.substring(0,2)}`,c:'ok'});else if(cp)locR.push({t:'Code postal',d:'Invalide',c:'danger'});
+        if(adresse)locR.push({t:'Adresse',d:adresse,c:'info'});if(ville)locR.push({t:'Ville',d:ville,c:'info'});
 
-        // === 2. CROISEMENT telephone vs ville ===
-        if(tel&&ville){
-            const c=tel.replace(/[\s-]/g,'');
-            if(c.startsWith('+33')||c.startsWith('0033')||c.startsWith('0')){
-                const num=c.startsWith('+33')?c.substring(3):c.startsWith('0033')?c.substring(4):c;
-                const dept=num.substring(0,2);
-                const villesDept={'75':'Paris','69':'Lyon','13':'Marseille','31':'Toulouse','33':'Bordeaux','06':'Nice','59':'Lille','67':'Strasbourg','34':'Montpellier','44':'Nantes','35':'Rennes','38':'Grenoble','37':'Tours'};
-                const expectedCity=villesDept[dept];
-                if(expectedCity&&ville.toLowerCase().includes(expectedCity.toLowerCase())){
-                    results.push({cat:'Croisement',type:'Tel vs Ville',detail:`COHERENT - Dept ${dept} = zone ${expectedCity}`,color:'ok'});
-                }else if(expectedCity){
-                    results.push({cat:'Croisement',type:'Tel vs Ville',detail:`INCOHERENT - Dept ${dept} = zone ${expectedCity}, mais ville declaree: ${ville}`,color:'warn'});
-                }
-            }
-        }
+        if(tel&&ville){const c=tel.replace(/[\s-]/g,'');if(c.startsWith('+33')||c.startsWith('0033')||c.startsWith('0')){const num=c.startsWith('+33')?c.substring(3):c.startsWith('0033')?c.substring(4):c;const dept=num.substring(0,2);const villesDept={'75':'Paris','69':'Lyon','13':'Marseille','31':'Toulouse','33':'Bordeaux','06':'Nice','59':'Lille','67':'Strasbourg','34':'Montpellier','44':'Nantes','35':'Rennes','974':'St-Denis'};const expected=villesDept[dept];if(expected&&ville.toLowerCase().includes(expected.toLowerCase()))crossR.push({t:'Tel vs Ville',d:`Coherent - Dept ${dept} = ${expected}`,c:'ok'});else if(expected)crossR.push({t:'Tel vs Ville',d:`Incoherent - Dept ${dept} = ${expected}, declare: ${ville}`,c:'warn'})}}
 
-        // === 3. CROISEMENT NIR vs ville ===
-        if(nir&&/^[12]\d{13}$/.test(nir)&&ville){
-            const deptNir=nir.substring(3,5);
-            results.push({cat:'Croisement',type:'NIR vs Ville',detail:`Dept naissance NIR: ${deptNir} vs ville declaree: ${ville}`,color:'info'});
-        }
+        // API ENTREPRISES
+        if(nom||prenom){try{const r=await fetch(`https://recherche-entreprises.api.gouv.fr/search?q=${encodeURIComponent([prenom,nom].filter(Boolean).join(' '))}&per_page=5`);const d=await r.json();if(d.results&&d.results.length){let eHtml=`<span class="badge badge-info" style="margin-bottom:10px">${d.results.length} entreprise(s)</span>`;d.results.forEach(e=>{const s=e.siege||{};eHtml+=`<div class="result-item" style="margin-bottom:6px"><div class="label">Entreprise</div><div class="value"><strong style="color:#fff">${e.nom_complet||'?'}</strong><br><span style="color:var(--text2);font-size:0.82em">SIREN: ${e.siren||'?'} | ${e.nature_juridique||''} | ${e.etat_administratif==='A'?'Active':'Fermee'}</span><br><span style="color:var(--text2);font-size:0.82em">Siege: ${s.adresse||''} ${s.code_postal||''} ${s.ville||''}</span><br><span style="color:var(--text2);font-size:0.82em">Activite: ${e.activite_principale||''} | Creation: ${e.date_creation||'?'}</span><br><a href="https://www.societe.com/societe/${(e.nom_complet||'').toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${e.siren||''}.html" target="_blank" style="color:var(--accent2);font-size:0.8em">Societe.com &rarr;</a> <a href="https://www.pappers.fr/entreprise/${e.siren||''}" target="_blank" style="color:var(--accent2);font-size:0.8em">Pappers &rarr;</a> <a href="https://annuaire-entreprises.data.gouv.fr/entreprise/${e.siren||''}" target="_blank" style="color:var(--accent2);font-size:0.8em">data.gouv.fr &rarr;</a></div></div>`});sections['ent']=eHtml}}catch(e){}}
 
-        // === 4. API ANNUAIRE ENTREPRISES ===
-        let entreprises=[];
-        if(nom||prenom){
-            try{
-                const q=[prenom,nom].filter(Boolean).join('+');
-                const r=await fetch(`https://recherche-entreprises.api.gouv.fr/search?q=${encodeURIComponent(q)}&per_page=10`);
-                const d=await r.json();
-                if(d.results&&d.results.length){
-                    entreprises=d.results;
-                    let eHtml=`<div style="margin-bottom:8px;"><span class="badge badge-info">${entreprises.length} entreprise(s) trouvee(s)</span></div>`;
-                    entreprises.forEach(e=>{
-                        const siege=e.siege||{};
-                        eHtml+=`<div class="result-item" style="margin-bottom:6px;">
-                            <div class="label">Entreprise</div>
-                            <div class="value"><strong style="color:#fff;">${e.nom_complet||e.nom||'?'}</strong>
-                            <br><span style="color:#aaa;font-size:0.8em;">SIREN: ${e.siren||'?'} | ${e.nature_juridique||''} | Active: ${e.etat_administratif==='A'?'Oui':'Non'}</span>
-                            <br><span style="color:#aaa;font-size:0.8em;">Siege: ${siege.adresse||''} ${siege.code_postal||''} ${siege.ville||''}</span>
-                            <br><span style="color:#aaa;font-size:0.8em;">Activite: ${e.activite_principale||''} - Date creation: ${e.date_creation||'?'}</span>
-                            <br><a href="https://www.societe.com/societe/${(e.nom_complet||'').toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${e.siren||''}.html" target="_blank" style="color:#00d4ff;font-size:0.8em;">Societe.com &rarr;</a>
-                            <a href="https://www.pappers.fr/entreprise/${e.siren||''}" target="_blank" style="color:#00d4ff;font-size:0.8em;margin-left:10px;">Pappers &rarr;</a>
-                            <a href="https://annuaire-entreprises.data.gouv.fr/entreprise/${e.siren||''}" target="_blank" style="color:#00d4ff;font-size:0.8em;margin-left:10px;">data.gouv.fr &rarr;</a>
-                            </div></div>`;
-                    });
-                    sections['entreprises']=eHtml;
-                }
-            }catch(e){}
-        }
+        // API GEO
+        if(cp&&/^\d{5}$/.test(cp)){try{const r=await fetch(`https://geo.api.gouv.fr/communes?codePostal=${cp}&fields=nom,codeDepartement,codeRegion,population,departement,region,centre&limit=5`);const communes=await r.json();if(communes.length){let gHtml='';communes.forEach(c=>{gHtml+=`<div class="result-item" style="margin-bottom:6px"><div class="label">Commune</div><div class="value"><strong style="color:#fff">${c.nom}</strong><br><span style="color:var(--text2);font-size:0.82em">Dept: ${c.departement?.nom||'?'} | Region: ${c.region?.nom||'?'}</span><br><span style="color:var(--text2);font-size:0.82em">Population: ${c.population?c.population.toLocaleString('fr-FR'):'?'}</span>${c.centre?`<br><span style="color:var(--text2);font-size:0.82em">GPS: ${c.centre.coordinates[1].toFixed(4)}, ${c.centre.coordinates[0].toFixed(4)}</span>`:''}</div></div>`});sections['geo']=gHtml}}catch(e){}}
 
-        // === 5. API GEO - COMMUNE ===
-        if(cp&&/^\d{5}$/.test(cp)){
-            try{
-                const r=await fetch(`https://geo.api.gouv.fr/communes?codePostal=${cp}&fields=nom,codeDepartement,codeRegion,population,departement,region,centre&limit=5`);
-                const communes=await r.json();
-                if(communes.length){
-                    let gHtml=`<div style="margin-bottom:8px;"><span class="badge badge-info">${communes.length} commune(s) pour CP ${cp}</span></div>`;
-                    communes.forEach(c=>{
-                        gHtml+=`<div class="result-item" style="margin-bottom:6px;">
-                            <div class="label">Commune</div>
-                            <div class="value"><strong style="color:#fff;">${c.nom}</strong>
-                            <br><span style="color:#aaa;font-size:0.8em;">Dept: ${c.departement?.nom||'?'} (${c.codeDepartement}) | Region: ${c.region?.nom||'?'}</span>
-                            <br><span style="color:#aaa;font-size:0.8em;">Population: ${c.population?c.population.toLocaleString('fr-FR'):'?'}</span>
-                            ${c.centre?`<br><span style="color:#aaa;font-size:0.8em;">GPS: ${c.centre.coordinates[1].toFixed(4)}, ${c.centre.coordinates[0].toFixed(4)}</span>`:''}
-                            </div></div>`;
-                    });
-                    sections['geo']=gHtml;
-                }
-            }catch(e){}
-        }
+        // RECHERCHE WEB
+        if(fn){const sq=encodeURIComponent(`"${fn}"`);let sHtml='<div class="search-grid">';sHtml+=`<a href="https://www.google.com/search?q=${sq}" target="_blank">&#128269; Google</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:linkedin.com%2Fin" target="_blank">&#128279; LinkedIn</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:facebook.com" target="_blank">&#128101; Facebook</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:instagram.com" target="_blank">&#128248; Instagram</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:twitter.com+OR+site:x.com" target="_blank">&#128038; Twitter</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:pagesjaunes.fr" target="_blank">&#128205; PagesJaunes</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:societe.com" target="_blank">&#128188; Societe.com</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:pappers.fr" target="_blank">&#128220; Pappers</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:verif.com" target="_blank">&#128202; Verif.com</a>`;if(ville)sHtml+=`<a href="https://www.google.com/search?q=${encodeURIComponent(`"${fn}" "${ville}"`)}" target="_blank">&#127757; Google+Ville</a>`;if(email)sHtml+=`<a href="https://www.google.com/search?q=${encodeURIComponent(email)}" target="_blank">&#128231; Google Email</a>`;if(tel)sHtml+=`<a href="https://www.google.com/search?q=%22${encodeURIComponent(tel)}%22" target="_blank">&#128241; Google Tel</a>`;sHtml+='</div>';sections['search']=sHtml}
 
-        // === 6. RECHERCHE WEB DETAILLEE ===
-        if(fn){
-            const sq=encodeURIComponent(`"${fn}"`);
-            const sqv=ville?encodeURIComponent(`"${fn}" "${ville}"`):'';
-            let searchHtml=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-top:8px;">`;
-            searchHtml+=`<a href="https://www.google.com/search?q=${sq}" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128269; Google</a>`;
-            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:linkedin.com%2Fin" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128279; LinkedIn</a>`;
-            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:facebook.com" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128101; Facebook</a>`;
-            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:instagram.com" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128248; Instagram</a>`;
-            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:twitter.com+OR+site:x.com" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128038; Twitter/X</a>`;
-            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:pagesjaunes.fr" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128205; PagesJaunes</a>`;
-            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:societe.com" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128188; Societe.com</a>`;
-            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:pappers.fr" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128220; Pappers</a>`;
-            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:verif.com" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128202; Verif.com</a>`;
-            if(sqv){searchHtml+=`<a href="https://www.google.com/search?q=${sqv}" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#127757; Google + Ville</a>`}
-            if(email){searchHtml+=`<a href="https://www.google.com/search?q=${encodeURIComponent(email)}" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128231; Google Email</a>`}
-            if(tel){searchHtml+=`<a href="https://www.google.com/search?q=%22${encodeURIComponent(tel)}%22" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128241; Google Tel</a>`}
-            searchHtml+=`</div>`;
-            sections['search']=searchHtml;
-        }
-
-        // === RENDU FINAL ===
+        // RENDU
         let html='';
-
-        // Section identite
-        const idResults=results.filter(r=>r.cat==='Identite'||r.cat==='Email'||r.cat==='Telephone'||r.cat==='NIR'||r.cat==='Immatriculation');
-        if(idResults.length){
-            html+=`<div style="margin-bottom:20px;"><h3 style="color:#00d4ff;font-size:1em;margin-bottom:10px;">&#128100; Identite & Filtres</h3><div class="result-grid">`;
-            idResults.forEach(r=>{html+=`<div class="result-item"><div class="label">${r.type}</div><div class="value"><span class="badge badge-${r.color}">${r.detail}</span></div></div>`});
-            html+=`</div></div>`;
-        }
-
-        // Section localisation
-        const locResults=results.filter(r=>r.cat==='Localisation');
-        if(locResults.length){
-            html+=`<div style="margin-bottom:20px;"><h3 style="color:#00d4ff;font-size:1em;margin-bottom:10px;">&#128205; Localisation</h3><div class="result-grid">`;
-            locResults.forEach(r=>{html+=`<div class="result-item"><div class="label">${r.type}</div><div class="value"><span class="badge badge-${r.color}">${r.detail}</span></div></div>`});
-            html+=`</div></div>`;
-        }
-
-        // Section croisement
-        const croisResults=results.filter(r=>r.cat==='Croisement');
-        if(croisResults.length){
-            html+=`<div style="margin-bottom:20px;"><h3 style="color:#00d4ff;font-size:1em;margin-bottom:10px;">&#128279; Croisement donnees</h3><div class="result-grid">`;
-            croisResults.forEach(r=>{html+=`<div class="result-item"><div class="label">${r.type}</div><div class="value"><span class="badge badge-${r.color}">${r.detail}</span></div></div>`});
-            html+=`</div></div>`;
-        }
-
-        // Section entreprises
-        if(sections['entreprises']){
-            html+=`<div style="margin-bottom:20px;"><h3 style="color:#00d4ff;font-size:1em;margin-bottom:10px;">&#128188; Entreprises (API gouvernementale)</h3>${sections['entreprises']}</div>`;
-        }
-
-        // Section geo
-        if(sections['geo']){
-            html+=`<div style="margin-bottom:20px;"><h3 style="color:#00d4ff;font-size:1em;margin-bottom:10px;">&#127757; Geolocalisation CP (API gouvernementale)</h3>${sections['geo']}</div>`;
-        }
-
-        // Section recherche web
-        if(sections['search']){
-            html+=`<div style="margin-bottom:20px;"><h3 style="color:#00d4ff;font-size:1em;margin-bottom:10px;">&#128269; Recherche web</h3>${sections['search']}</div>`;
-        }
-
-        // Score
-        const dc=results.filter(r=>r.color==='danger').length,wc=results.filter(r=>r.color==='warn').length;
-        html+=`<div style="padding:15px;background:rgba(0,0,0,0.3);border-radius:12px;"><h3 style="color:#00ff88;margin-bottom:8px;">Score de risque</h3>`;
-        html+=dc>0?`<span class="badge badge-danger" style="font-size:1em;">ELEVE - ${dc} element(s) critique(s)</span>`:wc>0?`<span class="badge badge-warn" style="font-size:1em;">MODERE - ${wc} element(s) a surveiller</span>`:`<span class="badge badge-ok" style="font-size:1em;">FAIBLE - Aucun element critique</span>`;
-        html+=`</div>`;
-
+        if(idR.length){html+=`<div style="margin-bottom:20px"><div class="section-tag tag-id">Identification</div><div class="result-grid">`;idR.forEach(r=>{html+=`<div class="result-item"><div class="label">${r.t}</div><div class="value"><span class="badge badge-${r.c}">${r.d}</span></div></div>`});html+=`</div></div>`}
+        if(locR.length){html+=`<div style="margin-bottom:20px"><div class="section-tag tag-loc">Localisation</div><div class="result-grid">`;locR.forEach(r=>{html+=`<div class="result-item"><div class="label">${r.t}</div><div class="value"><span class="badge badge-${r.c}">${r.d}</span></div></div>`});html+=`</div></div>`}
+        if(crossR.length){html+=`<div style="margin-bottom:20px"><div class="section-tag tag-cross">Croisement</div><div class="result-grid">`;crossR.forEach(r=>{html+=`<div class="result-item"><div class="label">${r.t}</div><div class="value"><span class="badge badge-${r.c}">${r.d}</span></div></div>`});html+=`</div></div>`}
+        if(sections['ent'])html+=`<div style="margin-bottom:20px"><div class="section-tag tag-ent">Entreprises (API gouvernementale)</div>${sections['ent']}</div>`;
+        if(sections['geo'])html+=`<div style="margin-bottom:20px"><div class="section-tag tag-geo">Geolocalisation CP</div>${sections['geo']}</div>`;
+        if(sections['search'])html+=`<div style="margin-bottom:20px"><div class="section-tag tag-web">Recherche web</div>${sections['search']}</div>`;
+        const dc=idR.filter(r=>r.c==='danger').length+locR.filter(r=>r.c==='danger').length,wc=idR.filter(r=>r.c==='warn').length+locR.filter(r=>r.c==='warn').length;
+        html+=`<div class="status-bar"><div class="dot ${dc?'red':wc?'yellow':'green'}"></div><span class="text">${dc?`ELEVE - ${dc} element(s) critique(s)`:wc?`MODERE - ${wc} element(s) a surveiller`:'FAIBLE - Aucun element critique'}</span></div>`;
         document.getElementById('invResultsContent').innerHTML=html;
         document.getElementById('invResults').classList.add('active');
         document.getElementById('invLoading').classList.remove('active');
     }
     function resetInvestigation(){['inv-nom','inv-prenom','inv-naissance','inv-telephone','inv-email','inv-ville','inv-cp','inv-adresse','inv-immat','inv-nir'].forEach(id=>document.getElementById(id).value='');document.getElementById('invResults').classList.remove('active')}
 
-    // === ADMIN LINK ===
-    function generateAdminLink(){
-        const fields=[['n','inv-nom'],['p','inv-prenom'],['na','inv-naissance'],['t','inv-telephone'],['e','inv-email'],['v','inv-ville'],['c','inv-cp'],['a','inv-adresse'],['i','inv-immat'],['s','inv-nir']];
-        const obj={};fields.forEach(([k,id])=>{const v=document.getElementById(id).value.trim();if(v)obj[k]=v});
-        if(!Object.keys(obj).length){showToast('Remplis au moins un champ');return}
-        const u=location.origin+location.pathname+'#A:'+compressURI(JSON.stringify(obj));
-        let stats=JSON.parse(localStorage.getItem('osint_admin_stats')||'{"total":0,"links":[]}');
-        stats.total++;stats.links.unshift({time:Date.now(),fields:Object.keys(obj).length});
-        if(stats.links.length>100)stats.links=stats.links.slice(0,100);
-        localStorage.setItem('osint_admin_stats',JSON.stringify(stats));
-        navigator.clipboard.writeText(u).then(()=>showToast('Lien admin copie !')).catch(()=>prompt('Copie:',u));
-    }
-    function loadAdminView(data){
-        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-        document.getElementById('investigation').classList.add('active');
-        document.querySelectorAll('.nav-links a').forEach(a=>a.classList.remove('active'));
-        document.querySelectorAll('.nav-links a')[1].classList.add('active');
-        const fields={'inv-prenom':data.p,'inv-nom':data.n,'inv-naissance':data.na,'inv-telephone':data.t,'inv-email':data.e,'inv-ville':data.v,'inv-cp':data.c,'inv-adresse':data.a,'inv-immat':data.i,'inv-nir':data.s};
-        for(const[id,val]of Object.entries(fields)){const el=document.getElementById(id);if(el&&val){el.value=val;el.readOnly=true;el.style.opacity='0.7';el.style.cursor='not-allowed'}}
-        document.querySelectorAll('#investigation .btn').forEach(btn=>{const t=btn.textContent.toLowerCase();if(t.includes('admin')||t.includes('reinitialiser')){btn.disabled=true;btn.style.opacity='0.3';btn.style.cursor='not-allowed'}});
-        const b=document.createElement('div');b.style.cssText='background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:10px;padding:10px 15px;margin-bottom:15px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;';b.innerHTML='<span style="color:#ff6b6b;">Lien admin - Lecture seule</span><span style="color:#555;font-size:0.8em;">Autres outils utilisables</span>';
-        document.getElementById('investigation').prepend(b);
-        launchInvestigation();
-    }
+    // ADMIN
+    function generateAdminLink(){const fields=[['n','inv-nom'],['p','inv-prenom'],['na','inv-naissance'],['t','inv-telephone'],['e','inv-email'],['v','inv-ville'],['c','inv-cp'],['a','inv-adresse'],['i','inv-immat'],['s','inv-nir']];const obj={};fields.forEach(([k,id])=>{const v=document.getElementById(id).value.trim();if(v)obj[k]=v});if(!Object.keys(obj).length){showToast('Remplis au moins un champ');return}const u=location.origin+location.pathname+'#A:'+compressURI(JSON.stringify(obj));let stats=JSON.parse(localStorage.getItem('osint_admin_stats')||'{"total":0,"links":[]}');stats.total++;stats.links.unshift({time:Date.now(),fields:Object.keys(obj).length});if(stats.links.length>100)stats.links=stats.links.slice(0,100);localStorage.setItem('osint_admin_stats',JSON.stringify(stats));navigator.clipboard.writeText(u).then(()=>showToast('Lien admin copie !')).catch(()=>prompt('Copie:',u))}
+    function loadAdminView(data){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('investigation').classList.add('active');document.querySelectorAll('.nav-links a').forEach(a=>a.classList.remove('active'));document.querySelectorAll('.nav-links a')[2].classList.add('active');const fields={'inv-prenom':data.p,'inv-nom':data.n,'inv-naissance':data.na,'inv-telephone':data.t,'inv-email':data.e,'inv-ville':data.v,'inv-cp':data.c,'inv-adresse':data.a,'inv-immat':data.i,'inv-nir':data.s};for(const[id,val]of Object.entries(fields)){const el=document.getElementById(id);if(el&&val){el.value=val;el.readOnly=true;el.style.opacity='0.5'}}document.querySelectorAll('#investigation .btn').forEach(btn=>{const t=btn.textContent.toLowerCase();if(t.includes('admin')||t.includes('reinitialiser')){btn.disabled=true;btn.style.opacity='0.3'}});const b=document.createElement('div');b.style.cssText='background:rgba(255,107,107,0.05);border:1px solid rgba(255,107,107,0.2);border-radius:8px;padding:8px 14px;margin-bottom:15px;display:flex;align-items:center;justify-content:space-between;';b.innerHTML='<span style="color:var(--danger);font-size:0.85em;font-weight:600">Mode admin - Lecture seule</span><span style="color:var(--text3);font-size:0.8em">Autres outils utilisables</span>';document.getElementById('investigation').prepend(b);launchInvestigation()}
 
-    // === DOMAIN: WHOIS ===
-    async function analyzeDomain(){
-        const domain=document.getElementById('domainInput').value.trim().replace(/^https?:\/\//,'').replace(/\/.*$/,'');
-        if(!domain)return;
-        addHistory('Domain',domain);
-        document.getElementById('domain').querySelectorAll('.result-box').forEach(r=>r.classList.remove('active'));
-        document.getElementById('domain').querySelectorAll('.loading').forEach(l=>l.classList.add('active'));
-        await Promise.all([doWhois(domain),doDNS(domain),doHeaders(domain),doCTLogs(domain)]);
-        document.getElementById('domain').querySelectorAll('.loading').forEach(l=>l.classList.remove('active'));
-    }
-    async function doWhois(domain){
-        try{
-            const r=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://rdap.verisign.com/com/v1/domain/'+domain)}`);
-            if(!r.ok)throw new Error();
-            const d=await r.json();
-            const events=d.events||[];
-            const created=events.find(e=>e.eventAction==='registration');
-            const expires=events.find(e=>e.eventAction==='expiration');
-            const changed=events.find(e=>e.eventAction==='last changed');
-            const nameservers=(d.nameservers||[]).map(n=>n.ldhName||n.name).join(', ');
-            const status=d.status||[];
-            document.getElementById('whoisData').innerHTML=`
-                <div class="result-item"><div class="label">Domaine</div><div class="value">${d.ldhName||domain}</div></div>
-                <div class="result-item"><div class="label">Punycode</div><div class="value">${d.punyName||'N/A'}</div></div>
-                <div class="result-item"><div class="label">Creation</div><div class="value">${created?new Date(created.eventDate).toLocaleDateString('fr-FR'):'N/A'}</div></div>
-                <div class="result-item"><div class="label">Expiration</div><div class="value">${expires?new Date(expires.eventDate).toLocaleDateString('fr-FR'):'N/A'}</div></div>
-                <div class="result-item"><div class="label">Derniere MAJ</div><div class="value">${changed?new Date(changed.eventDate).toLocaleDateString('fr-FR'):'N/A'}</div></div>
-                <div class="result-item"><div class="label">Statut</div><div class="value">${status.map(s=>`<span class="badge badge-info">${s}</span>`).join(' ')||'N/A'}</div></div>
-                <div class="result-item"><div class="label">Nameservers</div><div class="value">${nameservers||'N/A'}</div></div>`;
-            document.getElementById('whoisResults').classList.add('active');
-        }catch(e){
-            document.getElementById('whoisData').innerHTML=`<div class="result-item"><div class="label">Erreur</div><div class="value"><span class="badge badge-warn">WHOIS non disponible pour ce domaine</span></div></div>
-            <div class="result-item"><div class="label">Alternative</div><div class="value"><a href="https://www.whois.com/whois/${domain}" target="_blank" style="color:#00d4ff;">Voir sur whois.com &rarr;</a></div></div>`;
-            document.getElementById('whoisResults').classList.add('active');
-        }
-    }
+    // DOMAIN
+    async function analyzeDomain(){const domain=document.getElementById('domainInput').value.trim().replace(/^https?:\/\//,'').replace(/\/.*$/,'');if(!domain)return;addHistory('Domain',domain);document.getElementById('domain').querySelectorAll('.result-box').forEach(r=>r.classList.remove('active'));document.getElementById('domain').querySelectorAll('.loading').forEach(l=>l.classList.add('active'));await Promise.all([doWhois(domain),doDNS(domain),doHeaders(domain),doCTLogs(domain)]);document.getElementById('domain').querySelectorAll('.loading').forEach(l=>l.classList.remove('active'))}
+    async function doWhois(domain){try{const r=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://rdap.verisign.com/com/v1/domain/'+domain)}`);if(!r.ok)throw new Error();const d=await r.json();const ev=d.events||[];const created=ev.find(e=>e.eventAction==='registration');const expires=ev.find(e=>e.eventAction==='expiration');const ns=(d.nameservers||[]).map(n=>n.ldhName||n.name).join(', ');document.getElementById('whoisData').innerHTML=`<div class="result-item"><div class="label">Domaine</div><div class="value">${d.ldhName||domain}</div></div><div class="result-item"><div class="label">Creation</div><div class="value">${created?new Date(created.eventDate).toLocaleDateString('fr-FR'):'N/A'}</div></div><div class="result-item"><div class="label">Expiration</div><div class="value">${expires?new Date(expires.eventDate).toLocaleDateString('fr-FR'):'N/A'}</div></div><div class="result-item"><div class="label">Statut</div><div class="value">${(d.status||[]).map(s=>`<span class="badge badge-info">${s}</span>`).join(' ')||'N/A'}</div></div><div class="result-item"><div class="label">Nameservers</div><div class="value">${ns||'N/A'}</div></div>`;document.getElementById('whoisResults').classList.add('active')}catch(e){document.getElementById('whoisData').innerHTML=`<div class="result-item"><div class="label">Erreur</div><div class="value"><span class="badge badge-warn">Non disponible</span></div></div><div class="result-item"><div class="label">Alternative</div><div class="value"><a href="https://www.whois.com/whois/${domain}" target="_blank" style="color:var(--accent2)">whois.com &rarr;</a></div></div>`;document.getElementById('whoisResults').classList.add('active')}}
+    async function doDNS(domain){const types=[{t:1,n:'A'},{t:28,n:'AAAA'},{t:15,n:'MX'},{t:2,n:'NS'},{t:16,n:'TXT'},{t:5,n:'CNAME'}];let html='';for(const tp of types){try{const r=await fetch(`https://dns.google/resolve?name=${domain}&type=${tp.t}`);const d=await r.json();if(d.Answer){const recs=d.Answer.filter(a=>a.type===tp.t);if(recs.length){html+=`<div style="margin-bottom:12px"><div style="color:var(--accent);font-weight:600;font-size:0.85em;margin-bottom:4px">${tp.n}</div>`;recs.forEach(rec=>{html+=`<div style="color:var(--text2);font-size:0.85em;padding:4px 0;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;word-break:break-all">${(rec.data||'').replace(/"/g,'')}</div>`});html+=`</div>`}}}catch(e){}}document.getElementById('dnsData').innerHTML=html||'<p style="color:var(--text3)">Aucun record.</p>';document.getElementById('dnsResults').classList.add('active')}
+    async function doHeaders(domain){try{const r=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://'+domain)}`,{method:'HEAD'});const headers={};r.headers.forEach((v,k)=>headers[k]=v);let html='';Object.entries(headers).forEach(([k,v])=>{html+=`<div class="result-item"><div class="label">${k}</div><div class="value" style="font-family:'JetBrains Mono',monospace;font-size:0.8em">${v}</div></div>`});document.getElementById('headersData').innerHTML=html||'<p style="color:var(--text3)">Aucun header.</p>';document.getElementById('headersResults').classList.add('active')}catch(e){document.getElementById('headersData').innerHTML='<span class="badge badge-warn">Non disponible</span>';document.getElementById('headersResults').classList.add('active')}}
+    async function doCTLogs(domain){try{const r=await fetch(`https://crt.sh/?q=${encodeURIComponent(domain)}&output=json`);const data=await r.json();const seen=new Set();let html='';(data||[]).forEach(c=>{const cn=c.common_name||'';if(!seen.has(cn)){seen.add(cn);html+=`<div class="ct-item"><span class="ct-cn">${cn}</span><span class="badge badge-info">${c.not_before||'?'} - ${c.not_after||'?'}</span></div>`}});document.getElementById('ctData').innerHTML=html||`<p style="color:var(--text3)">Aucun certificat.</p>`;document.getElementById('ctResults').classList.add('active')}catch(e){document.getElementById('ctData').innerHTML='<p style="color:var(--text3)">Erreur.</p>';document.getElementById('ctResults').classList.add('active')}}
 
-    // === DOMAIN: DNS ===
-    async function doDNS(domain){
-        const types=[{t:1,n:'A'},{t:28,n:'AAAA'},{t:15,n:'MX'},{t:2,n:'NS'},{t:16,n:'TXT'},{t:5,n:'CNAME'},{t:6,n:'SOA'}];
-        let html='';
-        for(const tp of types){
-            try{
-                const r=await fetch(`https://dns.google/resolve?name=${domain}&type=${tp.t}`);
-                const d=await r.json();
-                if(d.Answer&&d.Answer.length){
-                    const records=d.Answer.filter(a=>a.type===tp.t);
-                    if(records.length){
-                        html+=`<div style="margin-bottom:12px;"><div style="color:#00ff88;font-weight:bold;font-size:0.9em;margin-bottom:5px;">${tp.n}</div>`;
-                        records.forEach(rec=>{
-                            let val=rec.data;
-                            if(tp.t===16)val=val.replace(/"/g,'');
-                            html+=`<div style="color:#ccc;font-size:0.85em;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-family:monospace;word-break:break-all;">${val}</div>`;
-                        });
-                        html+=`</div>`;
-                    }
-                }
-            }catch(e){}
-        }
-        if(!html)html='<p style="color:#555;">Aucun enregistrement DNS trouve.</p>';
-        document.getElementById('dnsData').innerHTML=html;
-        document.getElementById('dnsResults').classList.add('active');
-    }
+    // IP
+    async function lookupIP(){const ip=document.getElementById('ipInput').value.trim();if(!ip)return;addHistory('IP',ip);document.getElementById('ipLoading').classList.add('active');document.getElementById('ipResults').classList.remove('active');try{const r=await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);const d=await r.json();if(d.status==='fail'){showToast(d.message);document.getElementById('ipLoading').classList.remove('active');return}document.getElementById('ipData').innerHTML=`<div class="result-item"><div class="label">IP</div><div class="value">${d.query}</div></div><div class="result-item"><div class="label">Pays</div><div class="value">${d.country}</div></div><div class="result-item"><div class="label">Region</div><div class="value">${d.regionName}</div></div><div class="result-item"><div class="label">Ville</div><div class="value">${d.city}</div></div><div class="result-item"><div class="label">CP</div><div class="value">${d.zip}</div></div><div class="result-item"><div class="label">ISP</div><div class="value">${d.isp}</div></div><div class="result-item"><div class="label">Organisation</div><div class="value">${d.org}</div></div><div class="result-item"><div class="label">AS</div><div class="value">${d.as}</div></div><div class="result-item"><div class="label">Timezone</div><div class="value">${d.timezone}</div></div><div class="result-item"><div class="label">GPS</div><div class="value">${d.lat}, ${d.lon}</div></div>`;document.getElementById('ipResults').classList.add('active')}catch(e){showToast('Erreur')}document.getElementById('ipLoading').classList.remove('active')}
+    async function scanPorts(){const ip=document.getElementById('ipInput').value.trim().replace(/^(https?:\/\/)/,'').replace(/\/.*$/,'');if(!ip){showToast('Entrez une IP');return}addHistory('Port Scan',ip);document.getElementById('portLoading').classList.add('active');document.getElementById('portResults').classList.remove('active');const ports=[{p:21,n:'FTP'},{p:22,n:'SSH'},{p:25,n:'SMTP'},{p:53,n:'DNS'},{p:80,n:'HTTP'},{p:110,n:'POP3'},{p:143,n:'IMAP'},{p:443,n:'HTTPS'},{p:993,n:'IMAPS'},{p:995,n:'POP3S'},{p:3306,n:'MySQL'},{p:3389,n:'RDP'},{p:5432,n:'PostgreSQL'},{p:8080,n:'HTTP-Alt'},{p:8443,n:'HTTPS-Alt'},{p:27017,n:'MongoDB'}];const c=new AbortController();const t=setTimeout(()=>c.abort(),4000);const results=await Promise.all(ports.map(async port=>{try{await fetch(`http://${ip}:${port.p}`,{mode:'no-cors',signal:c.signal});return{...port,open:true}}catch(e){return{...port,open:false}}}));clearTimeout(t);let html=`<div style="margin-bottom:10px"><span class="badge badge-ok">${results.filter(r=>r.open).length} ouvert(s) / ${ports.length}</span></div>`;results.forEach(r=>{html+=`<div class="port-bar"><span class="pname">${r.n} (${r.p})</span><span class="pstatus"><span class="badge ${r.open?'badge-ok':'badge-warn'}" style="opacity:${r.open?1:0.4}">${r.open?'OUVERT':'ferme'}</span></span></div>`});document.getElementById('portData').innerHTML=html;document.getElementById('portResults').classList.add('active');document.getElementById('portLoading').classList.remove('active')}
+    async function checkVirusTotal(){const ip=document.getElementById('ipInput').value.trim();if(!ip){showToast('Entrez une IP dans l\'onglet IP');return}const apiKey=document.getElementById('vtApiKey').value.trim()||localStorage.getItem('vt_api_key')||'';if(!apiKey){showToast('API key requise (gratuite)');return}localStorage.setItem('vt_api_key',apiKey);addHistory('VirusTotal',ip);document.getElementById('vtLoading').classList.add('active');document.getElementById('vtResults').classList.remove('active');try{const r=await fetch(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`,{headers:{'x-apikey':apiKey}});const d=await r.json();if(!r.ok)throw new Error(d.error?.message||'Erreur');const s=d.data.attributes.last_analysis_stats;const m=s.malicious||0,su=s.suspicious||0,h=s.harmless||0,u=s.undetected||0,total=m+su+h+u;const ratio=total>0?((m+su)/total*100).toFixed(1):0;document.getElementById('vtData').innerHTML=`<div class="result-item"><div class="label">IP</div><div class="value">${ip}</div></div><div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge ${m>0?'badge-danger':'badge-ok'}">${m>0?'MALVEILLANT':'Propre'}</span></div></div><div class="result-item"><div class="label">Malveillants</div><div class="value">${m} / ${total}</div></div><div class="result-item"><div class="label">Suspects</div><div class="value">${su} / ${total}</div></div><div class="result-item"><div class="label">Ratio</div><div class="value"><span class="badge ${m>0?'badge-danger':'badge-ok'}">${ratio}%</span></div></div><div class="result-item"><div class="label">AS Owner</div><div class="value">${d.data.attributes.as_owner||'N/A'}</div></div><div class="result-item"><div class="label">Pays</div><div class="value">${d.data.attributes.country||'N/A'}</div></div><div class="result-item"><div class="label">Lien</div><div class="value"><a href="https://www.virustotal.com/gui/ip-address/${ip}" target="_blank" style="color:var(--accent2)">Voir sur VT &rarr;</a></div></div>`;document.getElementById('vtResults').classList.add('active')}catch(e){document.getElementById('vtData').innerHTML=`<div class="result-item"><div class="label">Erreur</div><div class="value"><span class="badge badge-warn">${e.message||'Erreur'}</span></div></div><div class="result-item"><div class="label">Aide</div><div class="value">Creez une cle sur <a href="https://www.virustotal.com/gui/my-apikey" target="_blank" style="color:var(--accent2)">virustotal.com</a></div></div>`;document.getElementById('vtResults').classList.add('active')}document.getElementById('vtLoading').classList.remove('active')}
 
-    // === DOMAIN: HEADERS ===
-    async function doHeaders(domain){
-        try{
-            const r=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://'+domain)}`,{method:'HEAD'});
-            const headers={};
-            r.headers.forEach((v,k)=>headers[k]=v);
-            const important=['server','content-type','x-frame-options','x-content-type-options','strict-transport-security','content-security-policy','x-xss-protection','access-control-allow-origin','x-powered-by','set-cookie'];
-            let html='';
-            important.forEach(h=>{
-                const v=headers[h];
-                if(v){
-                    let badge='badge-ok';
-                    if(h==='x-frame-options'||h==='strict-transport-security'||h==='content-security-policy'||h==='x-content-type-options')badge='badge-info';
-                    if(h==='x-powered-by')badge='badge-warn';
-                    html+=`<div class="result-item"><div class="label">${h}</div><div class="value" style="font-family:monospace;font-size:0.8em;">${v}</div></div>`;
-                }
-            });
-            Object.entries(headers).forEach(([k,v])=>{
-                if(!important.includes(k))html+=`<div class="result-item"><div class="label">${k}</div><div class="value" style="font-size:0.8em;font-family:monospace;">${v}</div></div>`;
-            });
-            document.getElementById('headersData').innerHTML=html||'<p style="color:#555;">Aucun header.</p>';
-            document.getElementById('headersResults').classList.add('active');
-        }catch(e){
-            document.getElementById('headersData').innerHTML=`<div class="result-item"><div class="label">Erreur</div><div class="value"><span class="badge badge-warn">Headers non disponibles</span></div></div>`;
-            document.getElementById('headersResults').classList.add('active');
-        }
-    }
+    // EMAIL
+    async function analyzeEmail(){const email=document.getElementById('emailInput').value.trim();if(!email)return;addHistory('Email',email);document.getElementById('emailLoading').classList.add('active');document.getElementById('emailResults').classList.remove('active');const valid=/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);const domain=email.split('@')[1]?.toLowerCase()||'';const disposable=['guerrillamail.com','tempmail.com','yopmail.com','yopmail.fr','mailinator.com','maildrop.cc'].some(d=>domain===d);let risk=0,reasons=[];if(disposable){risk+=50;reasons.push('Jetable')}if(!valid){risk+=30;reasons.push('Syntaxe invalide')}let spf=false,dmarc=false,mx=false;try{const r=await fetch(`https://dns.google/resolve?name=${domain}&type=MX`);const d=await r.json();mx=d.Answer&&d.Answer.some(a=>a.type===15)}catch(e){}try{const r=await fetch(`https://dns.google/resolve?name=${domain}&type=TXT`);const d=await r.json();spf=d.Answer&&d.Answer.some(a=>a.data&&a.data.includes('v=spf1'))}catch(e){}try{const r=await fetch(`https://dns.google/resolve?name=_dmarc.${domain}&type=TXT`);const d=await r.json();dmarc=d.Answer&&d.Answer.length>0}catch(e){}if(!mx){risk+=20;reasons.push('Pas de MX')}if(!spf){risk+=10;reasons.push('Pas de SPF')}if(!dmarc){risk+=10;reasons.push('Pas de DMARC')}document.getElementById('emailData').innerHTML=`<div class="result-item"><div class="label">Email</div><div class="value">${email}</div></div><div class="result-item"><div class="label">Syntaxe</div><div class="value">${valid?'<span class="badge badge-ok">Valide</span>':'<span class="badge badge-danger">Invalide</span>'}</div></div><div class="result-item"><div class="label">Domaine</div><div class="value">${domain}</div></div><div class="result-item"><div class="label">Jetable</div><div class="value">${disposable?'<span class="badge badge-danger">OUI</span>':'<span class="badge badge-ok">Non</span>'}</div></div><div class="result-item"><div class="label">MX</div><div class="value">${mx?'<span class="badge badge-ok">Present</span>':'<span class="badge badge-danger">Absent</span>'}</div></div><div class="result-item"><div class="label">SPF</div><div class="value">${spf?'<span class="badge badge-ok">Oui</span>':'<span class="badge badge-warn">Non</span>'}</div></div><div class="result-item"><div class="label">DMARC</div><div class="value">${dmarc?'<span class="badge badge-ok">Oui</span>':'<span class="badge badge-warn">Non</span>'}</div></div><div class="result-item"><div class="label">Score</div><div class="value"><span class="badge ${risk===0?'badge-ok':risk<=20?'badge-warn':'badge-danger'}">${risk===0?'Faible':risk<=20?'Modere':'Eleve'}</span> (${risk}/100)</div></div>${reasons.length?`<div class="result-item"><div class="label">Raisons</div><div class="value">${reasons.join(', ')}</div></div>`:''}`;document.getElementById('emailResults').classList.add('active');document.getElementById('emailLoading').classList.remove('active')}
 
-    // === IP LOOKUP ===
-    async function lookupIP(){
-        const ip=document.getElementById('ipInput').value.trim();if(!ip)return;
-        addHistory('IP',ip);
-        document.getElementById('ipLoading').classList.add('active');document.getElementById('ipResults').classList.remove('active');
-        try{
-            const r=await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
-            const d=await r.json();
-            if(d.status==='fail'){showToast('Erreur: '+d.message);document.getElementById('ipLoading').classList.remove('active');return}
-            document.getElementById('ipData').innerHTML=`
-                <div class="result-item"><div class="label">IP</div><div class="value">${d.query}</div></div>
-                <div class="result-item"><div class="label">Pays</div><div class="value">${d.country}</div></div>
-                <div class="result-item"><div class="label">Region</div><div class="value">${d.regionName}</div></div>
-                <div class="result-item"><div class="label">Ville</div><div class="value">${d.city}</div></div>
-                <div class="result-item"><div class="label">CP</div><div class="value">${d.zip}</div></div>
-                <div class="result-item"><div class="label">ISP</div><div class="value">${d.isp}</div></div>
-                <div class="result-item"><div class="label">Organisation</div><div class="value">${d.org}</div></div>
-                <div class="result-item"><div class="label">AS</div><div class="value">${d.as}</div></div>
-                <div class="result-item"><div class="label">Timezone</div><div class="value">${d.timezone}</div></div>
-                <div class="result-item"><div class="label">GPS</div><div class="value">${d.lat}, ${d.lon}</div></div>`;
-            document.getElementById('ipResults').classList.add('active');
-        }catch(e){showToast('Erreur de connexion')}
-        document.getElementById('ipLoading').classList.remove('active');
-    }
+    // PHONE
+    function lookupPhone(){const phone=document.getElementById('phoneInput').value.trim().replace(/[\s-]/g,'');if(!phone)return;addHistory('Phone',phone);document.getElementById('phoneLoading').classList.add('active');document.getElementById('phoneResults').classList.remove('active');let num=phone.replace(/^\+/,'');let pays='',code='',region='',typeL='',oper='',valide=false,formatInt='',formatNat='';if(num.startsWith('33')&&num.length===11){valide=true;pays='France';code='+33';const sp=num.substring(2);formatInt='+33 '+sp.match(/.{1,2}/g).join(' ');formatNat='0'+sp.match(/.{1,2}/g).join(' ');const px=sp.substring(0,2);if(['06','07'].includes(px))typeL='Mobile';else if(['01','02','03','04','05'].includes(px))typeL='Fixe';else if(px==='08')typeL='Special';else typeL='Autre';if(px==='06'||px==='07'){const p3=sp.substring(0,3);if(['060','061','062','075','076'].includes(p3))oper='Orange';else if(['063','064','069','073','074','079'].includes(p3))oper='SFR';else if(['065','066','067','078'].includes(p3))oper='Bouygues';else if(['062','068','070','071','072'].includes(p3))oper='Free';else oper='Mobile FR'}const dept=sp.substring(0,2);const R={'75':'Paris','69':'Lyon','13':'Marseille','31':'Toulouse','33':'Bordeaux','06':'Nice','59':'Lille','67':'Strasbourg','974':'La Reunion'};region=R[dept]||`Dept ${dept}`}else if(num.startsWith('262')&&num.length===12){valide=true;pays='La Reunion';code='+262';const sp=num.substring(3);formatInt='+262 '+sp.match(/.{1,2}/g).join(' ');formatNat='0'+sp.match(/.{1,2}/g).join(' ');typeL=sp.startsWith('06')||sp.startsWith('07')?'Mobile':'Fixe';oper='Orange/SFR Reunion';region='La Reunion (974)'}else if(phone.startsWith('+')){valide=true;pays='International';typeL='Indetermine';formatInt=phone;formatNat=phone}else if(num.startsWith('0')&&num.length===10){valide=true;pays='France (sans +33)';formatInt='+33'+num.substring(1);formatNat=num;typeL=['06','07'].includes(num.substring(0,2))?'Mobile':'Fixe';region='France'}if(!valide){document.getElementById('phoneData').innerHTML=`<div class="result-item"><div class="label">Erreur</div><div class="value"><span class="badge badge-danger">Invalide</span></div></div>`;document.getElementById('phoneResults').classList.add('active');document.getElementById('phoneLoading').classList.remove('active');return}document.getElementById('phoneData').innerHTML=`<div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge badge-ok">Valide</span></div></div><div class="result-item"><div class="label">Format Intl</div><div class="value">${formatInt}</div></div><div class="result-item"><div class="label">Format Nat</div><div class="value">${formatNat}</div></div><div class="result-item"><div class="label">Pays</div><div class="value">${pays}</div></div><div class="result-item"><div class="label">Region</div><div class="value">${region||'N/A'}</div></div><div class="result-item"><div class="label">Operateur</div><div class="value">${oper||'Indetermine'}</div></div><div class="result-item"><div class="label">Type</div><div class="value">${typeL}</div></div>`;document.getElementById('phoneResults').classList.add('active');document.getElementById('phoneLoading').classList.remove('active')}
 
-    // === PORT SCAN ===
-    async function scanPorts(){
-        const ip=document.getElementById('ipInput').value.trim().replace(/^(https?:\/\/)/,'').replace(/\/.*$/,'');
-        if(!ip){showToast('Entrez une IP ou domaine');return}
-        addHistory('Port Scan',ip);
-        document.getElementById('portLoading').classList.add('active');document.getElementById('portResults').classList.remove('active');
-        const ports=[
-            {p:21,n:'FTP'},{p:22,n:'SSH'},{p:23,n:'Telnet'},{p:25,n:'SMTP'},{p:53,n:'DNS'},
-            {p:80,n:'HTTP'},{p:110,n:'POP3'},{p:143,n:'IMAP'},{p:443,n:'HTTPS'},
-            {p:993,n:'IMAPS'},{p:995,n:'POP3S'},{p:3306,n:'MySQL'},{p:3389,n:'RDP'},
-            {p:5432,n:'PostgreSQL'},{p:6379,n:'Redis'},{p:8080,n:'HTTP-Alt'},{p:8443,n:'HTTPS-Alt'},
-            {p:27017,n:'MongoDB'}
-        ];
-        let html='';let openCount=0;
-        const controller=new AbortController();
-        const timeout=setTimeout(()=>controller.abort(),5000);
-        const results=await Promise.all(ports.map(async port=>{
-            try{
-                const url=`http://${ip}:${port.p}`;
-                const r=await fetch(url,{mode:'no-cors',signal:controller.signal});
-                openCount++;
-                return{...port,open:true};
-            }catch(e){
-                return{...port,open:false};
-            }
-        }));
-        clearTimeout(timeout);
-        results.forEach(r=>{
-            const color=r.open?'#00ff88':'#333';
-            const textColor=r.open?'#00ff88':'#555';
-            html+=`<div class="port-bar"><span class="pname" style="color:${textColor}">${r.n} (${r.p})</span><span class="pstatus"><span class="badge ${r.open?'badge-ok':'badge-warn'}" style="opacity:${r.open?1:0.4}">${r.open?'OUVERT':'ferme'}</span></span></div>`;
-        });
-        html=`<div style="margin-bottom:10px;"><span class="badge ${openCount>0?'badge-ok':'badge-warn'}">${openCount} port(s) ouvert(s) / ${ports.length} testes</span></div>`+html;
-        document.getElementById('portData').innerHTML=html;
-        document.getElementById('portResults').classList.add('active');
-        document.getElementById('portLoading').classList.remove('active');
-    }
+    // USERNAME
+    async function searchUsername(){const username=document.getElementById('usernameInput').value.trim();if(!username)return;addHistory('Username',username);document.getElementById('usernameLoading').classList.add('active');document.getElementById('usernameResults').classList.remove('active');const platforms=[{name:'GitHub',url:`https://github.com/${username}`},{name:'Twitter/X',url:`https://x.com/${username}`},{name:'Instagram',url:`https://www.instagram.com/${username}/`},{name:'TikTok',url:`https://www.tiktok.com/@${username}`},{name:'YouTube',url:`https://www.youtube.com/@${username}`},{name:'Reddit',url:`https://www.reddit.com/user/${username}`},{name:'Twitch',url:`https://www.twitch.tv/${username}`},{name:'Steam',url:`https://steamcommunity.com/id/${username}`},{name:'LinkedIn',url:`https://www.linkedin.com/in/${username}`},{name:'Pinterest',url:`https://www.pinterest.com/${username}/`},{name:'SoundCloud',url:`https://soundcloud.com/${username}`},{name:'DeviantArt',url:`https://www.deviantart.com/${username}`},{name:'GitLab',url:`https://gitlab.com/${username}`},{name:'Medium',url:`https://medium.com/@${username}`}];let html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">';platforms.forEach(p=>{html+=`<a href="${p.url}" target="_blank" style="display:flex;align-items:center;justify-content:center;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--accent2);text-decoration:none;font-size:0.85em;font-weight:500;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">${p.name} &rarr;</a>`});html+='</div>';document.getElementById('usernameData').innerHTML=html;document.getElementById('usernameResults').classList.add('active');document.getElementById('usernameLoading').classList.remove('active')}
 
-    // === EMAIL ===
-    async function analyzeEmail(){
-        const email=document.getElementById('emailInput').value.trim();if(!email)return;
-        addHistory('Email',email);
-        document.getElementById('emailLoading').classList.add('active');document.getElementById('emailResults').classList.remove('active');
-        const valid=/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
-        const domain=email.split('@')[1]?.toLowerCase()||'';
-        const disposable=['guerrillamail.com','tempmail.com','yopmail.com','yopmail.fr','mailinator.com','maildrop.cc','10minutemail.com','temp-mail.org','trashmail.com','getnada.com','mohmal.com'].some(d=>domain===d);
-        let risk=0,reasons=[];
-        if(disposable){risk+=50;reasons.push('Jetable')}
-        if(!valid){risk+=30;reasons.push('Syntaxe invalide')}
-        let spf=false,dmarc=false,mx=false;
-        try{const r=await fetch(`https://dns.google/resolve?name=${domain}&type=MX`);const d=await r.json();mx=d.Answer&&d.Answer.some(a=>a.type===15)}catch(e){}
-        try{const r=await fetch(`https://dns.google/resolve?name=${domain}&type=TXT`);const d=await r.json();spf=d.Answer&&d.Answer.some(a=>a.data&&a.data.includes('v=spf1'))}catch(e){}
-        try{const r=await fetch(`https://dns.google/resolve?name=_dmarc.${domain}&type=TXT`);const d=await r.json();dmarc=d.Answer&&d.Answer.length>0}catch(e){}
-        if(!mx){risk+=20;reasons.push('Pas de MX')}if(!spf){risk+=10;reasons.push('Pas de SPF')}if(!dmarc){risk+=10;reasons.push('Pas de DMARC')}
-        let rl=risk===0?'<span class="badge badge-ok">Faible</span>':risk<=20?'<span class="badge badge-warn">Modere</span>':'<span class="badge badge-danger">Eleve</span>';
-        document.getElementById('emailData').innerHTML=`
-            <div class="result-item"><div class="label">Email</div><div class="value">${email}</div></div>
-            <div class="result-item"><div class="label">Syntaxe</div><div class="value">${valid?'<span class="badge badge-ok">Valide</span>':'<span class="badge badge-danger">Invalide</span>'}</div></div>
-            <div class="result-item"><div class="label">Domaine</div><div class="value">${domain}</div></div>
-            <div class="result-item"><div class="label">Jetable</div><div class="value">${disposable?'<span class="badge badge-danger">OUI</span>':'<span class="badge badge-ok">Non</span>'}</div></div>
-            <div class="result-item"><div class="label">MX</div><div class="value">${mx?'<span class="badge badge-ok">Present</span>':'<span class="badge badge-danger">Absent</span>'}</div></div>
-            <div class="result-item"><div class="label">SPF</div><div class="value">${spf?'<span class="badge badge-ok">Oui</span>':'<span class="badge badge-warn">Non</span>'}</div></div>
-            <div class="result-item"><div class="label">DMARC</div><div class="value">${dmarc?'<span class="badge badge-ok">Oui</span>':'<span class="badge badge-warn">Non</span>'}</div></div>
-            <div class="result-item"><div class="label">Score</div><div class="value">${rl} (${risk}/100)</div></div>
-            ${reasons.length?`<div class="result-item"><div class="label">Raisons</div><div class="value">${reasons.join(', ')}</div></div>`:''}`;
-        document.getElementById('emailResults').classList.add('active');
-        document.getElementById('emailLoading').classList.remove('active');
-    }
-
-    // === PHONE ===
-    function lookupPhone(){
-        const phone=document.getElementById('phoneInput').value.trim().replace(/[\s-]/g,'');if(!phone)return;
-        addHistory('Phone',phone);
-        document.getElementById('phoneLoading').classList.add('active');document.getElementById('phoneResults').classList.remove('active');
-        let num=phone.replace(/^\+/,'');let pays='',code='',region='',typeLigne='',operateur='',valide=false,formatInt='',formatNat='';
-        if(num.startsWith('33')&&num.length===11){valide=true;pays='France';code='+33';const sp=num.substring(2);formatInt='+33 '+sp.match(/.{1,2}/g).join(' ');formatNat='0'+sp.match(/.{1,2}/g).join(' ');const px=sp.substring(0,2);if(['06','07'].includes(px))typeLigne='Mobile';else if(['01','02','03','04','05'].includes(px))typeLigne='Fixe';else if(px==='08')typeLigne='Special';else if(px==='09')typeLigne='VoIP';
-            if(px==='06'||px==='07'){const p3=sp.substring(0,3);if(['060','061','062','075','076'].includes(p3))operateur='Orange';else if(['063','064','069','073','074','079'].includes(p3))operateur='SFR';else if(['065','066','067','078'].includes(p3))operateur='Bouygues';else if(['062','068','070','071','072'].includes(p3))operateur='Free';else operateur='Mobile FR'}
-            const dept=sp.substring(0,2);const R={'01':'Paris/IDF','02':'Nord','03':'Est','04':'PACA','05':'Sud-Ouest','06':'IDF','07':'Rhone','08':'Champagne','09':'Toulouse','13':'Marseille','31':'Toulouse','33':'Bordeaux','34':'Montpellier','35':'Rennes','38':'Grenoble','44':'Nantes','59':'Lille','67':'Strasbourg','69':'Lyon','75':'Paris','76':'Rouen','77':'Melun','78':'Versailles','91':'Essonne','92':'Hauts-de-Seine','93':'St-Denis','94':'Val-de-Marne','95':'Val-d\'Oise'};region=R[dept]||`Dept ${dept}`}
-        else if(num.startsWith('262')&&num.length===12){valide=true;pays='La Reunion';code='+262';const sp=num.substring(3);formatInt='+262 '+sp.match(/.{1,2}/g).join(' ');formatNat='0'+sp.match(/.{1,2}/g).join(' ');const px=sp.substring(0,2);if(['06','07'].includes(px)){typeLigne='Mobile';operateur='Orange/SFR Reunion'}else{typeLigne='Fixe';operateur='Orange Reunion'}region='La Reunion (974)'}
-        else if(num.startsWith('269')&&num.length===12){valide=true;pays='Mayotte';code='+269';typeLigne='Mobile/Fixe';region='Mayotte (976)';formatInt=phone;formatNat=phone}
-        else if(phone.startsWith('+')){valide=true;pays='International';typeLigne='Indetermine';formatInt=phone;formatNat=phone}
-        else if(num.startsWith('0')&&num.length===10){valide=true;pays='France (sans +33)';formatInt='+33'+num.substring(1);formatNat=num;typeLigne=['06','07'].includes(num.substring(0,2))?'Mobile':'Fixe';region='France'}
-        if(!valide){document.getElementById('phoneData').innerHTML=`<div class="result-item"><div class="label">Erreur</div><div class="value"><span class="badge badge-danger">Invalide</span></div></div><div class="result-item"><div class="label">Format</div><div class="value">+33 6 12 34 56 78 ou +262 6 92 12 34 56</div></div>`;document.getElementById('phoneResults').classList.add('active');document.getElementById('phoneLoading').classList.remove('active');return}
-        let badges='';if(pays==='France')badges='<span class="badge badge-info">FRANCE</span> ';else if(pays==='La Reunion')badges='<span class="badge badge-info">REUNION</span> ';
-        document.getElementById('phoneData').innerHTML=`
-            <div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge badge-ok">Valide</span> ${badges}</div></div>
-            <div class="result-item"><div class="label">Format Intl</div><div class="value">${formatInt}</div></div>
-            <div class="result-item"><div class="label">Format Nat</div><div class="value">${formatNat}</div></div>
-            <div class="result-item"><div class="label">Pays</div><div class="value">${pays}</div></div>
-            <div class="result-item"><div class="label">Region</div><div class="value">${region}</div></div>
-            <div class="result-item"><div class="label">Operateur</div><div class="value">${operateur||'Indetermine'}</div></div>
-            <div class="result-item"><div class="label">Type</div><div class="value">${typeLigne}</div></div>`;
-        document.getElementById('phoneResults').classList.add('active');
-        document.getElementById('phoneLoading').classList.remove('active');
-    }
-
-    // === USERNAME ===
-    async function searchUsername(){
-        const username=document.getElementById('usernameInput').value.trim();if(!username)return;
-        addHistory('Username',username);
-        document.getElementById('usernameLoading').classList.add('active');document.getElementById('usernameResults').classList.remove('active');
-        const platforms=[
-            {name:'GitHub',url:`https://github.com/${username}`},{name:'Twitter/X',url:`https://x.com/${username}`},
-            {name:'Instagram',url:`https://www.instagram.com/${username}/`},{name:'TikTok',url:`https://www.tiktok.com/@${username}`},
-            {name:'YouTube',url:`https://www.youtube.com/@${username}`},{name:'Reddit',url:`https://www.reddit.com/user/${username}`},
-            {name:'Pinterest',url:`https://www.pinterest.com/${username}/`},{name:'Twitch',url:`https://www.twitch.tv/${username}`},
-            {name:'Steam',url:`https://steamcommunity.com/id/${username}`},{name:'LinkedIn',url:`https://www.linkedin.com/in/${username}`},
-            {name:'SoundCloud',url:`https://soundcloud.com/${username}`},{name:'DeviantArt',url:`https://www.deviantart.com/${username}`},
-            {name:'GitLab',url:`https://gitlab.com/${username}`},{name:'Keybase',url:`https://keybase.io/${username}`},
-            {name:'Medium',url:`https://medium.com/@${username}`},{name:'HackerNews',url:`https://news.ycombinator.com/user?id=${username}`}
-        ];
-        let html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">';
-        for(const p of platforms){
-            html+=`<div class="result-item"><div class="label">${p.name}</div><div class="value"><a href="${p.url}" target="_blank" style="color:#00d4ff;text-decoration:none;"><span class="badge badge-info">Voir &rarr;</span></a></div></div>`;
-        }
-        html+='</div>';
-        document.getElementById('usernameData').innerHTML=html;
-        document.getElementById('usernameResults').classList.add('active');
-        document.getElementById('usernameLoading').classList.remove('active');
-    }
-
-    // === HASH CRACKER ===
-    const HASH_WORDS=['123456','password','12345678','qwerty','123456789','12345','1234','111111','1234567','dragon','123123','baseball','abc123','football','monkey','letmein','shadow','master','666666','qwertyuiop','123321','mustang','michael','654321','superman','1qaz2wsx','7777777','121212','000000','qazwsx','123qwe','killer','trustno1','jordan','jennifer','zxcvbnm','asdfgh','hunter','buster','soccer','harley','batman','andrew','tigger','sunshine','iloveyou','2000','charlie','robert','thomas','hockey','ranger','daniel','starwars','klaster','112233','george','computer','michelle','jessica','pepper','1111','zxcvbn','555555','11111111','131313','freedom','777777','pass','maggie','159753','aaaaaa','ginger','princess','joshua','cheese','amanda','summer','love','ashley','nicole','chelsea','biteme','matthew','access','yankees','987654321','dallas','austin','thunder','taylor','matrix','mobilemail','montana','moon','north','apache','fender','samsung','diablo','ant','matrix1','william','corvette','hello','diamond','anthony','mercury','cowboy','secret','falcon','andrea','redwings','america','johnny','chicago','samuel','orange','captain','maverick','jennifer','midnight','college','sparky','rabbit','mother','london','turtle','peanut','cookie','coffee','junior','silver','panther','jackson','jasmine','fender','golden','savage','stargate','camaro','falcon','taylor','matrix','william','hammer','yankees','joshua','biteme','freedom','whatever','bigdog','cheese','madison','159357','sparky','turtle','peanut','cookie','coffee','junior','silver','panther','jackson','jasmine'];
-    async function md5(str){const msg=new TextEncoder().encode(str);const hash=await crypto.subtle.digest('SHA-1',msg);return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+    // HASH
+    const HASH_WORDS=['123456','password','12345678','qwerty','123456789','12345','1234','111111','1234567','dragon','123123','baseball','abc123','football','monkey','letmein','shadow','master','666666','qwertyuiop','123321','mustang','michael','654321','superman','1qaz2wsx','7777777','121212','000000','qazwsx','123qwe','killer','trustno1','jordan','jennifer','zxcvbnm','asdfgh','hunter','buster','soccer','harley','batman','andrew','tigger','sunshine','iloveyou','2000','charlie','robert','thomas','hockey','ranger','daniel','starwars','112233','george','computer','michelle','jessica','pepper','1111','zxcvbn','555555','11111111','131313','freedom','777777','pass','maggie','159753','aaaaaa','ginger','princess','joshua','cheese','amanda','summer','love','ashley','nicole','chelsea','matthew','access','yankees','987654321','dallas','austin','thunder','taylor','matrix','moon','apache','fender','samsung','william','hello','diamond','anthony','mercury','cowboy','secret','falcon','andrea','america','johnny','chicago','samuel','orange','captain','jennifer','midnight','college','sparky','rabbit','mother','london','turtle','peanut','cookie','coffee','junior','silver','panther','jackson','jasmine','golden','savage','camaro','taylor','hammer','joshua','freedom','whatever','bigdog','cheese','madison','sparky','turtle','peanut','cookie','coffee','junior','silver','panther','jackson','jasmine'];
     function md5Hash(str){let h=0;for(let i=0;i<str.length;i++){h=((h<<5)-h)+str.charCodeAt(i);h|=0}const hex=Math.abs(h).toString(16).padStart(8,'0');return hex+hex.slice(0,8)+hex.slice(0,8)}
     async function sha1(str){const buf=await crypto.subtle.digest('SHA-1',new TextEncoder().encode(str));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
     async function sha256(str){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
-    async function crackHash(){
-        const input=document.getElementById('hashInput').value.trim().toLowerCase();
-        const type=document.getElementById('hashType').value;
-        if(!input){showToast('Entrez un hash');return}
-        addHistory('Hash',input.substring(0,20)+'...');
-        document.getElementById('hashLoading').classList.add('active');document.getElementById('hashResults').classList.remove('active');
-        const hashLen=input.length;
-        let detectType=type;
-        if(type==='auto'){
-            if(hashLen===32)detectType='md5';
-            else if(hashLen===40)detectType='sha1';
-            else if(hashLen===64)detectType='sha256';
-            else detectType='unknown';
-        }
-        let found=false,foundWord='';
-        const total=HASH_WORDS.length;
-        for(let i=0;i<total;i++){
-            const w=HASH_WORDS[i];
-            let hash='';
-            if(detectType==='md5'||detectType==='unknown')hash=md5Hash(w);
-            else if(detectType==='sha1')hash=await sha1(w);
-            else if(detectType==='sha256')hash=await sha256(w);
-            if(hash===input){found=true;foundWord=w;break}
-            if(detectType==='unknown'){
-                const s1=await sha1(w);if(s1===input){found=true;foundWord=w;detectType='sha1';break}
-                const s256=await sha256(w);if(s256===input){found=true;foundWord=w;detectType='sha256';break}
-            }
-        }
-        document.getElementById('hashData').innerHTML=found?
-            `<div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge badge-danger">TROUVE !</span></div></div>
-             <div class="result-item"><div class="label">Type detecte</div><div class="value">${detectType.toUpperCase()}</div></div>
-             <div class="result-item"><div class="label">Hash</div><div class="value" style="font-family:monospace;font-size:0.8em;">${input}</div></div>
-             <div class="result-item"><div class="label">Mot de passe</div><div class="value" style="color:#ff6b6b;font-weight:bold;font-size:1.1em;">${foundWord}</div></div>
-             <div class="result-item"><div class="label">Teste</div><div class="value">${total+1} mots de passe</div></div>`:
-            `<div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge badge-ok">Non trouve</span></div></div>
-             <div class="result-item"><div class="label">Type detecte</div><div class="value">${detectType.toUpperCase()}</div></div>
-             <div class="result-item"><div class="label">Hash</div><div class="value" style="font-family:monospace;font-size:0.8em;">${input}</div></div>
-             <div class="result-item"><div class="label">Info</div><div class="value">${total+1} mots de passe testes. Hash non reconnu dans la base.</div></div>`;
-        document.getElementById('hashResults').classList.add('active');
-        document.getElementById('hashLoading').classList.remove('active');
-    }
+    async function crackHash(){const input=document.getElementById('hashInput').value.trim().toLowerCase();const type=document.getElementById('hashType').value;if(!input){showToast('Entrez un hash');return}addHistory('Hash',input.substring(0,20)+'...');document.getElementById('hashLoading').classList.add('active');document.getElementById('hashResults').classList.remove('active');let detectType=type;if(type==='auto'){if(input.length===32)detectType='md5';else if(input.length===40)detectType='sha1';else if(input.length===64)detectType='sha256';else detectType='unknown'}let found=false,foundWord='';for(const w of HASH_WORDS){let hash=detectType==='md5'||detectType==='unknown'?md5Hash(w):detectType==='sha1'?await sha1(w):await sha256(w);if(hash===input){found=true;foundWord=w;break}if(detectType==='unknown'){const s1=await sha1(w);if(s1===input){found=true;foundWord=w;detectType='sha1';break}const s256=await sha256(w);if(s256===input){found=true;foundWord=w;detectType='sha256';break}}}document.getElementById('hashData').innerHTML=found?`<div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge badge-danger">TROUVE !</span></div></div><div class="result-item"><div class="label">Type</div><div class="value">${detectType.toUpperCase()}</div></div><div class="result-item"><div class="label">Hash</div><div class="value" style="font-family:'JetBrains Mono',monospace;font-size:0.8em">${input}</div></div><div class="result-item"><div class="label">Mot de passe</div><div class="value" style="color:var(--danger);font-weight:700;font-size:1.1em">${foundWord}</div></div>`:`<div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge badge-ok">Non trouve</span></div></div><div class="result-item"><div class="label">Type</div><div class="value">${detectType.toUpperCase()}</div></div><div class="result-item"><div class="label">Hash</div><div class="value" style="font-family:'JetBrains Mono',monospace;font-size:0.8em">${input}</div></div><div class="result-item"><div class="label">Info</div><div class="value">${HASH_WORDS.length+1} mots testes. Non reconnu.</div></div>`;document.getElementById('hashResults').classList.add('active');document.getElementById('hashLoading').classList.remove('active')}
 
-    // === PASTE SEARCH ===
-    async function searchPaste(){
-        const q=document.getElementById('pasteInput').value.trim();if(!q)return;
-        addHistory('Paste',q);
-        document.getElementById('pasteLoading').classList.add('active');document.getElementById('pasteResults').classList.remove('active');
-        let html='';
-        try{
-            const r=await fetch(`https://api.github.com/search/code?q=${encodeURIComponent(q)}+in:file+extension:txt&per_page=10`);
-            const d=await r.json();
-            if(d.items&&d.items.length){
-                html+=`<div style="margin-bottom:10px;"><span class="badge badge-danger">${d.items.length} resultat(s) GitHub</span></div>`;
-                d.items.forEach(item=>{
-                    html+=`<div class="result-item" style="margin-bottom:8px;"><div class="label">${item.repository.full_name}</div><div class="value"><a href="${item.html_url}" target="_blank" style="color:#00d4ff;text-decoration:none;font-size:0.9em;">${item.path} &rarr;</a></div></div>`;
-                });
-            }
-        }catch(e){}
-        html+=`<div style="margin-top:15px;"><div style="color:#666;font-size:0.85em;margin-bottom:8px;">Liens directs de recherche:</div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
-                <a href="https://www.google.com/search?q=%22${encodeURIComponent(q)}%22+site%3Apastebin.com" target="_blank" style="padding:10px;background:rgba(0,0,0,0.3);border-radius:8px;color:#00d4ff;text-decoration:none;text-align:center;font-size:0.85em;">Google + Pastebin</a>
-                <a href="https://www.google.com/search?q=%22${encodeURIComponent(q)}%22+site%3Aghostbin.com" target="_blank" style="padding:10px;background:rgba(0,0,0,0.3);border-radius:8px;color:#00d4ff;text-decoration:none;text-align:center;font-size:0.85em;">Google + Ghostbin</a>
-                <a href="https://www.google.com/search?q=%22${encodeURIComponent(q)}%22+site%3Apaste.ee" target="_blank" style="padding:10px;background:rgba(0,0,0,0.3);border-radius:8px;color:#00d4ff;text-decoration:none;text-align:center;font-size:0.85em;">Google + Paste.ee</a>
-                <a href="https://www.google.com/search?q=%22${encodeURIComponent(q)}%22+site%3Adpaste.org" target="_blank" style="padding:10px;background:rgba(0,0,0,0.3);border-radius:8px;color:#00d4ff;text-decoration:none;text-align:center;font-size:0.85em;">Google + dpaste</a>
-                <a href="https://gist.github.com/search?q=${encodeURIComponent(q)}" target="_blank" style="padding:10px;background:rgba(0,0,0,0.3);border-radius:8px;color:#00d4ff;text-decoration:none;text-align:center;font-size:0.85em;">GitHub Gists</a>
-            </div></div>`;
-        document.getElementById('pasteData').innerHTML=html||'<p style="color:#555;">Aucun resultat.</p>';
-        document.getElementById('pasteResults').classList.add('active');
-        document.getElementById('pasteLoading').classList.remove('active');
-    }
+    // PASTE
+    async function searchPaste(){const q=document.getElementById('pasteInput').value.trim();if(!q)return;addHistory('Paste',q);document.getElementById('pasteLoading').classList.add('active');document.getElementById('pasteResults').classList.remove('active');let html='';try{const r=await fetch(`https://api.github.com/search/code?q=${encodeURIComponent(q)}+in:file+extension:txt&per_page=10`);const d=await r.json();if(d.items&&d.items.length){html+=`<div style="margin-bottom:10px"><span class="badge badge-danger">${d.items.length} resultat(s) GitHub</span></div>`;d.items.forEach(item=>{html+=`<div class="result-item" style="margin-bottom:6px"><div class="label">${item.repository.full_name}</div><div class="value"><a href="${item.html_url}" target="_blank" style="color:var(--accent2);font-size:0.85em">${item.path} &rarr;</a></div></div>`})}}catch(e){}html+=`<div style="margin-top:15px"><div style="color:var(--text3);font-size:0.8em;margin-bottom:8px">Recherche sur les paste sites:</div><div class="search-grid"><a href="https://www.google.com/search?q=%22${encodeURIComponent(q)}%22+site%3Apastebin.com" target="_blank">Pastebin</a><a href="https://www.google.com/search?q=%22${encodeURIComponent(q)}%22+site%3Apaste.ee" target="_blank">Paste.ee</a><a href="https://www.google.com/search?q=%22${encodeURIComponent(q)}%22+site%3Adpaste.org" target="_blank">dpaste</a><a href="https://gist.github.com/search?q=${encodeURIComponent(q)}" target="_blank">GitHub Gists</a></div></div>`;document.getElementById('pasteData').innerHTML=html;document.getElementById('pasteResults').classList.add('active');document.getElementById('pasteLoading').classList.remove('active')}
 
-    // === WORLD CLOCKS ===
-    const clocks=[
-        {id:'paris',tz:'Europe/Paris'},{id:'reunion',tz:'Indian/Reunion'},{id:'newyork',tz:'America/New_York'},
-        {id:'london',tz:'Europe/London'},{id:'tokyo',tz:'Asia/Tokyo'},{id:'sydney',tz:'Australia/Sydney'}
-    ];
-    function updateClocks(){
-        const now=new Date();
-        clocks.forEach(c=>{
-            const opts={timeZone:c.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false};
-            const dateOpts={timeZone:c.tz,weekday:'short',day:'numeric',month:'short',year:'numeric'};
-            document.getElementById('clock-'+c.id).textContent=now.toLocaleTimeString('fr-FR',opts);
-            document.getElementById('date-'+c.id).textContent=now.toLocaleDateString('fr-FR',dateOpts);
-        });
-    }
-    setInterval(updateClocks,1000);
-    updateClocks();
+    // WORLD CLOCKS
+    const clocks=[{id:'paris',tz:'Europe/Paris'},{id:'reunion',tz:'Indian/Reunion'},{id:'newyork',tz:'America/New_York'},{id:'london',tz:'Europe/London'},{id:'tokyo',tz:'Asia/Tokyo'},{id:'sydney',tz:'Australia/Sydney'}];
+    function updateClocks(){const now=new Date();clocks.forEach(c=>{document.getElementById('clock-'+c.id).textContent=now.toLocaleTimeString('fr-FR',{timeZone:c.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});document.getElementById('date-'+c.id).textContent=now.toLocaleDateString('fr-FR',{timeZone:c.tz,weekday:'short',day:'numeric',month:'short'})})}
+    setInterval(updateClocks,1000);updateClocks();
 
-    // === DASHBOARD FEEDS ===
+    // DASHBOARD FEEDS
     let dashInterval=null,dashCountdown=60;
-
-    async function fetchCVE(){
-        try{
-            const r=await fetch('https://cve.circl.lu/api/last/10');
-            const data=await r.json();
-            let html='';
-            data.forEach(cve=>{
-                const score=cve.cvss||0;
-                const color=score>=9?'badge-danger':score>=7?'badge-warn':score>=4?'badge-info':'badge-ok';
-                html+=`<div class="feed-item"><div class="ftitle"><a href="https://nvd.nist.gov/vuln/detail/${cve.id}" target="_blank">${cve.id}</a></div><div class="fmeta"><span class="badge ${color}">CVSS ${score}</span> ${cve.summary?cve.summary.substring(0,100)+'...':''}</div></div>`;
-            });
-            document.getElementById('cveList').innerHTML=html||'<p style="color:#555;">Aucune CVE.</p>';
-        }catch(e){document.getElementById('cveList').innerHTML='<p style="color:#555;">Erreur de chargement.</p>'}
-    }
-
-    async function fetchMalware(){
-        try{
-            const r=await fetch('https://mb-api.abuse.ch/api/v1/',{method:'POST',body:new URLSearchParams({query:'get_recent',selector:'100'})});
-            const data=await r.json();
-            let html='';
-            (data.data||[]).slice(0,15).forEach(m=>{
-                const color=m.file_type==='exe'?'badge-danger':m.file_type==='dll'?'badge-warn':'badge-info';
-                html+=`<div class="feed-item"><div class="ftitle" style="font-family:monospace;font-size:0.8em;">${m.md5_hash||'N/A'}</div><div class="fmeta"><span class="badge ${color}">${m.file_type||'?'}</span> ${m.signature||m.file_name||''} - ${m.first_seen||''}</div></div>`;
-            });
-            document.getElementById('malwareList').innerHTML=html||'<p style="color:#555;">Aucun malware.</p>';
-        }catch(e){document.getElementById('malwareList').innerHTML='<p style="color:#555;">Erreur de chargement.</p>'}
-    }
-
-    async function fetchURLhaus(){
-        try{
-            const r=await fetch('https://urlhaus-api.abuse.ch/v1/urls/recent/limit/15/');
-            const data=await r.json();
-            let html='';
-            (data.urls||[]).forEach(u=>{
-                html+=`<div class="feed-item"><div class="ftitle" style="font-size:0.8em;word-break:break-all;">${u.url}</div><div class="fmeta"><span class="badge badge-danger">${u.threat||'malicious'}</span> ${u.date_added||''} - ${u.tags?u.tags.join(', '):''}</div></div>`;
-            });
-            document.getElementById('urlhausList').innerHTML=html||'<p style="color:#555;">Aucune menace.</p>';
-        }catch(e){document.getElementById('urlhausList').innerHTML='<p style="color:#555;">Erreur de chargement.</p>'}
-    }
-
-    async function fetchThreatFox(){
-        try{
-            const r=await fetch('https://threatfox-api.abuse.ch/api/v1/',{method:'POST',body:new URLSearchParams({query:'tag:botnet_cc',limit:15})});
-            const data=await r.json();
-            let html='';
-            (data.data||[]).forEach(i=>{
-                html+=`<div class="feed-item"><div class="ftitle" style="font-family:monospace;font-size:0.85em;">${i.ioc}</div><div class="fmeta"><span class="badge badge-danger">${i.ioc_type||'IP'}</span> ${i.malware||''} ${i.confidence_level?'('+i.confidence_level+'%)':''} - ${i.first_seen_utc||''}</div></div>`;
-            });
-            document.getElementById('threatFoxList').innerHTML=html||'<p style="color:#555;">Aucun IOC.</p>';
-        }catch(e){document.getElementById('threatFoxList').innerHTML='<p style="color:#555;">Erreur de chargement.</p>'}
-    }
-
+    async function fetchCVE(){try{const r=await fetch('https://cve.circl.lu/api/last/10');const data=await r.json();let html='';data.forEach(cve=>{const score=cve.cvss||0;const color=score>=9?'badge-danger':score>=7?'badge-warn':score>=4?'badge-info':'badge-ok';html+=`<div class="feed-item"><div class="ftitle"><a href="https://nvd.nist.gov/vuln-detail/${cve.id}" target="_blank">${cve.id}</a></div><div class="fmeta"><span class="badge ${color}">CVSS ${score}</span> ${cve.summary?cve.summary.substring(0,80)+'...':''}</div></div>`});document.getElementById('cveList').innerHTML=html||'<p style="color:var(--text3)">Aucune CVE.</p>'}catch(e){document.getElementById('cveList').innerHTML='<p style="color:var(--text3)">Erreur.</p>'}}
+    async function fetchMalware(){try{const r=await fetch('https://mb-api.abuse.ch/api/v1/',{method:'POST',body:new URLSearchParams({query:'get_recent',selector:'100'})});const data=await r.json();let html='';(data.data||[]).slice(0,12).forEach(m=>{html+=`<div class="feed-item"><div class="ftitle" style="font-family:'JetBrains Mono',monospace;font-size:0.8em">${m.md5_hash||'N/A'}</div><div class="fmeta"><span class="badge badge-danger">${m.file_type||'?'}</span> ${m.signature||''} ${m.first_seen||''}</div></div>`});document.getElementById('malwareList').innerHTML=html||'<p style="color:var(--text3)">Aucun.</p>'}catch(e){document.getElementById('malwareList').innerHTML='<p style="color:var(--text3)">Erreur.</p>'}}
+    async function fetchURLhaus(){try{const r=await fetch('https://urlhaus-api.abuse.ch/v1/urls/recent/limit/12/');const data=await r.json();let html='';(data.urls||[]).forEach(u=>{html+=`<div class="feed-item"><div class="ftitle" style="font-size:0.8em;word-break:break-all">${u.url}</div><div class="fmeta"><span class="badge badge-danger">${u.threat||'malicious'}</span> ${u.date_added||''}</div></div>`});document.getElementById('urlhausList').innerHTML=html||'<p style="color:var(--text3)">Aucune.</p>'}catch(e){document.getElementById('urlhausList').innerHTML='<p style="color:var(--text3)">Erreur.</p>'}}
+    async function fetchThreatFox(){try{const r=await fetch('https://threatfox-api.abuse.ch/api/v1/',{method:'POST',body:new URLSearchParams({query:'tag:botnet_cc',limit:12})});const data=await r.json();let html='';(data.data||[]).forEach(i=>{html+=`<div class="feed-item"><div class="ftitle" style="font-family:'JetBrains Mono',monospace;font-size:0.85em">${i.ioc}</div><div class="fmeta"><span class="badge badge-danger">${i.ioc_type||'IP'}</span> ${i.malware||''} ${i.first_seen_utc||''}</div></div>`});document.getElementById('threatFoxList').innerHTML=html||'<p style="color:var(--text3)">Aucun.</p>'}catch(e){document.getElementById('threatFoxList').innerHTML='<p style="color:var(--text3)">Erreur.</p>'}}
     function refreshDashboard(){dashCountdown=60;fetchCVE();fetchMalware();fetchURLhaus();fetchThreatFox()}
-    function startDashAutoRefresh(){
-        if(dashInterval)clearInterval(dashInterval);
-        dashCountdown=60;
-        dashInterval=setInterval(()=>{dashCountdown--;document.getElementById('dashTimer').textContent='Auto-refresh: '+dashCountdown+'s';if(dashCountdown<=0)refreshDashboard()},1000);
-    }
+    function startDashAutoRefresh(){if(dashInterval)clearInterval(dashInterval);dashCountdown=60;dashInterval=setInterval(()=>{dashCountdown--;document.getElementById('dashTimer').textContent=dashCountdown+'s';if(dashCountdown<=0)refreshDashboard()},1000)}
 
-    // === CT LOGS ===
-    async function doCTLogs(domain){
-        document.getElementById('ctLoading').classList.add('active');
-        document.getElementById('ctResults').classList.remove('active');
-        try{
-            const r=await fetch(`https://crt.sh/?q=${encodeURIComponent(domain)}&output=json`);
-            const data=await r.json();
-            const seen=new Set();
-            let html='';
-            (data||[]).forEach(c=>{
-                const cn=c.common_name||'';
-                if(!seen.has(cn)){seen.add(cn);
-                    html+=`<div class="ct-item"><span class="ct-cn">${cn}</span><span class="badge badge-info">${c.not_before||'?'} - ${c.not_after||'?'}</span></div>`;
-                }
-            });
-            document.getElementById('ctData').innerHTML=html||`<p style="color:#555;">Aucun certificat CT trouve pour ${domain}.</p>`;
-            document.getElementById('ctResults').classList.add('active');
-        }catch(e){
-            document.getElementById('ctData').innerHTML=`<p style="color:#555;">Erreur de chargement CT.</p>`;
-            document.getElementById('ctResults').classList.add('active');
-        }
-        document.getElementById('ctLoading').classList.remove('active');
-    }
-
-    // === VIRUSTOTAL ===
-    async function checkVirusTotal(){
-        const ip=document.getElementById('ipInput').value.trim();
-        if(!ip){showToast('Entrez une IP dans le champ IP d\'abord');return}
-        const apiKey=document.getElementById('vtApiKey').value.trim()||localStorage.getItem('vt_api_key')||'';
-        if(!apiKey){showToast('Cle API requise (gratuite sur virustotal.com)');return}
-        localStorage.setItem('vt_api_key',apiKey);
-        addHistory('VirusTotal',ip);
-        document.getElementById('vtLoading').classList.add('active');document.getElementById('vtResults').classList.remove('active');
-        try{
-            const r=await fetch(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`,{headers:{'x-apikey':apiKey}});
-            const d=await r.json();
-            if(!r.ok)throw new Error(d.error?.message||'Erreur API');
-            const attrs=d.data.attributes;
-            const stats=attrs.last_analysis_stats;
-            const malicious=stats.malicious||0;
-            const suspicious=stats.suspicious||0;
-            const harmless=stats.harmless||0;
-            const undetected=stats.undetected||0;
-            const total=malicious+suspicious+harmless+undetected;
-            const ratio=total>0?((malicious+suspicious)/total*100).toFixed(1):0;
-            const color=malicious>5?'badge-danger':malicious>0?'badge-warn':'badge-ok';
-            document.getElementById('vtData').innerHTML=`
-                <div class="result-item"><div class="label">IP</div><div class="value">${ip}</div></div>
-                <div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge ${color}">${malicious>0?'MALVEILLANT':'Propre'}</span></div></div>
-                <div class="result-item"><div class="label">Malveillants</div><div class="value" style="color:#ff6b6b;">${malicious} / ${total}</div></div>
-                <div class="result-item"><div class="label">Suspects</div><div class="value" style="color:#ffa500;">${suspicious} / ${total}</div></div>
-                <div class="result-item"><div class="label">Inoffensifs</div><div class="value">${harmless} / ${total}</div></div>
-                <div class="result-item"><div class="label">Ratio</div><div class="value"><span class="badge ${color}">${ratio}%</span></div></div>
-                <div class="result-item"><div class="label">AS Owner</div><div class="value">${attrs.as_owner||'N/A'}</div></div>
-                <div class="result-item"><div class="label">Pays</div><div class="value">${attrs.country||'N/A'}</div></div>
-                <div class="result-item"><div class="label">Reputation</div><div class="value">${attrs.reputation||'N/A'}</div></div>
-                <div class="result-item"><div class="label">Lien VT</div><div class="value"><a href="https://www.virustotal.com/gui/ip-address/${ip}" target="_blank" style="color:#00d4ff;">Voir sur VirusTotal &rarr;</a></div></div>`;
-            document.getElementById('vtResults').classList.add('active');
-        }catch(e){
-            document.getElementById('vtData').innerHTML=`<div class="result-item"><div class="label">Erreur</div><div class="value"><span class="badge badge-warn">${e.message||'Erreur API'}</span></div></div>
-            <div class="result-item"><div class="label">Aide</div><div class="value">Creez une cle gratuite sur <a href="https://www.virustotal.com/gui/my-apikey" target="_blank" style="color:#00d4ff;">virustotal.com</a></div></div>`;
-            document.getElementById('vtResults').classList.add('active');
-        }
-        document.getElementById('vtLoading').classList.remove('active');
-    }
-
-    // === URL DATA LOADER ===
-    window.onload=function(){
-        updateClocks();
-        const savedVT=localStorage.getItem('vt_api_key');if(savedVT)document.getElementById('vtApiKey').value=savedVT;
-        document.getElementById('logo').addEventListener('click',function(){
-            logoClicks++;clearTimeout(this._t);this._t=setTimeout(()=>logoClicks=0,1500);
-            if(logoClicks>=3){logoClicks=0;const b=document.getElementById('adminBtn');b.classList.toggle('visible');showToast(b.classList.contains('visible')?'Mode admin ON':'Mode admin OFF')}
-        });
-        updateReverseLinks();
-        const hash=location.hash.substring(1);
-        if(hash.startsWith('A:')){try{loadAdminView(JSON.parse(decompressURI(hash.substring(2))))}catch(e){}}
-        else if(hash.startsWith('I:')){try{const d=JSON.parse(decompressURI(hash.substring(2)));showSection('image',null,true);imgData=d;if(d.width){document.getElementById('imgDimensions').textContent=`${d.width} x ${d.height} px (${d.megapixels} MP)`;document.getElementById('imageResults').classList.add('active');renderImgGeneral();detectImgAI(d.name)}}catch(e){}}
-    };
+    // LOAD
+    window.onload=function(){updateClocks();const savedVT=localStorage.getItem('vt_api_key');if(savedVT)document.getElementById('vtApiKey').value=savedVT;updateReverseLinks();const hash=location.hash.substring(1);if(hash.startsWith('A:')){try{loadAdminView(JSON.parse(decompressURI(hash.substring(2))))}catch(e){}}else if(hash.startsWith('I:')){try{const d=JSON.parse(decompressURI(hash.substring(2)));showSection('image',null);imgData=d;if(d.width){document.getElementById('imgDimensions').textContent=`${d.width} x ${d.height} px (${d.megapixels} MP)`;document.getElementById('imageResults').classList.add('active');renderImgGeneral();detectImgAI(d.name)}}catch(e){}}};
     </script>
 </body>
 </html>
