@@ -622,19 +622,211 @@
         if(!nom&&!prenom&&!tel&&!email&&!nir&&!immat){showToast('Remplis au moins un champ');return}
         addHistory('Investigation',(prenom+' '+nom).trim()||tel||email||'');
         document.getElementById('invLoading').classList.add('active');document.getElementById('invResults').classList.remove('active');
+        const fn=(prenom+' '+nom).trim();
         let results=[];
-        if(email){try{const r=await fetch('https://haveibeenpwned.com/api/v3/breachedaccount/'+encodeURIComponent(email),{headers:{'hibp-api-key':'demo'}});if(r.status===200){const d=await r.json();results.push({type:'Email',status:'COMPROMIS',detail:`${d.length} fuite(s)`,color:'danger',data:d.map(x=>x.Name).join(', ')})}else results.push({type:'Email',status:'NON TROUVE',detail:'Aucune fuite',color:'ok'})}catch(e){results.push({type:'Email',status:'VERIFICATION',detail:'API non dispo',color:'warn'})}}
-        if(tel){const c=tel.replace(/[\s-]/g,'');let info='';if(c.startsWith('+33')||c.startsWith('0033'))info='France - '+(c.match(/^(?:\+33|0033)([67])/)?'Mobile':'Fixe');else if(c.startsWith('+262'))info='La Reunion';else if(c.startsWith('+590')||c.startsWith('+594')||c.startsWith('+596'))info='DOM-TOM';results.push({type:'Telephone',status:info?'IDENTIFIE':'FORMAT OK',detail:info||'International',color:info?'ok':'warn'})}
-        if(nir){if(/^[12]\d{13}$/.test(nir)){results.push({type:'NIR',status:'VALIDE',detail:`Sexe: ${nir.startsWith('1')?'Homme':'Femme'} | Dept: ${nir.substring(3,5)} | Nais: ~19${nir.substring(1,3)}`,color:'warn'})}else results.push({type:'NIR',status:'INVALIDE',detail:'Format incorrect',color:'danger'})}
-        if(immat){if(/^[A-Z]{2}[\s-]?\d{3}[\s-]?[A-Z]{2}$/.test(immat)||/^[\s-]?\d{1,4}[\s-]?[A-Z]{1,3}[\s-]?\d{1,2}$/.test(immat))results.push({type:'Immat',status:'FORMAT FR',detail:immat,color:'ok'});else results.push({type:'Immat',status:'INCONNU',detail:immat,color:'warn'})}
-        if(nom||prenom){const fn=(prenom+' '+nom).trim();results.push({type:'Identite',status:'RECHERCHE',detail:fn,color:'info',link:`https://www.google.com/search?q=%22${encodeURIComponent(fn)}%22`});if(ville)results.push({type:'Localisation',status:'RECHERCHE',detail:`${fn} a ${ville} ${cp||''}`,color:'info',link:`https://www.google.com/search?q=%22${encodeURIComponent(fn)}%22+%22${encodeURIComponent(ville)}%22`})}
-        if(cp&&/^\d{5}$/.test(cp))results.push({type:'CP',status:'VALIDE',detail:`Dept: ${cp.substring(0,2)} | ${cp} ${ville||''}`,color:'ok'});else if(cp)results.push({type:'CP',status:'INVALIDE',detail:'5 chiffres',color:'danger'});
-        let html='<div class="result-grid">';results.forEach(r=>{html+=`<div class="result-item"><div class="label">${r.type}</div><div class="value"><span class="badge badge-${r.color}">${r.status}</span><br><span style="color:#aaa;font-size:0.85em;">${r.detail}</span>${r.link?`<br><a href="${r.link}" target="_blank" style="color:#00d4ff;font-size:0.8em;">Google &rarr;</a>`:''}</div></div>`});html+='</div>';
+        let sections={};
+
+        // === 1. VALIDATION CHAMPS ===
+        if(nom||prenom)results.push({cat:'Identite',type:'Nom complet',detail:fn,color:'info'});
+        if(naissance){
+            const d=new Date(naissance),age=Math.floor((Date.now()-d.getTime())/(365.25*86400000));
+            results.push({cat:'Identite',type:'Date naissance',detail:`${d.toLocaleDateString('fr-FR')} (${age} ans)`,color:'info'});
+        }
+        if(tel){
+            const c=tel.replace(/[\s-]/g,'');let info='',typeL='',operateur='',regionTel='';
+            if(c.startsWith('+33')||c.startsWith('0033')){
+                const sp=c.startsWith('+33')?c.substring(3):c.substring(4);
+                info='France';typeL=sp.startsWith('06')||sp.startsWith('07')?'Mobile':sp.startsWith('01')||sp.startsWith('02')||sp.startsWith('03')||sp.startsWith('04')||sp.startsWith('05')?'Fixe':'Special';
+                const px=sp.substring(0,3);
+                if(['060','061','062','075','076'].includes(px))operateur='Orange';
+                else if(['063','064','069','073','074','079'].includes(px))operateur='SFR';
+                else if(['065','066','067','078'].includes(px))operateur='Bouygues Telecom';
+                else if(['062','068','070','071','072'].includes(px))operateur='Free Mobile';
+                const dept=sp.substring(0,2);
+                const R={'75':'Paris (75)','69':'Rhone / Lyon (69)','13':'Bouches-du-Rhone / Marseille (13)','31':'Haute-Garonne / Toulouse (31)','33':'Gironde / Bordeaux (33)','06':'Alpes-Maritimes / Nice (06)','59':'Nord / Lille (59)','67':'Bas-Rhin / Strasbourg (67)','34':'Herault / Montpellier (34)','44':'Loire-Atlantique / Nantes (44)','35':'Ille-et-Vilaine / Rennes (35)','38':'Isere / Grenoble (38)','21':'Cote-d\'Or / Dijon (21)','57':'Moselle / Metz (57)','76':'Seine-Maritime / Rouen (76)','62':'Pas-de-Calais (62)','54':'Meurthe-et-Moselle / Nancy (54)','37':'Indre-et-Loire / Tours (37)','87':'Haute-Vienne / Limoges (87)'};
+                regionTel=R[dept]||`Departement ${dept}`;
+            }else if(c.startsWith('+262')){info='La Reunion';regionTel='La Reunion (974)';typeL='Mobile/Fixe';operateur='Orange/SFR Reunion'}
+            else if(c.startsWith('+269')){info='Mayotte';regionTel='Mayotte (976)'}
+            else if(c.startsWith('0')&&c.length===10){info='France (sans +33)';typeL=c.startsWith('06')||c.startsWith('07')?'Mobile':'Fixe';regionTel='France'}
+            else{info='International'}
+            results.push({cat:'Telephone',type:'Pays',detail:info,color:'ok'});
+            if(regionTel)results.push({cat:'Telephone',type:'Region estimee',detail:regionTel,color:'info'});
+            if(typeL)results.push({cat:'Telephone',type:'Type de ligne',detail:typeL,color:'info'});
+            if(operateur)results.push({cat:'Telephone',type:'Operateur',detail:operateur,color:'info'});
+        }
+        if(nir){
+            if(/^[12]\d{13}$/.test(nir)){
+                const sexe=nir.startsWith('1')?'Homme':'Femme';
+                const deptNir=nir.substring(3,5);
+                const anNiss=nir.substring(1,3);
+                const anneeNiss=parseInt(anNiss)>50?'19'+anNiss:'20'+anNiss;
+                results.push({cat:'NIR',type:'NIR',detail:`Valide | Sexe: ${sexe} | Dept naissance: ${deptNir} | Nee en ~${anneeNiss}`,color:'warn'});
+            }else results.push({cat:'NIR',type:'NIR',detail:'Format invalide',color:'danger'});
+        }
+        if(immat){
+            const oldFR=/^[A-Z]{2}[\s-]?\d{3}[\s-]?[A-Z]{2}$/;
+            const newFR=/^\d{1,4}[\s-]?[A-Z]{1,3}[\s-]?\d{1,2}$/;
+            if(oldFR.test(immat))results.push({cat:'Immatriculation',type:'Plaque',detail:`Format ancien FR: ${immat}`,color:'ok'});
+            else if(newFR.test(immat))results.push({cat:'Immatriculation',type:'Plaque',detail:`Format nouveau FR: ${immat}`,color:'ok'});
+            else results.push({cat:'Immatriculation',type:'Plaque',detail:`Format non reconnu: ${immat}`,color:'warn'});
+        }
+        if(email){
+            const domain=email.split('@')[1]?.toLowerCase()||'';
+            const providers={'gmail.com':'Google Mail','yahoo.com':'Yahoo','hotmail.com':'Microsoft','outlook.com':'Microsoft','live.com':'Microsoft','orange.fr':'Orange','sfr.fr':'SFR','free.fr':'Free','laposte.net':'La Poste','icloud.com':'Apple','protonmail.com':'ProtonMail','proton.me':'ProtonMail','zoho.com':'Zoho','gmx.com':'GMX','web.de':'Web.de','aol.com':'AOL','mail.com':'Mail.com'};
+            const isDisposable=['guerrillamail.com','tempmail.com','yopmail.com','yopmail.fr','mailinator.com','maildrop.cc','10minutemail.com','temp-mail.org','trashmail.com','getnada.com','mohmal.com'].includes(domain);
+            const isPro=domain.endsWith('.gouv.fr')||domain.endsWith('.fr')||domain.endsWith('.com')&&['societe.com','pappers.fr'].includes(domain);
+            const provider=providers[domain]||domain;
+            results.push({cat:'Email',type:'Domaine',detail:provider,color:isPro?'ok':'info'});
+            if(isDisposable)results.push({cat:'Email',type:'Email jetable',detail:'OUI - pas fiable',color:'danger'});
+        }
+        if(cp&&/^\d{5}$/.test(cp)){
+            const deptCp=cp.substring(0,2);
+            results.push({cat:'Localisation',type:'Code postal',detail:`CP ${cp} - Dept ${deptCp}`,color:'ok'});
+        }else if(cp)results.push({cat:'Localisation',type:'Code postal',detail:'Format invalide (5 chiffres)',color:'danger'});
+        if(adresse)results.push({cat:'Localisation',type:'Adresse',detail:adresse,color:'info'});
+        if(ville)results.push({cat:'Localisation',type:'Ville',detail:ville,color:'info'});
+
+        // === 2. CROISEMENT telephone vs ville ===
+        if(tel&&ville){
+            const c=tel.replace(/[\s-]/g,'');
+            if(c.startsWith('+33')||c.startsWith('0033')||c.startsWith('0')){
+                const num=c.startsWith('+33')?c.substring(3):c.startsWith('0033')?c.substring(4):c;
+                const dept=num.substring(0,2);
+                const villesDept={'75':'Paris','69':'Lyon','13':'Marseille','31':'Toulouse','33':'Bordeaux','06':'Nice','59':'Lille','67':'Strasbourg','34':'Montpellier','44':'Nantes','35':'Rennes','38':'Grenoble','37':'Tours'};
+                const expectedCity=villesDept[dept];
+                if(expectedCity&&ville.toLowerCase().includes(expectedCity.toLowerCase())){
+                    results.push({cat:'Croisement',type:'Tel vs Ville',detail:`COHERENT - Dept ${dept} = zone ${expectedCity}`,color:'ok'});
+                }else if(expectedCity){
+                    results.push({cat:'Croisement',type:'Tel vs Ville',detail:`INCOHERENT - Dept ${dept} = zone ${expectedCity}, mais ville declaree: ${ville}`,color:'warn'});
+                }
+            }
+        }
+
+        // === 3. CROISEMENT NIR vs ville ===
+        if(nir&&/^[12]\d{13}$/.test(nir)&&ville){
+            const deptNir=nir.substring(3,5);
+            results.push({cat:'Croisement',type:'NIR vs Ville',detail:`Dept naissance NIR: ${deptNir} vs ville declaree: ${ville}`,color:'info'});
+        }
+
+        // === 4. API ANNUAIRE ENTREPRISES ===
+        let entreprises=[];
+        if(nom||prenom){
+            try{
+                const q=[prenom,nom].filter(Boolean).join('+');
+                const r=await fetch(`https://recherche-entreprises.api.gouv.fr/search?q=${encodeURIComponent(q)}&per_page=10`);
+                const d=await r.json();
+                if(d.results&&d.results.length){
+                    entreprises=d.results;
+                    let eHtml=`<div style="margin-bottom:8px;"><span class="badge badge-info">${entreprises.length} entreprise(s) trouvee(s)</span></div>`;
+                    entreprises.forEach(e=>{
+                        const siege=e.siege||{};
+                        eHtml+=`<div class="result-item" style="margin-bottom:6px;">
+                            <div class="label">Entreprise</div>
+                            <div class="value"><strong style="color:#fff;">${e.nom_complet||e.nom||'?'}</strong>
+                            <br><span style="color:#aaa;font-size:0.8em;">SIREN: ${e.siren||'?'} | ${e.nature_juridique||''} | Active: ${e.etat_administratif==='A'?'Oui':'Non'}</span>
+                            <br><span style="color:#aaa;font-size:0.8em;">Siege: ${siege.adresse||''} ${siege.code_postal||''} ${siege.ville||''}</span>
+                            <br><span style="color:#aaa;font-size:0.8em;">Activite: ${e.activite_principale||''} - Date creation: ${e.date_creation||'?'}</span>
+                            <br><a href="https://www.societe.com/societe/${(e.nom_complet||'').toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${e.siren||''}.html" target="_blank" style="color:#00d4ff;font-size:0.8em;">Societe.com &rarr;</a>
+                            <a href="https://www.pappers.fr/entreprise/${e.siren||''}" target="_blank" style="color:#00d4ff;font-size:0.8em;margin-left:10px;">Pappers &rarr;</a>
+                            <a href="https://annuaire-entreprises.data.gouv.fr/entreprise/${e.siren||''}" target="_blank" style="color:#00d4ff;font-size:0.8em;margin-left:10px;">data.gouv.fr &rarr;</a>
+                            </div></div>`;
+                    });
+                    sections['entreprises']=eHtml;
+                }
+            }catch(e){}
+        }
+
+        // === 5. API GEO - COMMUNE ===
+        if(cp&&/^\d{5}$/.test(cp)){
+            try{
+                const r=await fetch(`https://geo.api.gouv.fr/communes?codePostal=${cp}&fields=nom,codeDepartement,codeRegion,population,departement,region,centre&limit=5`);
+                const communes=await r.json();
+                if(communes.length){
+                    let gHtml=`<div style="margin-bottom:8px;"><span class="badge badge-info">${communes.length} commune(s) pour CP ${cp}</span></div>`;
+                    communes.forEach(c=>{
+                        gHtml+=`<div class="result-item" style="margin-bottom:6px;">
+                            <div class="label">Commune</div>
+                            <div class="value"><strong style="color:#fff;">${c.nom}</strong>
+                            <br><span style="color:#aaa;font-size:0.8em;">Dept: ${c.departement?.nom||'?'} (${c.codeDepartement}) | Region: ${c.region?.nom||'?'}</span>
+                            <br><span style="color:#aaa;font-size:0.8em;">Population: ${c.population?c.population.toLocaleString('fr-FR'):'?'}</span>
+                            ${c.centre?`<br><span style="color:#aaa;font-size:0.8em;">GPS: ${c.centre.coordinates[1].toFixed(4)}, ${c.centre.coordinates[0].toFixed(4)}</span>`:''}
+                            </div></div>`;
+                    });
+                    sections['geo']=gHtml;
+                }
+            }catch(e){}
+        }
+
+        // === 6. RECHERCHE WEB DETAILLEE ===
+        if(fn){
+            const sq=encodeURIComponent(`"${fn}"`);
+            const sqv=ville?encodeURIComponent(`"${fn}" "${ville}"`):'';
+            let searchHtml=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-top:8px;">`;
+            searchHtml+=`<a href="https://www.google.com/search?q=${sq}" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128269; Google</a>`;
+            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:linkedin.com%2Fin" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128279; LinkedIn</a>`;
+            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:facebook.com" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128101; Facebook</a>`;
+            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:instagram.com" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128248; Instagram</a>`;
+            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:twitter.com+OR+site:x.com" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128038; Twitter/X</a>`;
+            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:pagesjaunes.fr" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128205; PagesJaunes</a>`;
+            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:societe.com" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128188; Societe.com</a>`;
+            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:pappers.fr" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128220; Pappers</a>`;
+            searchHtml+=`<a href="https://www.google.com/search?q=${sq}+site:verif.com" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128202; Verif.com</a>`;
+            if(sqv){searchHtml+=`<a href="https://www.google.com/search?q=${sqv}" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#127757; Google + Ville</a>`}
+            if(email){searchHtml+=`<a href="https://www.google.com/search?q=${encodeURIComponent(email)}" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128231; Google Email</a>`}
+            if(tel){searchHtml+=`<a href="https://www.google.com/search?q=%22${encodeURIComponent(tel)}%22" target="_blank" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;font-size:0.8em;">&#128241; Google Tel</a>`}
+            searchHtml+=`</div>`;
+            sections['search']=searchHtml;
+        }
+
+        // === RENDU FINAL ===
+        let html='';
+
+        // Section identite
+        const idResults=results.filter(r=>r.cat==='Identite'||r.cat==='Email'||r.cat==='Telephone'||r.cat==='NIR'||r.cat==='Immatriculation');
+        if(idResults.length){
+            html+=`<div style="margin-bottom:20px;"><h3 style="color:#00d4ff;font-size:1em;margin-bottom:10px;">&#128100; Identite & Filtres</h3><div class="result-grid">`;
+            idResults.forEach(r=>{html+=`<div class="result-item"><div class="label">${r.type}</div><div class="value"><span class="badge badge-${r.color}">${r.detail}</span></div></div>`});
+            html+=`</div></div>`;
+        }
+
+        // Section localisation
+        const locResults=results.filter(r=>r.cat==='Localisation');
+        if(locResults.length){
+            html+=`<div style="margin-bottom:20px;"><h3 style="color:#00d4ff;font-size:1em;margin-bottom:10px;">&#128205; Localisation</h3><div class="result-grid">`;
+            locResults.forEach(r=>{html+=`<div class="result-item"><div class="label">${r.type}</div><div class="value"><span class="badge badge-${r.color}">${r.detail}</span></div></div>`});
+            html+=`</div></div>`;
+        }
+
+        // Section croisement
+        const croisResults=results.filter(r=>r.cat==='Croisement');
+        if(croisResults.length){
+            html+=`<div style="margin-bottom:20px;"><h3 style="color:#00d4ff;font-size:1em;margin-bottom:10px;">&#128279; Croisement donnees</h3><div class="result-grid">`;
+            croisResults.forEach(r=>{html+=`<div class="result-item"><div class="label">${r.type}</div><div class="value"><span class="badge badge-${r.color}">${r.detail}</span></div></div>`});
+            html+=`</div></div>`;
+        }
+
+        // Section entreprises
+        if(sections['entreprises']){
+            html+=`<div style="margin-bottom:20px;"><h3 style="color:#00d4ff;font-size:1em;margin-bottom:10px;">&#128188; Entreprises (API gouvernementale)</h3>${sections['entreprises']}</div>`;
+        }
+
+        // Section geo
+        if(sections['geo']){
+            html+=`<div style="margin-bottom:20px;"><h3 style="color:#00d4ff;font-size:1em;margin-bottom:10px;">&#127757; Geolocalisation CP (API gouvernementale)</h3>${sections['geo']}</div>`;
+        }
+
+        // Section recherche web
+        if(sections['search']){
+            html+=`<div style="margin-bottom:20px;"><h3 style="color:#00d4ff;font-size:1em;margin-bottom:10px;">&#128269; Recherche web</h3>${sections['search']}</div>`;
+        }
+
+        // Score
         const dc=results.filter(r=>r.color==='danger').length,wc=results.filter(r=>r.color==='warn').length;
-        let sc='<div style="margin-top:20px;padding:15px;background:rgba(0,0,0,0.3);border-radius:12px;"><h3 style="color:#00ff88;margin-bottom:8px;">Score de risque</h3>';
-        sc+=dc>0?`<span class="badge badge-danger" style="font-size:1em;">ELEVE - ${dc} critique(s)</span>`:wc>0?`<span class="badge badge-warn" style="font-size:1em;">MODERE - ${wc} a surveiller</span>`:`<span class="badge badge-ok" style="font-size:1em;">FAIBLE</span>`;
-        sc+='</div>';
-        document.getElementById('invResultsContent').innerHTML=html+sc;
+        html+=`<div style="padding:15px;background:rgba(0,0,0,0.3);border-radius:12px;"><h3 style="color:#00ff88;margin-bottom:8px;">Score de risque</h3>`;
+        html+=dc>0?`<span class="badge badge-danger" style="font-size:1em;">ELEVE - ${dc} element(s) critique(s)</span>`:wc>0?`<span class="badge badge-warn" style="font-size:1em;">MODERE - ${wc} element(s) a surveiller</span>`:`<span class="badge badge-ok" style="font-size:1em;">FAIBLE - Aucun element critique</span>`;
+        html+=`</div>`;
+
+        document.getElementById('invResultsContent').innerHTML=html;
         document.getElementById('invResults').classList.add('active');
         document.getElementById('invLoading').classList.remove('active');
     }
