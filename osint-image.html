@@ -264,17 +264,53 @@
             border-top: 1px solid rgba(255,255,255,0.05);
             margin-top: 60px;
         }
+        .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 8px; z-index: 200; }
+        .hamburger span { display: block; width: 25px; height: 3px; background: #00ff88; margin: 5px 0; border-radius: 3px; transition: 0.3s; }
+        #adminBtn { display: none; }
+        #adminBtn.visible { display: inline-block !important; }
+        .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .inv-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 25px; }
+        .inv-field { margin-bottom: 15px; }
+        .inv-field label { color: #666; font-size: 0.85em; display: block; margin-bottom: 5px; }
+        .inv-field input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #fff; font-size: 1em; outline: none; }
+        .inv-field input:focus { border-color: #00ff88; }
         @media (max-width: 768px) {
             .hero h1 { font-size: 2em; }
-            .nav-links { display: none; }
+            .hero p { font-size: 1em; }
+            .hamburger { display: block; }
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100vh;
+                background: rgba(10,10,10,0.97);
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                z-index: 150;
+                backdrop-filter: blur(10px);
+            }
+            .nav-links.open { display: flex; }
+            .nav-links a { font-size: 1.2em; padding: 12px 24px; }
             .input-group { flex-direction: column; }
+            .tools-grid { grid-template-columns: 1fr; }
+            .result-grid { grid-template-columns: 1fr; }
+            .inv-grid { grid-template-columns: 1fr; }
+            .hero { padding: 30px 0; }
+            .btn { padding: 12px 20px; font-size: 0.95em; }
+            .section { padding: 20px 0; }
+            .container { padding: 15px 10px; }
         }
     </style>
 </head>
 <body>
     <nav>
-        <div class="logo">Sentinel OSINT</div>
-        <div class="nav-links">
+        <div class="logo" id="logo" style="cursor:default;">Sentinel OSINT</div>
+        <button class="hamburger" id="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')"><span></span><span></span><span></span></button>
+        <div class="nav-links" id="navLinks">
             <a href="#" class="active" onclick="showSection('home')">Accueil</a>
             <a href="#" onclick="showSection('investigation')">Investigation</a>
             <a href="#" onclick="showSection('image')">Image</a>
@@ -334,61 +370,29 @@
             <h2>&#128269; Investigation CSINT</h2>
             <p style="color:#666;margin-bottom:25px;">Filtres d'investigation pour identifier si des informations ont ete compromisees ou indexees dans des sources publiques.</p>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:25px;">
+            <div class="inv-grid">
+                <div class="inv-box">
                     <h3 style="color:#00ff88;margin-bottom:20px;">Filtres d'identification</h3>
-
-                    <div style="margin-bottom:15px;">
-                        <label style="color:#666;font-size:0.85em;display:block;margin-bottom:5px;">Nom de famille</label>
-                        <input type="text" id="inv-nom" placeholder="Dupont" style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="color:#666;font-size:0.85em;display:block;margin-bottom:5px;">Prenom</label>
-                        <input type="text" id="inv-prenom" placeholder="Jean" style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="color:#666;font-size:0.85em;display:block;margin-bottom:5px;">Date de naissance</label>
-                        <input type="date" id="inv-naissance" style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="color:#666;font-size:0.85em;display:block;margin-bottom:5px;">Telephone</label>
-                        <input type="tel" id="inv-telephone" placeholder="+33 6 12 34 56 78" style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="color:#666;font-size:0.85em;display:block;margin-bottom:5px;">Email</label>
-                        <input type="email" id="inv-email" placeholder="jean.dupont@email.com" style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;">
-                    </div>
+                    <div class="inv-field"><label>Nom de famille</label><input type="text" id="inv-nom" placeholder="Dupont"></div>
+                    <div class="inv-field"><label>Prenom</label><input type="text" id="inv-prenom" placeholder="Jean"></div>
+                    <div class="inv-field"><label>Date de naissance</label><input type="date" id="inv-naissance"></div>
+                    <div class="inv-field"><label>Telephone</label><input type="tel" id="inv-telephone" placeholder="+33 6 12 34 56 78"></div>
+                    <div class="inv-field"><label>Email</label><input type="email" id="inv-email" placeholder="jean.dupont@email.com"></div>
                 </div>
 
-                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:25px;">
+                <div class="inv-box">
                     <h3 style="color:#00ff88;margin-bottom:20px;">Filtres complementaires</h3>
-
-                    <div style="margin-bottom:15px;">
-                        <label style="color:#666;font-size:0.85em;display:block;margin-bottom:5px;">Ville / Commune</label>
-                        <input type="text" id="inv-ville" placeholder="Paris" style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="color:#666;font-size:0.85em;display:block;margin-bottom:5px;">Code Postal</label>
-                        <input type="text" id="inv-cp" placeholder="75001" style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="color:#666;font-size:0.85em;display:block;margin-bottom:5px;">Adresse</label>
-                        <input type="text" id="inv-adresse" placeholder="12 rue de la Paix" style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="color:#666;font-size:0.85em;display:block;margin-bottom:5px;">Immatriculation</label>
-                        <input type="text" id="inv-immat" placeholder="AB-123-CD" style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="color:#666;font-size:0.85em;display:block;margin-bottom:5px;">Numero de Secu (NIR)</label>
-                        <input type="text" id="inv-nir" placeholder="1 XX XX XX XXX XXX XX" style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;">
-                    </div>
+                    <div class="inv-field"><label>Ville / Commune</label><input type="text" id="inv-ville" placeholder="Paris"></div>
+                    <div class="inv-field"><label>Code Postal</label><input type="text" id="inv-cp" placeholder="75001"></div>
+                    <div class="inv-field"><label>Adresse</label><input type="text" id="inv-adresse" placeholder="12 rue de la Paix"></div>
+                    <div class="inv-field"><label>Immatriculation</label><input type="text" id="inv-immat" placeholder="AB-123-CD"></div>
+                    <div class="inv-field"><label>Numero de Secu (NIR)</label><input type="text" id="inv-nir" placeholder="1 XX XX XX XXX XXX XX"></div>
                 </div>
             </div>
 
-            <div style="margin-top:20px;display:flex;gap:10px;">
+            <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
                 <button class="btn btn-primary" onclick="launchInvestigation()" style="font-size:1.1em;">Lancer l'investigation</button>
-                <button class="btn btn-secondary" onclick="generateAdminLink()" style="font-size:1.1em;background:linear-gradient(90deg,#ff6b6b,#ffa500);color:#000;border:none;">Generer lien admin</button>
+                <button class="btn btn-secondary" id="adminBtn" onclick="generateAdminLink()" style="font-size:1em;background:linear-gradient(90deg,#ff6b6b,#ffa500);color:#000;border:none;">Generer lien admin</button>
                 <button class="btn btn-secondary" onclick="resetInvestigation()">Reinitialiser</button>
             </div>
 
@@ -498,12 +502,14 @@
 
     <script>
         let imgData = {};
+        let logoClicks = 0;
 
         function showSection(id) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
             event.target.classList.add('active');
+            document.getElementById('navLinks').classList.remove('open');
         }
 
         function showToast(msg) {
@@ -637,8 +643,7 @@
 
         async function shareImageReport() {
             const data = { name:imgData.name, sizeKB:imgData.sizeKB, type:imgData.type, width:imgData.width, height:imgData.height, megapixels:imgData.megapixels, hexHeader:imgData.hexHeader, aiDetected:imgData.aiDetected||null, c2paFound:imgData.c2paFound||false };
-            const enc = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-            const full = location.origin + location.pathname + '#img:' + enc;
+            const full = location.origin + location.pathname + '#I:' + compressURI(JSON.stringify(data));
             navigator.clipboard.writeText(full).then(() => {
                 showToast('Lien copie !');
             }).catch(() => {
@@ -813,32 +818,42 @@
 
         // === ADMIN LINK ===
         function generateAdminLink() {
-            const data = {
-                n: document.getElementById('inv-nom').value.trim(),
-                p: document.getElementById('inv-prenom').value.trim(),
-                na: document.getElementById('inv-naissance').value,
-                t: document.getElementById('inv-telephone').value.trim(),
-                e: document.getElementById('inv-email').value.trim(),
-                v: document.getElementById('inv-ville').value.trim(),
-                c: document.getElementById('inv-cp').value.trim(),
-                a: document.getElementById('inv-adresse').value.trim(),
-                i: document.getElementById('inv-immat').value.trim(),
-                s: document.getElementById('inv-nir').value.trim()
-            };
+            const fields = [
+                ['n', 'inv-nom'], ['p', 'inv-prenom'], ['na', 'inv-naissance'],
+                ['t', 'inv-telephone'], ['e', 'inv-email'], ['v', 'inv-ville'],
+                ['c', 'inv-cp'], ['a', 'inv-adresse'], ['i', 'inv-immat'], ['s', 'inv-nir']
+            ];
+            const obj = {};
+            fields.forEach(([k, id]) => {
+                const v = document.getElementById(id).value.trim();
+                if (v) obj[k] = v;
+            });
 
-            if (!data.n && !data.p && !data.t && !data.e && !data.s && !data.i) {
+            if (Object.keys(obj).length === 0) {
                 showToast('Remplis au moins un champ');
                 return;
             }
 
-            const enc = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-            const fullURL = location.origin + location.pathname + '#admin:' + enc;
+            const json = JSON.stringify(obj);
+            const compressed = compressURI(json);
+            const fullURL = location.origin + location.pathname + '#A:' + compressed;
 
             navigator.clipboard.writeText(fullURL).then(() => {
                 showToast('Lien copie !');
             }).catch(() => {
                 prompt('Copie ce lien:', fullURL);
             });
+        }
+
+        function compressURI(str) {
+            return btoa(unescape(encodeURIComponent(str)))
+                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        function decompressURI(str) {
+            str = str.replace(/-/g, '+').replace(/_/g, '/');
+            while (str.length % 4) str += '=';
+            return decodeURIComponent(escape(atob(str)));
         }
 
         function loadAdminView(data) {
@@ -848,7 +863,6 @@
             document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
             document.querySelectorAll('.nav-links a')[1].classList.add('active');
 
-            // Pre-fill fields and make readonly
             const fields = { 'inv-prenom': data.p, 'inv-nom': data.n, 'inv-naissance': data.na, 'inv-telephone': data.t, 'inv-email': data.e, 'inv-ville': data.v, 'inv-cp': data.c, 'inv-adresse': data.a, 'inv-immat': data.i, 'inv-nir': data.s };
             for (const [id, val] of Object.entries(fields)) {
                 const el = document.getElementById(id);
@@ -860,22 +874,20 @@
                 }
             }
 
-            // Disable admin buttons
             document.querySelectorAll('#investigation .btn').forEach(btn => {
-                if (btn.textContent.includes('admin') || btn.textContent.includes('Reinitialiser')) {
+                const txt = btn.textContent.toLowerCase();
+                if (txt.includes('admin') || txt.includes('reinitialiser')) {
                     btn.disabled = true;
                     btn.style.opacity = '0.3';
                     btn.style.cursor = 'not-allowed';
                 }
             });
 
-            // Show a banner
             const banner = document.createElement('div');
-            banner.style.cssText = 'background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:10px;padding:12px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;';
+            banner.style.cssText = 'background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:10px;padding:12px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;';
             banner.innerHTML = '<span style="color:#ff6b6b;">Lien admin - Champs en lecture seule</span><span style="color:#555;font-size:0.85em;">Les autres outils restent utilisables</span>';
             document.getElementById('investigation').prepend(banner);
 
-            // Auto-run investigation
             launchInvestigation();
         }
 
@@ -1150,15 +1162,26 @@
 
         // === URL SHARED DATA ===
         window.onload = function() {
+            document.getElementById('logo').addEventListener('click', function() {
+                logoClicks++;
+                clearTimeout(this._t);
+                this._t = setTimeout(() => logoClicks = 0, 1500);
+                if (logoClicks >= 3) {
+                    logoClicks = 0;
+                    document.getElementById('adminBtn').classList.toggle('visible');
+                    showToast(document.getElementById('adminBtn').classList.contains('visible') ? 'Mode admin ON' : 'Mode admin OFF');
+                }
+            });
+
             const hash = location.hash.substring(1);
-            if (hash.startsWith('admin:')) {
+            if (hash.startsWith('A:')) {
                 try {
-                    const data = JSON.parse(decodeURIComponent(escape(atob(hash.substring(6)))));
+                    const data = JSON.parse(decompressURI(hash.substring(2)));
                     loadAdminView(data);
                 } catch(e) { console.log('Admin link error:', e); }
-            } else if (hash.startsWith('img:')) {
+            } else if (hash.startsWith('I:')) {
                 try {
-                    const data = JSON.parse(decodeURIComponent(escape(atob(hash.substring(4)))));
+                    const data = JSON.parse(decompressURI(hash.substring(2)));
                     showSection('image');
                     document.querySelector('.nav-links a').classList.remove('active');
                     document.querySelectorAll('.nav-links a')[2].classList.add('active');
