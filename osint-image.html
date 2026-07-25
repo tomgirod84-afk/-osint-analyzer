@@ -651,8 +651,7 @@ ${currentData.c2paFound ? 'Signature C2PA presente' : 'Pas de C2PA'}
             URL.revokeObjectURL(url);
         }
 
-        function shareReport() {
-            // Create shareable data (without raw buffer)
+        async function shareReport() {
             const shareData = {
                 name: currentData.name || '',
                 size: currentData.size || 0,
@@ -671,18 +670,40 @@ ${currentData.c2paFound ? 'Signature C2PA presente' : 'Pas de C2PA'}
                 c2paDetails: currentData.c2paDetails || null
             };
 
-            // Encode in base64 with proper encoding
             const jsonStr = JSON.stringify(shareData);
             const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
-            const shareURL = window.location.origin + window.location.pathname + '#' + encoded;
+            const fullURL = window.location.origin + window.location.pathname + '#' + encoded;
 
-            // Copy to clipboard
-            navigator.clipboard.writeText(shareURL).then(() => {
-                showToastCustom('Lien copie ! Envoie-le a la personne');
-            }).catch(() => {
-                // Fallback
-                prompt('Copie ce lien:', shareURL);
-            });
+            // Try to shorten with TinyURL
+            try {
+                const resp = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(fullURL));
+                if (resp.ok) {
+                    const shortURL = await resp.text();
+                    showShareModal(shortURL, fullURL);
+                    return;
+                }
+            } catch(e) {}
+
+            // Fallback: show long URL
+            showShareModal(fullURL, null);
+        }
+
+        function showShareModal(shortURL, longURL) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999;';
+            modal.innerHTML = `
+                <div style="background:#1a1a2e;border-radius:20px;padding:40px;max-width:500px;width:90%;border:1px solid rgba(0,255,136,0.3);text-align:center;">
+                    <h2 style="color:#00ff88;margin-bottom:20px;">Lien de partage</h2>
+                    <p style="color:#aaa;margin-bottom:20px;">Envoie ce lien a la personne - elle verra le rapport OSINT</p>
+                    <input type="text" value="${shortURL}" readonly style="width:100%;padding:15px;border-radius:10px;border:1px solid #444;background:#0a0a0a;color:#00ff88;font-size:1.1em;text-align:center;margin-bottom:15px;" onclick="this.select()">
+                    <div style="display:flex;gap:10px;justify-content:center;">
+                        <button onclick="navigator.clipboard.writeText('${shortURL}');this.textContent='Copie !';setTimeout(()=>this.textContent='Copier',1500)" style="padding:12px 30px;border-radius:10px;border:none;background:linear-gradient(90deg,#00ff88,#00d4ff);color:#000;font-weight:bold;cursor:pointer;font-size:1em;">Copier</button>
+                        <button onclick="this.closest('div').parentElement.parentElement.remove()" style="padding:12px 30px;border-radius:10px;border:1px solid #444;background:transparent;color:#aaa;cursor:pointer;font-size:1em;">Fermer</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
         }
 
         function downloadReport() {
