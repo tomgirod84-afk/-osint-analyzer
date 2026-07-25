@@ -844,25 +844,32 @@
         }
 
         function loadAdminView(data) {
-            // Show everything, just switch to investigation and auto-fill
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById('investigation').classList.add('active');
 
-            // Update nav active
             document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
             document.querySelectorAll('.nav-links a')[1].classList.add('active');
 
-            // Pre-fill fields
-            if (data.p) document.getElementById('inv-prenom').value = data.p;
-            if (data.n) document.getElementById('inv-nom').value = data.n;
-            if (data.na) document.getElementById('inv-naissance').value = data.na;
-            if (data.t) document.getElementById('inv-telephone').value = data.t;
-            if (data.e) document.getElementById('inv-email').value = data.e;
-            if (data.v) document.getElementById('inv-ville').value = data.v;
-            if (data.c) document.getElementById('inv-cp').value = data.c;
-            if (data.a) document.getElementById('inv-adresse').value = data.a;
-            if (data.i) document.getElementById('inv-immat').value = data.i;
-            if (data.s) document.getElementById('inv-nir').value = data.s;
+            // Pre-fill fields and make readonly
+            const fields = { 'inv-prenom': data.p, 'inv-nom': data.n, 'inv-naissance': data.na, 'inv-telephone': data.t, 'inv-email': data.e, 'inv-ville': data.v, 'inv-cp': data.c, 'inv-adresse': data.a, 'inv-immat': data.i, 'inv-nir': data.s };
+            for (const [id, val] of Object.entries(fields)) {
+                const el = document.getElementById(id);
+                if (el && val) {
+                    el.value = val;
+                    el.readOnly = true;
+                    el.style.opacity = '0.7';
+                    el.style.cursor = 'not-allowed';
+                }
+            }
+
+            // Disable admin buttons
+            document.querySelectorAll('#investigation .btn').forEach(btn => {
+                if (btn.textContent.includes('admin') || btn.textContent.includes('Reinitialiser')) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.3';
+                    btn.style.cursor = 'not-allowed';
+                }
+            });
 
             // Auto-run investigation
             launchInvestigation();
