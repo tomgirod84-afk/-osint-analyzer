@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberLearn - Comprendre la Cybersecurite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#080b12;--bg2:#0d1117;--bg3:#161b22;--bg4:#1c2333;--border:#21262d;--border2:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#484f58;--accent:#00ff88;--accent2:#00d4ff;--danger:#ff6b6b;--warn:#ffa500;--purple:#a371f7;--card:rgba(22,27,34,0.8)}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;line-height:1.6}
+        ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+        nav{background:rgba(8,11,18,0.9);border-bottom:1px solid var(--border);padding:0 30px;display:flex;align-items:center;height:60px;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
+        .logo{font-size:1.3em;font-weight:800;color:#fff;letter-spacing:3px;cursor:pointer;display:flex;align-items:center;gap:10px}
+        .logo span{background:var(--accent);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        .nav-links{display:flex;gap:2px;margin-left:30px;overflow-x:auto;scrollbar-width:none}
+        .nav-links::-webkit-scrollbar{display:none}
+        .nav-links a{color:var(--text2);text-decoration:none;padding:8px 14px;border-radius:6px;transition:all 0.2s;font-size:0.82em;font-weight:500;white-space:nowrap}
+        .nav-links a:hover{color:var(--text);background:rgba(255,255,255,0.05)}
+        .nav-links a.active{color:var(--accent);background:rgba(0,255,136,0.08)}
+        .container{max-width:1100px;margin:0 auto;padding:30px 25px}
+        .hero{text-align:center;padding:80px 0 50px;position:relative}
+        .hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(0,255,136,0.03) 0%,transparent 70%);pointer-events:none}
+        .hero h1{font-size:3.5em;font-weight:900;color:#fff;margin-bottom:10px;letter-spacing:-1px}
+        .hero h1 span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .hero p{color:var(--text2);font-size:1.1em;font-weight:300;max-width:700px;margin:0 auto}
+        .section{display:none;padding:30px 0}.section.active{display:block}
+        .section-header{margin-bottom:30px}
+        .section-header h2{font-size:1.8em;color:#fff;font-weight:800;display:flex;align-items:center;gap:12px}
+        .section-header p{color:var(--text2);font-size:0.95em;margin-top:8px;max-width:800px}
+        .card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:16px;transition:all 0.3s}
+        .card:hover{border-color:rgba(0,255,136,0.3);box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+        .card h3{color:#fff;font-size:1.1em;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+        .card p,.card li{color:var(--text2);font-size:0.9em;line-height:1.7}
+        .card ul{padding-left:20px;margin-top:8px}
+        .card li{margin-bottom:6px}
+        .card code{background:var(--bg);padding:2px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:0.85em;color:var(--accent2)}
+        .badge{display:inline-block;padding:3px 10px;border-radius:8px;font-size:0.7em;font-weight:700;letter-spacing:0.5px}
+        .badge-danger{background:rgba(255,107,107,0.15);color:var(--danger);border:1px solid rgba(255,107,107,0.2)}
+        .badge-warn{background:rgba(255,165,0,0.15);color:var(--warn);border:1px solid rgba(255,165,0,0.2)}
+        .badge-ok{background:rgba(0,255,136,0.15);color:var(--accent);border:1px solid rgba(0,255,136,0.2)}
+        .badge-info{background:rgba(0,212,255,0.15);color:var(--accent2);border:1px solid rgba(0,212,255,0.2)}
+        .badge-purple{background:rgba(163,113,247,0.15);color:var(--purple);border:1px solid rgba(163,113,247,0.2)}
+        .grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+        .grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+        .step{display:flex;gap:16px;margin-bottom:20px;padding:20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px}
+        .step-num{width:40px;height:40px;min-width:40px;background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:800;font-size:1.1em}
+        .step-content h4{color:#fff;font-weight:600;margin-bottom:4px}
+        .step-content p{color:var(--text2);font-size:0.88em}
+        .warning-box{background:rgba(255,107,107,0.05);border:1px solid rgba(255,107,107,0.2);border-radius:12px;padding:16px 20px;margin-bottom:20px}
+        .warning-box h4{color:var(--danger);font-weight:700;margin-bottom:6px;font-size:0.95em}
+        .warning-box p{color:var(--text2);font-size:0.85em}
+        .tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:20px}
+        .tool-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;transition:all 0.2s}
+        .tool-item:hover{border-color:var(--accent);transform:translateY(-2px)}
+        .tool-item .icon{font-size:2em;margin-bottom:8px}
+        .tool-item h4{color:#fff;font-size:0.95em;font-weight:600;margin-bottom:4px}
+        .tool-item p{color:var(--text3);font-size:0.78em}
+        .type-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:15px}
+        .type-item{padding:16px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;text-align:center}
+        .type-item .icon{font-size:2.2em;margin-bottom:8px}
+        .type-item h4{color:#fff;font-size:0.9em;margin-bottom:4px}
+        .type-item p{color:var(--text3);font-size:0.78em}
+        .footer{border-top:1px solid var(--border);padding:30px;text-align:center;margin-top:60px}
+        .footer p{color:var(--text3);font-size:0.8em}
+        .footer a{color:var(--accent2);text-decoration:none}
+        @media(max-width:768px){.hero h1{font-size:2.2em}.nav-links{display:none;position:fixed;top:60px;left:0;width:100%;background:rgba(8,11,18,0.98);flex-direction:column;padding:20px;gap:4px;z-index:150}.nav-links.open{display:flex}.grid-2,.grid-3{grid-template-columns:1fr}.container{padding:15px 10px}}
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="logo" onclick="showSection('home',this)"><span class="logo-dot"></span><span>CYBER</span>LEARN</div>
+        <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')" style="display:none;background:none;border:none;color:var(--text);font-size:1.5em;cursor:pointer">&#9776;</button>
+        <div class="nav-links" id="navLinks">
+            <a href="#" class="active" onclick="showSection('home',this)">Accueil</a>
+            <a href="#" onclick="showSection('hackers',this)">Hackers</a>
+            <a href="#" onclick="showSection('doxxing',this)">Doxxing</a>
+            <a href="#" onclick="showSection('phishing',this)">Phishing</a>
+            <a href="#" onclick="showSection('malware',this)">Malware</a>
+            <a href="#" onclick="showSection('cryptojacking',this)">Cryptojacking</a>
+            <a href="#" onclick="showSection('defenses',this)">Defenses</a>
+            <a href="#" onclick="showSection('osint',this)">OSINT</a>
+            <a href="#" onclick="showSection('tools',this)">Outils</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- HOME -->
+        <div class="section active" id="home">
+            <div class="hero">
+                <h1><span>CYBER</span>LEARN</h1>
+                <p>Comprendre la cybersecurite, les techniques des hackers, et comment se defendre. Un guide complet et accessible.</p>
+            </div>
+            <div class="grid-3">
+                <div class="card" onclick="showSection('hackers',null)" style="cursor:pointer">
+                    <h3>&#128126; Hackers</h3>
+                    <p>Les differentes categories, leurs methodes, et comment ils operent.</p>
+                    <div style="margin-top:10px"><span class="badge badge-danger">Offensif</span></div>
+                </div>
+                <div class="card" onclick="showSection('doxxing',null)" style="cursor:pointer">
+                    <h3>&#128270; Doxxing</h3>
+                    <p>Comment les informations publiques sont exploitees pour identifier quelqu'un.</p>
+                    <div style="margin-top:10px"><span class="badge badge-warn">Risques</span></div>
+                </div>
+                <div class="card" onclick="showSection('phishing',null)" style="cursor:pointer">
+                    <h3>&#127919; Phishing</h3>
+                    <p>Les techniques d'ingenierie sociale pour voler des donnees.</p>
+                    <div style="margin-top:10px"><span class="badge badge-danger">Offensif</span></div>
+                </div>
+                <div class="card" onclick="showSection('malware',null)" style="cursor:pointer">
+                    <h3>&#128163; Malware</h3>
+                    <p>Virus, ransomware, trojan, spyware — comment ils fonctionnent.</p>
+                    <div style="margin-top:10px"><span class="badge badge-danger">Offensif</span></div>
+                </div>
+                <div class="card" onclick="showSection('cryptojacking',null)" style="cursor:pointer">
+                    <h3>&#128176; Cryptojacking</h3>
+                    <p>Le minage cryptographique a l'insu des victimes.</p>
+                    <div style="margin-top:10px"><span class="badge badge-warn">Risques</span></div>
+                </div>
+                <div class="card" onclick="showSection('defenses',null)" style="cursor:pointer">
+                    <h3>&#128737; Defenses</h3>
+                    <p>Comment se proteger et renforcer sa securite.</p>
+                    <div style="margin-top:10px"><span class="badge badge-ok">Defensif</span></div>
+                </div>
+                <div class="card" onclick="showSection('osint',null)" style="cursor:pointer">
+                    <h3>&#128269; OSINT</h3>
+                    <p>Open Source Intelligence — collecter des infos depuis des sources publiques.</p>
+                    <div style="margin-top:10px"><span class="badge badge-info">Technique</span></div>
+                </div>
+                <div class="card" onclick="showSection('tools',null)" style="cursor:pointer">
+                    <h3>&#128295; Outils</h3>
+                    <p>Les outils utilises en securite et en pentest.</p>
+                    <div style="margin-top:10px"><span class="badge badge-purple">Technique</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HACKERS -->
+        <div class="section" id="hackers">
+            <div class="section-header">
+                <h2>&#128126; Les Hackers</h2>
+                <p>Tout le monde pense aux hackers comme des criminels. En realite, le terme est plus complexe.</p>
+            </div>
+            <div class="warning-box">
+                <h4>&#9888; Attention</h4>
+                <p>Cette section est a but educatif. Comprendre les techniques des hackers sert a mieux se defendre. Hacker illegalement est un delit puni par la loi.</p>
+            </div>
+            <div class="card">
+                <h3>Les 3 categories principales</h3>
+                <div class="type-grid">
+                    <div class="type-item">
+                        <div class="icon">&#128994;</div>
+                        <h4>White Hat</h4>
+                        <p>Chercheurs en securite legaux. Ils testent les systemes avec autorisation pour trouver des failles.</p>
+                        <div><span class="badge badge-ok">Legalement</span></div>
+                    </div>
+                    <div class="type-item">
+                        <div class="icon">&#128308;</div>
+                        <h4>Black Hat</h4>
+                        <p>Cybercriminel. Exploite des failles sans autorisation pour voler, detruire ou ranconner.</p>
+                        <div><span class="badge badge-danger">Illegal</span></div>
+                    </div>
+                    <div class="type-item">
+                        <div class="icon">&#128992;</div>
+                        <h4>Grey Hat</h4>
+                        <p>Entre les deux. Peut trouver des failles sans autorisation mais les signaler plutot que les exploiter.</p>
+                        <div><span class="badge badge-warn">Zone grise</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>&#128187; Comment un hacker opere</h3>
+                <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Reconnaissance</h4><p>Collecte d'informations sur la cible. Noms, emails, technologies utilisees, IPs, employes. C'est l'etape OSINT.</p></div></div>
+                <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Scan / Enumeration</h4><p>Scan de ports ouverts, detection des services et versions. Recherche de failles connues (CVE).</p></div></div>
+                <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Exploitation</h4><p>Exploitation d'une faille trouvee. Mot de passe faible, SQL injection, XSS, phishing...</p></div></div>
+                <div class="step"><div class="step-num">4</div><div class="step-content"><h4>Persistance</h4><p>Maintenir l'acces au systeme. Creation de backdoors, comptes caches, cron jobs malveillants.</p></div></div>
+                <div class="step"><div class="step-num">5</div><div class="step-content"><h4>Exfiltration / Objectif</h4><p>Vol de donnees, chiffrement (ransomware), destruction, ou espionnage.</p></div></div>
+            </div>
+            <div class="card">
+                <h3>&#127919; Les types d'attaques les plus courants</h3>
+                <ul>
+                    <li><strong>Brute Force</strong> — Essayer tous les mots de passe possibles</li>
+                    <li><strong>SQL Injection</strong> — Injecter du code SQL dans les formulaires</li>
+                    <li><strong>XSS (Cross-Site Scripting)</strong> — Injecter du JavaScript dans des pages web</li>
+                    <li><strong>Man-in-the-Middle</strong> — Intercepter les communications entre deux personnes</li>
+                    <li><strong>Social Engineering</strong> — Manipuler psychologiquement les victimes</li>
+                    <li><strong>Zero-Day</strong> — Exploiter une faille non encore corrigee</li>
+                    <li><strong>DDoS</strong> — Saturation d'un serveur avec du trafic massif</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- DOXXING -->
+        <div class="section" id="doxxing">
+            <div class="section-header">
+                <h2>&#128270; Le Doxxing</h2>
+                <p>Le doxxing (doxing) est l'action de rechercher et publier des informations personnelles en ligne pour harceler ou intimider.</p>
+            </div>
+            <div class="warning-box">
+                <h4>&#9888; Disclaimer legal</h4>
+                <p>Le doxxing est un delit en France (article 226-1-1 du Code Penal : 2 ans de prison, 30 000 EUR d'amende). Comprendre comment ca fonctionne sert a s'en proteger.</p>
+            </div>
+            <div class="card">
+                <h3>&#128196; Quelles infos sont exploitees ?</h3>
+                <div class="type-grid">
+                    <div class="type-item"><div class="icon">&#128231;</div><h4>Email</h4><p>Adresse email retrouvable via des fuites ou des recherches</p></div>
+                    <div class="type-item"><div class="icon">&#128241;</div><h4>Telephone</h4><p>Numero trouve dans des annuaires, fuites, reseaux sociaux</p></div>
+                    <div class="type-item"><div class="icon">&#127968;</div><h4>Adresse</h4><p>Adresse physique via des services publics ou reseaux sociaux</p></div>
+                    <div class="type-item"><div class="icon">&#128100;</div><h4>Nom reel</h4><p>Lien entre pseudo et identite reelle</p></div>
+                    <div class="type-item"><div class="icon">&#128187;</div><h4>IP / Localisation</h4><p>Adresse IP exposee, geolocalisation grossiere</p></div>
+                    <div class="type-item"><div class="icon">&#128196;</div><h4>Emploi / Ecole</h4><p>LinkedIn, publications, pages d'entreprise</p></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>&#128269; Comment retrouver une personne (techniques OSINT legales)</h3>
+                <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Pseudo -> Email</h4><p>Verifier si le meme pseudo est utilise partout. Chercher sur Google, Sherlock, Namechk. Certains sites revelent l'email au reset password.</p></div></div>
+                <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Email -> Comptes</h4><p>Entrez l'email sur HaveIBeenPwned, Epieos, ou utilisez le linkedin.com/search pour trouver le profil.</p></div></div>
+                <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Photo -> Visage</h4><p>Recherche inverse d'image sur Yandex (le plus puissant), Google Images, TinEye. Yandex reconnait les visages.</p></div></div>
+                <div class="step"><div class="step-num">4</div><div class="step-content"><h4>Geolocalisation</h4><p>EXIF d'une photo (GPS), arriere-plan d'une photo, comparaison avec Google Street View, ombres et directions.</p></div></div>
+                <div class="step"><div class="step-num">5</div><div class="step-content"><h4>Croisement de donnees</h4><p>Croiser les infos de sources differentes pour confirmer l'identite. C'est le principe de l'OSINT.</p></div></div>
+            </div>
+            <div class="card">
+                <h3>&#128737; Comment se proteger du doxxing</h3>
+                <ul>
+                    <li><strong>Pseudonymes differents</strong> pour chaque plateforme</li>
+                    <li><strong>2FA activee</strong> partout (Authentification a 2 facteurs)</li>
+                    <li><strong>Supprimer les donnees</strong> des annuaires en ligne (123people, spokeo...)</li>
+                    <li><strong>Vie privee reseaux sociaux</strong> — ne pas tout publier</li>
+                    <li><strong>VPN</strong> pour masquer son adresse IP</li>
+                    <li><strong>Exif metadata</strong> — supprimer les donnees GPS des photos avant publication</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- PHISHING -->
+        <div class="section" id="phishing">
+            <div class="section-header">
+                <h2>&#127919; Le Phishing</h2>
+                <p>Le phishing est la technique de fraude la plus repandue au monde. 90% des cyberattaques commencent par du phishing.</p>
+            </div>
+            <div class="card">
+                <h3>&#128187; Comment ca marche ?</h3>
+                <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Le faux email/site</h4><p>Le hacker cree un email ou un site qui imite parfaitement un service legitime (Netflix, banque, Microsoft...)</p></div></div>
+                <div class="step"><div class="step-num">2</div><div class="step-content"><h4>La peur / l'urgence</h4><p>"Votre compte sera ferme dans 24h", "Activite suspecte detectee", "Confirmez votre identite"</p></div></div>
+                <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Le piege</h4><p>La victime clique sur le lien, entre ses identifiants sur le faux site, et le hacker les recupere.</p></div></div>
+            </div>
+            <div class="card">
+                <h3>&#128172; Les variantes</h3>
+                <div class="grid-2">
+                    <div>
+                        <h4 style="color:var(--accent2);margin-bottom:8px">Spear Phishing</h4>
+                        <p>Phishing personnalise. Le hacker a fait ses recherches et connait votre nom, votre job, vos collègues.</p>
+                    </div>
+                    <div>
+                        <h4 style="color:var(--accent2);margin-bottom:8px">Smishing / Vishing</h4>
+                        <p>Par SMS (smishing) ou par电话 (vishing). Faux appel de votre banque, faux SMS de La Poste...</p>
+                    </div>
+                    <div>
+                        <h4 style="color:var(--accent2);margin-bottom:8px">Whaling</h4>
+                        <p>Phishing cible contre les dirigeants (CEO, CFO). Messages tres sophistiques.</p>
+                    </div>
+                    <div>
+                        <h4 style="color:var(--accent2);margin-bottom:8px">Clone Phishing</h4>
+                        <p>Copie exacte d'un email legitime avec un lien remplace par un lien malveillant.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>&#128737; Comment reconnaitre un phishing</h3>
+                <ul>
+                    <li><strong>Expediteur suspect</strong> — verifiez l'adresse email reelle (pas juste le nom affiche)</li>
+                    <li><strong>Urgence / Peur</strong> — tout message qui cree de la panique est suspect</li>
+                    <li><strong>Lien douteux</strong> — passez la souris dessus, verifiez le domaine reel</li>
+                    <li><strong>Erreurs</strong> — fautes d'orthographe, ton inhabituel</li>
+                    <li><strong>Pieces jointes</strong> — ne jamais ouvrir un .exe, .zip, .html inattendu</li>
+                    <li><strong>Demande d'infos sensibles</strong> — aucune entreprise legitime ne demande votre MDP par email</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- MALWARE -->
+        <div class="section" id="malware">
+            <div class="section-header">
+                <h2>&#128163; Les Malware</h2>
+                <p>Logiciels malveillains concus pour infiltrer, detruire ou voler des donnees.</p>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>&#128163; Ransomware</h3>
+                    <p>Chiffre tous vos fichiers et demande une rancon (souvent en Bitcoin) pour les recuperer.</p>
+                    <p style="margin-top:8px"><strong>Exemples :</strong> WannaCry, LockBit, Ryuk, REvil</p>
+                    <p><strong>Mode d'entree :</strong> Email phishing, RDP expose, faille Log4Shell</p>
+                </div>
+                <div class="card">
+                    <h3>&#128065; Spyware</h3>
+                    <p>Surveille activement l'utilisateur : enregistre les frappes (keylogger), capture l'ecran, ecoute le micro.</p>
+                    <p style="margin-top:8px"><strong>Exemples :</strong> Pegasus, DarkComet, FinFisher</p>
+                    <p><strong>Mode d'entree :</strong> Email, application infectee, zero-day</p>
+                </div>
+                <div class="card">
+                    <h3>&#128169; Trojan (Cheval de Troie)</h3>
+                    <p>Se fait passer pour un logiciel legitime. Une fois installe, il ouvre une porte derriere (backdoor).</p>
+                    <p style="margin-top:8px"><strong>Exemples :</strong> Emotet, TrickBot, Zeus</p>
+                    <p><strong>Mode d'entree :</strong> Telechargement douteux, crack, email</p>
+                </div>
+                <div class="card">
+                    <h3>&#129416; Worm (Ver)</h3>
+                    <p>Se propage automatiquement d'un ordinateur a l'autre sans intervention humaine. Exploite le reseau.</p>
+                    <p style="margin-top:8px"><strong>Exemples :</strong> ILOVEYOU, Conficker, Stuxnet</p>
+                    <p><strong>Mode d'entree :</strong> Failles reseau, pieces jointes email</p>
+                </div>
+                <div class="card">
+                    <h3>&#128274; Rootkit</h3>
+                    <p>Se cache au plus profond du systeme (noyau) pour rester invisible aux antivirus.</p>
+                    <p style="margin-top:8px"><strong>Exemples :</strong> Necurs, ZeroAccess</p>
+                    <p><strong>Mode d'entree :</strong> Exploitation de privilege, malware precedent</p>
+                </div>
+                <div class="card">
+                    <h3>&#128027; Adware</h3>
+                    <p>Affiche des publicites forcees. Moins dangereux mais ralentit le PC et peut servir de vecteur a autre chose.</p>
+                    <p style="margin-top:8px"><strong>Exemples :</strong> Fireball, Gator, Bonzi Buddy</p>
+                    <p><strong>Mode d'entree :</strong> Logiciels freeware, bundleware</p>
+                </div>
+            </div>
+            <div class="card" style="margin-top:16px">
+                <h3>&#128161; Le cycle de vie d'un malware</h3>
+                <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Creation</h4><p>Le malware est code. Souvent avec des techniques d'evasion (obfuscation, chiffrement) pour passer les antivirus.</p></div></div>
+                <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Distribution</h4><p>Email, site web, crack, USB, faille zero-day... Le vecteur d'attaque.</p></div></div>
+                <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Installation</h4><p>S'installe silencieusement. Cree des points de persistence (registre, taches planifiees).</p></div></div>
+                <div class="step"><div class="step-num">4</div><div class="step-content"><h4>Action</h4><p>Vole des donnees, chiffre des fichiers, espionne, mine des cryptos...</p></div></div>
+                <div class="step"><div class="step-num">5</div><div class="step-content"><h4>Exfiltration</h4><p>Envoie les donnees volees au serveur C2 (Command & Control) du hacker.</p></div></div>
+            </div>
+        </div>
+
+        <!-- CRYPTOJACKING -->
+        <div class="section" id="cryptojacking">
+            <div class="section-header">
+                <h2>&#128176; Cryptojacking</h2>
+                <p>Utiliser la puissance de calcul de quelqu'un d'autre pour miner des cryptomonnaies a son insu.</p>
+            </div>
+            <div class="card">
+                <h3>&#128187; Comment ca marche ?</h3>
+                <p>Un script malveillant (souvent JavaScript) est injecte dans un site web ou un logiciel. Lorsque vous visitez le site, votre CPU/GPU est utilise pour miner du Monero (XMR) ou d'autres cryptos.</p>
+                <p style="margin-top:10px">C'est moins visible qu'un virus classique — pas de fichier installe, pas de vol de donnees. Juste une consommation CPU elevee et des ventilateurs qui tournent a fond.</p>
+            </div>
+            <div class="card">
+                <h3>&#128270; Les vecteurs d'attaque</h3>
+                <ul>
+                    <li><strong>Sites web compromis</strong> — un site legit injecte un minero (ex: Coinhive)</li>
+                    <li><strong>Extensions navigateur</strong> — fausses extensions qui minent en arriere-plan</li>
+                    <li><strong>Logiciels infectes</strong> — cracks, keygens qui minent en meme temps</li>
+                    <li><strong>Publicites malveillantes (malvertising)</strong> — pubs qui minent en arriere-plan</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>&#128737; Comment detecter et se proteger</h3>
+                <ul>
+                    <li><strong>CPU a 100%</strong> sans raison apparente</li>
+                    <li><strong>Ventilateurs qui accelerent</strong> sur des pages simples</li>
+                    <li><strong>Extensions bloqueuses</strong> — uBlock Origin, NoCoin</li>
+                    <li><strong>Extensions douteuses</strong> a supprimer</li>
+                    <li><strong>Mise a jour navigateur</strong> pour bloquer les scripts malveillants</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- DEFENSES -->
+        <div class="section" id="defenses">
+            <div class="section-header">
+                <h2>&#128737; Se Defendre</h2>
+                <p>La securite n'est pas un produit, c'est un processus. Voici les bases pour se proteger.</p>
+            </div>
+            <div class="card">
+                <h3>&#128273; Mots de passe securises</h3>
+                <div class="grid-2">
+                    <div>
+                        <h4 style="color:var(--danger);margin-bottom:6px">Pas ca</h4>
+                        <ul>
+                            <li>123456, password, qwerty</li>
+                            <li>Votre nom, date de naissance</li>
+                            <li>Meme mot de passe partout</li>
+                            <li>Mot de passe court (moins de 12 caracteres)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color:var(--accent);margin-bottom:6px">Fais ca</h4>
+                        <ul>
+                            <li>16+ caracteres minimum</li>
+                            <li>Mots de passe uniques par site</li>
+                            <li>Manager de mots de passe (Bitwarden, KeePass)</li>
+                            <li>Passphrase : <code>cheval-bleu-42-manger-cinema</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>&#128272; Authentification a 2 facteurs (2FA)</h3>
+                <p>Le 2FA ajoute une 2eme couche de securite. Meme si quelqu'un vole votre mot de passe, il ne peut pas se connecter sans le 2eme facteur.</p>
+                <div class="type-grid">
+                    <div class="type-item"><div class="icon">&#128241;</div><h4>SMS</h4><p>Code par SMS. Vulnérable au SIM swapping. Minimum.</p></div>
+                    <div class="type-item"><div class="icon">&#128241;</div><h4>App (TOTP)</h4><p>Google Authenticator, Authy. Plus sur. Codes qui changent toutes les 30s.</p></div>
+                    <div class="type-item"><div class="icon">&#128273;</div><h4>Cle physique</h4><p>YubiKey, Titan. Le plus sur. Impossible a phisher.</p></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>&#128737; Bonnes pratiques</h3>
+                <ul>
+                    <li><strong>Mises a jour</strong> — Mettez a jour votre OS et vos logiciels. Les patches corrigent les failles.</li>
+                    <li><strong>Antivirus</strong> — Windows Defender suffit pour la plupart des gens. Pas besoin de payer.</li>
+                    <li><strong>VPN</h4> — Masque votre IP, chiffre votre trafic sur le WiFi public.</li>
+                    <li><strong>Pare-feu</strong> — Activez-le. Bloque les connections entrantes non autorisees.</li>
+                    <li><strong>Sauvegardes</strong> — 3-2-1 : 3 copies, 2 supports differents, 1 hors-ligne. Anti-ransomware.</li>
+                    <li><strong>Suspicion = action</strong> — Si quelque chose semble bizarre, deconnectez-vous et changez votre mot de passe.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>&#128187; Securite avancee</h3>
+                <div class="grid-2">
+                    <div>
+                        <h4 style="color:var(--accent2);margin-bottom:6px">Pour les curieux</h4>
+                        <ul>
+                            <li>Linux (distributions comme Kali, Parrot)</li>
+                            <li>Chiffrement disque (BitLocker, LUKS)</li>
+                            <li>Reseau Tor pour l'anonymat</li>
+                            <li>Sandbox / VM pour tester des logiciels</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color:var(--accent2);margin-bottom:6px">Pour les entreprises</h4>
+                        <ul>
+                            <li>Pentest regulier (test d'intrusion)</li>
+                            <li>Formation employes (awareness)</li>
+                            <li>Zero Trust ("ne jamais faire confiance")</li>
+                            <li>SIEM / detection d'intrusion</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OSINT -->
+        <div class="section" id="osint">
+            <div class="section-header">
+                <h2>&#128269; OSINT</h2>
+                <p>Open Source Intelligence — Recueillir des informations depuis des sources 100% publiques et legales.</p>
+            </div>
+            <div class="warning-box">
+                <h4>&#9888; Legalite</h4>
+                <p>L'OSINT utilise uniquement des donnees publiques. C'est legal tant qu'on ne viole pas de systeme, de regle d'utilisation, ou de loi sur la vie privee.</p>
+            </div>
+            <div class="card">
+                <h3>&#128196; Les sources OSINT</h3>
+                <div class="type-grid">
+                    <div class="type-item"><div class="icon">&#127760;</div><h4>Web</h4><p>Google, archives web (Wayback Machine), forums</p></div>
+                    <div class="type-item"><div class="icon">&#128247;</div><h4>Images</h4><p>Google Images, Yandex, EXIF metadata</p></div>
+                    <div class="type-item"><div class="icon">&#128100;</div><h4>Reseaux sociaux</h4><p>LinkedIn, Facebook, Twitter/X, Instagram, TikTok</p></div>
+                    <div class="type-item"><div class="icon">&#128187;</div><h4>Technique</h4><p>DNS, WHOIS, Shodan, Censys, Crt.sh</p></div>
+                    <div class="type-item"><div class="icon">&#128196;</div><h4>Donnees publiques</h4><p>Annuaire entreprises, cadastre, JO, societe.com</p></div>
+                    <div class="type-item"><div class="icon">&#128176;</div><h4>Finance</h4><p>Societe.com, Pappers, registres des entreprises</p></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>&#128295; Outils OSINT populaires</h3>
+                <div class="grid-2">
+                    <div>
+                        <h4 style="color:var(--accent);margin-bottom:6px">Recherche</h4>
+                        <ul>
+                            <li><strong>Google Dorks</strong> — Recherches avancees avec operateurs</li>
+                            <li><strong>Shodan</strong> — Moteur pour dispositifs connectes</li>
+                            <li><strong>Maltego</strong> — Visualisation de liens entre donnees</li>
+                            <li><strong>Sherlock</strong> — Chercher un username partout</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color:var(--accent);margin-bottom:6px">Analyse</h4>
+                        <ul>
+                            <li><strong>ExifTool</strong> — Lire les metadata des fichiers</li>
+                            <li><strong>C2PA Validator</strong> — Verifier l'authenticite des images</li>
+                            <li><strong>Holehe</strong> — Verifier si un email existe</li>
+                            <li><strong>theHarvester</strong> — Collecter emails et sous-domaines</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>&#128270; Exemple : Google Dorks</h3>
+                <p>Google Dorks permettent de trouver des infos cachees. Exemples :</p>
+                <ul>
+                    <li><code>site:linkedin.com "ingenieur" "Paris"</code> — Chercher des ingenieurs parisiens</li>
+                    <li><code>filetype:pdf "confidentiel"</code> — Trouver des PDF confidentiels</li>
+                    <li><code>intitle:"index of" "password"</code> — Repertoire ouverts avec des fichiers sensibles</li>
+                    <li><code>inurl:admin intitle:"login"</code> — Pages d'admin exposees</li>
+                    <li><code>"@gmail.com" site:pastebin.com</code> — Emails sur Pastebin</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TOOLS -->
+        <div class="section" id="tools">
+            <div class="section-header">
+                <h2>&#128295; Outils de Cybersecurite</h2>
+                <p>Les outils utilises par les professionnels de la securite. A utiliser uniquement de maniere legale et autorisee.</p>
+            </div>
+            <div class="card">
+                <h3>&#128737; Securite defensive</h3>
+                <div class="tools-grid">
+                    <div class="tool-item"><div class="icon">&#128737;</div><h4>Wireshark</h4><p>Analyse de trafic reseau</p></div>
+                    <div class="tool-item"><div class="icon">&#128190;</div><h4>Bitwarden</h4><p>Manager de mots de passe</p></div>
+                    <div class="tool-item"><div class="icon">&#128737;</div><h4>Nmap</h4><p>Scanner les ports ouverts</p></div>
+                    <div class="tool-item"><div class="icon">&#128274;</div><h4>KeePass</h4><p>Stockage de mots de passe local</p></div>
+                    <div class="tool-item"><div class="icon">&#127760;</div><h4>uBlock Origin</h4><p>Bloqueur de pubs et scripts</p></div>
+                    <div class="tool-item"><div class="icon">&#128241;</div><h4>Authy</h4><p>Generation de codes 2FA</p></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>&#9888; Securite offensive (pentest)</h3>
+                <div class="warning-box" style="margin-bottom:12px">
+                    <h4>Usage legal uniquement</h4>
+                    <p>Ces outils ne doivent etre utilises que sur des systemes dont vous avez l'autorisation explicite de tester.</p>
+                </div>
+                <div class="tools-grid">
+                    <div class="tool-item"><div class="icon">&#128187;</div><h4>Kali Linux</h4><p>Distribution Linux pour pentesters</p></div>
+                    <div class="tool-item"><div class="icon">&#128269;</div><h4>Metasploit</h4><p>Framework d'exploitation</p></div>
+                    <div class="tool-item"><div class="icon">&#128269;</div><h4>Burp Suite</h4><p>Proxy et test d'apps web</p></div>
+                    <div class="tool-item"><div class="icon">&#128269;</div><h4>John the Ripper</h4><p>Cracker des mots de passe</p></div>
+                    <div class="tool-item"><div class="icon">&#128269;</div><h4>Aircrack-ng</h4><p>Test de securite WiFi</p></div>
+                    <div class="tool-item"><div class="icon">&#128269;</div><h4>SQLmap</h4><p>Injection SQL automatisee</p></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>&#128269; OSINT Tools</h3>
+                <div class="tools-grid">
+                    <div class="tool-item" onclick="window.open('https://tomgirod84-afk.github.io/-osint-analyzer/osint-image.html','_blank')" style="cursor:pointer"><div class="icon">&#128269;</div><h4>Sentinel OSINT</h4><p>Notre outil OSINT complet</p><span class="badge badge-ok">Notre outil</span></div>
+                    <div class="tool-item"><div class="icon">&#128269;</div><h4>Shodan</h4><p>Moteur IoT</p></div>
+                    <div class="tool-item"><div class="icon">&#128269;</div><h4>Censys</h4><p>Scan internet</p></div>
+                    <div class="tool-item"><div class="icon">&#128269;</div><h4>GreyNoise</h4><p>Bruit internet</p></div>
+                    <div class="tool-item"><div class="icon">&#128269;</div><h4>Sherlock</h4><p>Username partout</p></div>
+                    <div class="tool-item"><div class="icon">&#128269;</div><h4>SpiderFoot</h4><p>Automatisation OSINT</p></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>&#127760; Outils en ligne (pas d'installation)</h3>
+                <div class="tools-grid">
+                    <div class="tool-item"><div class="icon">&#127760;</div><h4>VirusTotal</h4><p>Scanner fichiers/URLs</p></div>
+                    <div class="tool-item"><div class="icon">&#128231;</div><h4>HIBP</h4><p>Verifier les fuites de donnees</p></div>
+                    <div class="tool-item"><div class="icon">&#127760;</div><h4>Crt.sh</h4><p>Certificats SSL</p></div>
+                    <div class="tool-item"><div class="icon">&#128172;</div><h4>Have I Been Pwned</h4><p>Fuites email</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>CyberLearn &middot; Education a la cybersecurite &middot; <a href="https://discord.gg/9Hyuy68SrB" target="_blank">Discord</a> &middot; <a href="https://tomgirod84-afk.github.io/-osint-analyzer/osint-image.html" target="_blank">Sentinel OSINT</a></p>
+    </div>
+
+    <script>
+    function showSection(id,el){
+        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.nav-links a').forEach(a=>a.classList.remove('active'));
+        if(el)el.classList.add('active');
+        document.getElementById('navLinks').classList.remove('open');
+        window.scrollTo(0,0);
+    }
+
+    // Hamburger mobile
+    if(window.innerWidth<=768){document.querySelector('.hamburger').style.display='block'}
+    window.addEventListener('resize',()=>{document.querySelector('.hamburger').style.display=window.innerWidth<=768?'block':'none'});
+    </script>
+</body>
+</html>
