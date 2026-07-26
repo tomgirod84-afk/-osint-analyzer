@@ -490,40 +490,35 @@
 
         <!-- AVIATION -->
         <div class="section" id="aviation">
-            <div class="section-header"><h2><span class="emoji">&#9992;</span> Traffic Aerien</h2><p>Recherche un avion en temps reel via OpenSky Network (ICAO24, callsign, immatriculation).</p></div>
-            <div class="tabs"><button class="active" onclick="switchTab('av-map',this)">&#127758; Carte Live</button><button onclick="switchTab('av-tracker',this)">Tracker Vol</button><button onclick="switchTab('av-aircraft',this)">Avion</button><button onclick="switchTab('av-airport',this)">&#127969; Aeroport</button></div>
+            <div class="section-header"><h2><span class="emoji">&#9992;</span> Traffic Aerien</h2><p>Observe les avions en temps reel sur la carte.</p></div>
+            <div class="tabs"><button class="active" onclick="switchTab('av-map',this)">&#127758; Carte</button><button onclick="switchTab('av-tracker',this)">&#128270; Avion</button><button onclick="switchTab('av-airport',this)">&#127969; Aeroport</button></div>
             <div class="tab-content active" id="tab-av-map">
-                <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                    <button class="btn btn-primary" onclick="loadAvMap()">&#127758; Charger la carte</button>
-                    <span id="avMapCount" style="color:var(--text3);font-size:0.85em"></span>
+                <div style="margin:10px 0;display:flex;gap:10px;flex-wrap:wrap">
+                    <button class="btn btn-primary" onclick="loadAvMap()" style="font-size:1.05em;padding:14px 28px">&#127758; Afficher la carte</button>
+                    <button class="btn btn-primary" onclick="goFullscreen('avMapFrame')" style="font-size:1.05em;padding:14px 28px">&#9974; Plein ecran</button>
                 </div>
                 <div id="avMapFallback" style="display:none">
-                    <iframe id="avMapFrame" src="" style="width:100%;height:70vh;min-height:500px;border:none;border-radius:12px;border:1px solid var(--border)" allowfullscreen loading="lazy"></iframe>
+                    <iframe id="avMapFrame" src="" style="width:100%;height:65vh;min-height:450px;border:none;border-radius:12px;border:1px solid var(--border)" allowfullscreen loading="lazy"></iframe>
                 </div>
+                <div id="avMapCount" style="color:var(--text3);font-size:0.85em;margin-top:6px"></div>
             </div>
             <div class="tab-content" id="tab-av-tracker">
+                <p style="color:var(--text3);margin-bottom:10px">Entrez le code ou le nom d'un avion pour le retrouver.</p>
                 <div class="input-group">
-                    <input type="text" id="avTrackerInput" placeholder="ICAO24 ex: 3C6586 ou callsign ex: DLH456">
-                    <button class="btn btn-primary" onclick="trackFlight()">Tracker</button>
+                    <input type="text" id="avTrackerInput" placeholder="Ex: DLH456 ou 3C6586">
+                    <button class="btn btn-primary" onclick="trackFlight()" style="font-size:1.05em;padding:14px 28px">&#128269; Chercher</button>
                 </div>
                 <div class="loading" id="avTrackerLoading"><div class="spinner"></div></div>
-                <div class="result-box" id="avTrackerResults"><h3>&#128663; Position en temps reel</h3><div id="avTrackerData"></div></div>
-            </div>
-            <div class="tab-content" id="tab-av-aircraft">
-                <div class="input-group">
-                    <input type="text" id="avAircraftInput" placeholder="ICAO24 ex: 3C6586">
-                    <button class="btn btn-primary" onclick="searchAircraft()">Rechercher</button>
-                </div>
-                <div class="loading" id="avAircraftLoading"><div class="spinner"></div></div>
-                <div class="result-box" id="avAircraftResults"><h3>&#9992; Historique vol</h3><div id="avAircraftData"></div></div>
+                <div class="result-box" id="avTrackerResults"><h3>&#9992; Resultat</h3><div id="avTrackerData"></div></div>
             </div>
             <div class="tab-content" id="tab-av-airport">
+                <p style="color:var(--text3);margin-bottom:10px">Entrez le code d'un aeroport pour voir les vols.</p>
                 <div class="input-group">
-                    <input type="text" id="avAirportInput" placeholder="ICAO code ex: LFPG (Paris CDG)">
-                    <button class="btn btn-primary" onclick="searchAirport()">Vols</button>
+                    <input type="text" id="avAirportInput" placeholder="Ex: LFPG (Paris) ou JFK">
+                    <button class="btn btn-primary" onclick="searchAirport()" style="font-size:1.05em;padding:14px 28px">&#127969; Rechercher</button>
                 </div>
                 <div class="loading" id="avAirportLoading"><div class="spinner"></div></div>
-                <div class="result-box" id="avAirportResults"><h3>&#127969; Arrivees/Departs</h3><div id="avAirportData"></div></div>
+                <div class="result-box" id="avAirportResults"><h3>&#127969; Resultat</h3><div id="avAirportData"></div></div>
             </div>
         </div>
 
@@ -842,6 +837,13 @@ document.getElementById('phoneResults').classList.add('active');document.getElem
         document.getElementById('avMapCount').textContent='Carte ADS-B Exchange chargee';
     }
     function refreshAvMap(){loadAvMap()}
+    function goFullscreen(id){
+        var el=document.getElementById(id);
+        if(!el){showToast('Charge la carte d\'abord');return}
+        if(el.requestFullscreen)el.requestFullscreen();
+        else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+        else if(el.msRequestFullscreen)el.msRequestFullscreen();
+    }
 
     // DASHBOARD FEEDS
     var dashInterval=null,dashCountdown=60;
