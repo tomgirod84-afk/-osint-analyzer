@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <title>Sentinel OSINT - Investigation</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -489,8 +491,17 @@
         <!-- AVIATION -->
         <div class="section" id="aviation">
             <div class="section-header"><h2><span class="emoji">&#9992;</span> Traffic Aerien</h2><p>Recherche un avion en temps reel via OpenSky Network (ICAO24, callsign, immatriculation).</p></div>
-            <div class="tabs"><button class="active" onclick="switchTab('av-tracker',this)">&#128663; Tracker Vol</button><button onclick="switchTab('av-aircraft',this)">&#9992; Avion</button><button onclick="switchTab('av-airport',this)>&#127969; Aeroport</button></div>
-            <div class="tab-content active" id="tab-av-tracker">
+            <div class="tabs"><button class="active" onclick="switchTab('av-map',this)">&#127758; Carte Live</button><button onclick="switchTab('av-tracker',this)">Tracker Vol</button><button onclick="switchTab('av-aircraft',this)">Avion</button><button onclick="switchTab('av-airport',this)">&#127969; Aeroport</button></div>
+            <div class="tab-content active" id="tab-av-map">
+                <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+                    <button class="btn btn-primary" onclick="loadAvMap()">&#9654; Charger la carte</button>
+                    <button class="btn btn-sm" onclick="refreshAvMap()" style="color:var(--accent2)">&#8635; Actualiser</button>
+                    <span id="avMapCount" style="color:var(--text3);font-size:0.85em"></span>
+                </div>
+                <div id="avMap" style="height:500px;width:100%;border-radius:12px;border:1px solid var(--border);background:var(--bg2);display:none"></div>
+                <div id="avMapInfo" style="margin-top:10px"></div>
+            </div>
+            <div class="tab-content" id="tab-av-tracker">
                 <div class="input-group">
                     <input type="text" id="avTrackerInput" placeholder="ICAO24 ex: 3C6586 ou callsign ex: DLH456">
                     <button class="btn btn-primary" onclick="trackFlight()">Tracker</button>
@@ -771,6 +782,7 @@ document.getElementById('phoneResults').classList.add('active');document.getElem
     // AVIATION
     var OSKY='https://opensky-network.org/api';
     var AV_COUNTRIES={0:'Inconnu',1:'USA',2:'UK/Canada',16:'France',20:'Allemagne',46:'Russie',55:'Japon',127:'Australie',159:'Chine',196:'Inde'};
+    var avMap=null,avLayer=null,avRefreshTimer=null;
     function avAlt(v){return v!=null?(v*3.28084).toFixed(0)+' ft ('+v.toFixed(0)+' m)':''}
     function avSpeed(v){return v!=null?(v*3.6).toFixed(0)+' km/h':''}
     function avCoord(v){return v!=null?v.toFixed(4):''}
@@ -872,6 +884,45 @@ document.getElementById('phoneResults').classList.add('active');document.getElem
             document.getElementById('avAirportResults').classList.add('active');
         }catch(e){document.getElementById('avAirportData').innerHTML='<p style="color:var(--text3)">Erreur ou API indisponible.</p>';document.getElementById('avAirportResults').classList.add('active')}
         document.getElementById('avAirportLoading').classList.remove('active');
+    }
+
+    function loadAvMap(){
+        document.getElementById('avMap').style.display='block';
+        if(!avMap){
+            avMap=L.map('avMap',{zoomControl:true,attributionControl:true}).setView([20,0],2);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; CARTO',maxZoom:18}).addTo(avMap);
+            avLayer=L.layerGroup().addTo(avMap);
+            setTimeout(function(){avMap.invalidateSize()},200);
+        }
+        refreshAvMap();
+    }
+    function refreshAvMap(){
+        if(!avMap){loadAvMap();return}
+        fetch(OSKY+'/states/all').then(function(r){return r.json()}).then(function(d){
+            if(avLayer)avLayer.clearLayers();
+            var count=0;
+            (d.states||[]).forEach(function(s){
+                if(s[5]==null||s[6]==null)return;
+                var icao=s[0].toUpperCase();
+                var cs=s[1]?s[1].trim():'N/A';
+                var alt=s[7]!=null?Math.round(s[7]):0;
+                var spd=s[9]!=null?Math.round(s[9]*3.6):0;
+                var trk=s[10]!=null?(s[10]*180/Math.PI):0;
+                var onGround=s[8];
+                if(onGround)return;
+                var color=alt>10000?'#00ff88':alt>5000?'#ffaa00':'#ff4444';
+                var planeIcon=L.divIcon({
+                    className:'',
+                    html:'<div style="transform:rotate('+trk+'deg);font-size:18px;text-shadow:0 0 4px '+color+';filter:drop-shadow(0 0 2px '+color+')">&#9992;</div>',
+                    iconSize:[20,20],iconAnchor:[10,10]
+                });
+                var m=L.marker([s[6],s[5]],{icon:planeIcon});
+                m.bindPopup('<div style="font-family:sans-serif;min-width:180px"><b style="color:#00ff88">'+icao+'</b><br><b>Callsign:</b> '+cs+'<br><b>Alt:</b> '+alt+' m ('+Math.round(alt*3.28)+' ft)<br><b>Vitesse:</b> '+spd+' km/h<br><b>Cap:</b> '+Math.round(trk)+'°<br><b>Pays:</b> '+(AV_COUNTRIES[s[5]]||s[5])+'</div>');
+                avLayer.addLayer(m);
+                count++;
+            });
+            document.getElementById('avMapCount').textContent=count+' avions en vol';
+        }).catch(function(e){document.getElementById('avMapCount').textContent='Erreur chargement'});
     }
 
     // DASHBOARD FEEDS
