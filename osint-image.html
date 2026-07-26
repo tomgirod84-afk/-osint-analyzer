@@ -349,7 +349,8 @@
                 <button class="btn btn-secondary btn-sm" id="adminBtn" onclick="generateAdminLink()">Generer lien admin</button>
                 <button class="btn btn-secondary btn-sm" onclick="resetInvestigation()">Reinitialiser</button>
             </div>
-            <div class="loading" id="invLoading"><div class="spinner"></div><p style="color:var(--text2)">Analyse en cours...</p><div id="apiStatusTracker" style="margin-top:12px;text-align:left;max-width:500px"></div></div>
+            <div class="loading" id="invLoading"><div class="spinner"></div><p style="color:var(--text2)">Analyse en cours...</p></div>
+            <div id="apiStatusTracker" style="margin:12px 0;text-align:left;max-width:500px;display:none"></div>
             <div class="result-box" id="invResults"><h3>&#128269; Resultats</h3><div id="invResultsContent"></div></div>
         </div>
 
@@ -806,14 +807,14 @@
     function updateReverseLinks(){if(!imgData.name){document.getElementById('reverseImgInfo').textContent='Analysez d\'abord une image.';return}document.getElementById('reverseImgInfo').textContent=`Image: ${imgData.name}`;document.getElementById('revGoogle').href='https://images.google.com/';document.getElementById('revTinEye').href='https://tineye.com/';document.getElementById('revYandex').href='https://yandex.com/images/search';document.getElementById('revBing').href='https://www.bing.com/images';document.getElementById('revLens').href='https://www.google.com/lens';document.getElementById('revPict').href='https://www.pictriev.com/';document.getElementById('revBrave').href='https://search.brave.com/images';document.getElementById('revFB').href='https://graph.facebook.com/'}
 
     // INVESTIGATION
-    function apiTrack(name,status){const el=document.getElementById('apiStatusTracker');if(!el)return;const colors={ok:'var(--accent)',fail:'var(--danger)',loading:'var(--accent2)',skip:'var(--text3)'};const icons={ok:'&#10004;',fail:'&#10008;',loading:'&#8987;',skip:'&#8211;'};let row=document.getElementById('apit-'+name);if(!row){row=document.createElement('div');row.id='apit-'+name;row.style.cssText='display:flex;align-items:center;gap:8px;padding:3px 0;font-size:0.82em;color:var(--text2)';el.appendChild(row)}row.innerHTML=`<span style="color:${colors[status]};width:16px;text-align:center">${icons[status]}</span> <span>${name}</span>`}
+    function apiTrack(name,status){const el=document.getElementById('apiStatusTracker');if(!el)return;el.style.display='block';const colors={ok:'var(--accent)',fail:'var(--danger)',loading:'var(--accent2)',skip:'var(--text3)'};const icons={ok:'&#10004;',fail:'&#10008;',loading:'&#8987;',skip:'&#8211;'};let row=document.getElementById('apit-'+name);if(!row){row=document.createElement('div');row.id='apit-'+name;row.style.cssText='display:flex;align-items:center;gap:8px;padding:3px 0;font-size:0.82em;color:var(--text2)';el.appendChild(row)}row.innerHTML=`<span style="color:${colors[status]};width:16px;text-align:center">${icons[status]}</span> <span>${name}</span>`}
 
     async function launchInvestigation(){
         const nom=document.getElementById('inv-nom').value.trim(),prenom=document.getElementById('inv-prenom').value.trim(),naissance=document.getElementById('inv-naissance').value,tel=document.getElementById('inv-telephone').value.trim(),email=document.getElementById('inv-email').value.trim(),ville=document.getElementById('inv-ville').value.trim(),cp=document.getElementById('inv-cp').value.trim(),adresse=document.getElementById('inv-adresse').value.trim(),immat=document.getElementById('inv-immat').value.trim().toUpperCase(),nir=document.getElementById('inv-nir').value.trim().replace(/\s/g,'');
         if(!nom&&!prenom&&!tel&&!email&&!nir&&!immat){showToast('Remplis au moins un champ');return}
         addHistory('Investigation',(prenom+' '+nom).trim()||tel||email||'');
         document.getElementById('invLoading').classList.add('active');document.getElementById('invResults').classList.remove('active');
-        document.getElementById('apiStatusTracker').innerHTML='';
+        document.getElementById('apiStatusTracker').innerHTML='';document.getElementById('apiStatusTracker').style.display='block';
         const fn=(prenom+' '+nom).trim();
         let idR=[],locR=[],crossR=[],sections={};
 
@@ -878,8 +879,42 @@
 
         await Promise.allSettled(apiJobs);
 
-        // RECHERCHE WEB (toujours)
-        if(fn||email||tel){const searchQ=fn||email||tel;const sq=encodeURIComponent(`"${searchQ}"`);let sHtml='<div class="search-grid">';sHtml+=`<a href="https://www.google.com/search?q=${sq}" target="_blank">&#128269; Google</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:linkedin.com%2Fin" target="_blank">&#128279; LinkedIn</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:facebook.com" target="_blank">&#128101; Facebook</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:instagram.com" target="_blank">&#128248; Instagram</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:twitter.com+OR+site:x.com" target="_blank">&#128038; Twitter</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:pagesjaunes.fr" target="_blank">&#128205; PagesJaunes</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:societe.com" target="_blank">&#128188; Societe.com</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:pappers.fr" target="_blank">&#128220; Pappers</a>`;sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:verif.com" target="_blank">&#128202; Verif.com</a>`;if(ville)sHtml+=`<a href="https://www.google.com/search?q=${encodeURIComponent(`"${fn||searchQ}" "${ville}"`)}" target="_blank">&#127757; Google+Ville</a>`;if(email)sHtml+=`<a href="https://www.google.com/search?q=${encodeURIComponent(email)}" target="_blank">&#128231; Google Email</a>`;if(tel)sHtml+=`<a href="https://www.google.com/search?q=%22${encodeURIComponent(tel)}%22" target="_blank">&#128241; Google Tel</a>`;sHtml+=`<a href="https://yandex.com/search/?text=${encodeURIComponent(searchQ)}" target="_blank">&#128269; Yandex</a>`;sHtml+=`<a href="https://duckduckgo.com/?q=${encodeURIComponent(searchQ)}" target="_blank">&#129414; DuckDuckGo</a>`;sHtml+=`<a href="https://www.bing.com/search?q=${encodeURIComponent(searchQ)}" target="_blank">&#127760; Bing</a>`;sHtml+=`<a href="https://www.qwant.com/?q=${encodeURIComponent(searchQ)}" target="_blank">&#127760; Qwant</a>`;sHtml+=`<a href="https://search.brave.com/search?q=${encodeURIComponent(searchQ)}" target="_blank">&#128293; Brave</a>`;if(email)sHtml+=`<a href="https://intelx.io/?s=${encodeURIComponent(email)}" target="_blank">&#128270; IntelX</a>`;if(email)sHtml+=`<a href="https://www.google.com/search?q=%22${encodeURIComponent(email)}%22+filetype:csv+OR+filetype:xlsx+OR+filetype:pdf" target="_blank">&#128196; Google Docs</a>`;sHtml+='</div>';sections['search']='<div class="section-tag tag-web">Recherche web</div>'+sHtml}
+        // RECHERCHE WEB INTELLIGENTE
+        const searchQ=fn||email||tel||immat||ville||'';
+        if(searchQ){
+            let sHtml='<div class="search-grid">';
+            const sq=encodeURIComponent(`"${searchQ}"`);
+            // Google Dorks puissants
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}" target="_blank">&#128269; Google</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:linkedin.com" target="_blank">&#128279; LinkedIn</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:facebook.com" target="_blank">&#128101; Facebook</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:instagram.com" target="_blank">&#128248; Instagram</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:twitter.com+OR+site:x.com" target="_blank">&#128038; Twitter/X</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:tiktok.com" target="_blank">&#127916; TikTok</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:snapchat.com" target="_blank">&#128049; Snapchat</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:tinder.com+OR+site:badoo.com+OR+site:meetme.com" target="_blank">&#128149; Dating</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+filetype:pdf+OR+filetype:csv+OR+filetype:xlsx" target="_blank">&#128196; Documents leaked</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:pastebin.com+OR+site:paste.ee+OR+site:hastebin.com" target="_blank">&#128203; Pastebins</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:github.com+OR+site:gitlab.com" target="_blank">&#128187; Code/Repos</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:reddit.com" target="_blank">&#128172; Reddit</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:t.me+OR+site:telegram.org" target="_blank">&#9993; Telegram</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:pagesjaunes.fr" target="_blank">&#128205; PagesJaunes</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:societe.com+OR+site:pappers.fr+OR+site:verif.com" target="_blank">&#128188; Entreprises FR</a>`;
+            sHtml+=`<a href="https://www.google.com/search?q=${sq}+site:forum+OR+site:forum.php+OR+site:vBulletin" target="_blank">&#128483; Forums</a>`;
+            if(email)sHtml+=`<a href="https://www.google.com/search?q=%22${encodeURIComponent(email)}%22" target="_blank">&#128231; Google Email</a>`;
+            if(tel)sHtml+=`<a href="https://www.google.com/search?q=%22${encodeURIComponent(tel)}%22" target="_blank">&#128241; Google Tel</a>`;
+            if(ville)sHtml+=`<a href="https://www.google.com/search?q=${sq}+%22${encodeURIComponent(ville)}%22" target="_blank">&#127757; Google+Ville</a>`;
+            // Moteurs alternatifs
+            sHtml+=`<a href="https://yandex.com/search/?text=${encodeURIComponent(searchQ)}" target="_blank">&#128269; Yandex</a>`;
+            sHtml+=`<a href="https://duckduckgo.com/?q=${encodeURIComponent(searchQ)}" target="_blank">&#129414; DuckDuckGo</a>`;
+            sHtml+=`<a href="https://www.bing.com/search?q=${encodeURIComponent(searchQ)}" target="_blank">&#127760; Bing</a>`;
+            sHtml+=`<a href="https://www.qwant.com/?q=${encodeURIComponent(searchQ)}" target="_blank">&#127760; Qwant</a>`;
+            sHtml+=`<a href="https://search.brave.com/search?q=${encodeURIComponent(searchQ)}" target="_blank">&#128293; Brave</a>`;
+            if(email)sHtml+=`<a href="https://intelx.io/?s=${encodeURIComponent(email)}" target="_blank">&#128270; IntelX</a>`;
+            if(email)sHtml+=`<a href="https://www.google.com/search?q=%22${encodeURIComponent(email)}%22+filetype:csv+OR+filetype:xlsx+OR+filetype:pdf" target="_blank">&#128196; Google Docs</a>`;
+            sHtml+='</div>';
+            sections['search']='<div class="section-tag tag-web">Recherche Web Intelligente (26 sources)</div>'+sHtml;
+        }
 
         // RENDU
         let html='';
@@ -892,6 +927,7 @@
         document.getElementById('invResultsContent').innerHTML=html;
         document.getElementById('invResults').classList.add('active');
         document.getElementById('invLoading').classList.remove('active');
+        setTimeout(()=>{document.getElementById('apiStatusTracker').style.display='none'},3000);
     }
     function resetInvestigation(){['inv-nom','inv-prenom','inv-naissance','inv-telephone','inv-email','inv-ville','inv-cp','inv-adresse','inv-immat','inv-nir'].forEach(id=>document.getElementById(id).value='');document.getElementById('invResults').classList.remove('active');document.getElementById('apiStatusTracker').innerHTML=''}
 
