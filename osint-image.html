@@ -493,17 +493,12 @@
             <div class="section-header"><h2><span class="emoji">&#9992;</span> Traffic Aerien</h2><p>Recherche un avion en temps reel via OpenSky Network (ICAO24, callsign, immatriculation).</p></div>
             <div class="tabs"><button class="active" onclick="switchTab('av-map',this)">&#127758; Carte Live</button><button onclick="switchTab('av-tracker',this)">Tracker Vol</button><button onclick="switchTab('av-aircraft',this)">Avion</button><button onclick="switchTab('av-airport',this)">&#127969; Aeroport</button></div>
             <div class="tab-content active" id="tab-av-map">
-                <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
-                    <button class="btn btn-primary" onclick="loadAvMap()">&#9654; Charger la carte</button>
-                    <button class="btn btn-sm" onclick="refreshAvMap()" style="color:var(--accent2)">&#8635; Actualiser</button>
+                <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <button class="btn btn-primary" onclick="loadAvMap()">&#127758; Charger la carte</button>
                     <span id="avMapCount" style="color:var(--text3);font-size:0.85em"></span>
                 </div>
-                <div id="avMapContainer" style="display:none">
-                    <div id="avMap" style="height:500px;width:100%;border-radius:12px;border:1px solid var(--border);background:var(--bg2)"></div>
-                    <div id="avMapInfo" style="margin-top:10px"></div>
-                </div>
                 <div id="avMapFallback" style="display:none">
-                    <iframe id="avMapFrame" src="" style="width:100%;height:550px;border:none;border-radius:12px;border:1px solid var(--border)" allowfullscreen></iframe>
+                    <iframe id="avMapFrame" src="" style="width:100%;height:70vh;min-height:500px;border:none;border-radius:12px;border:1px solid var(--border)" allowfullscreen loading="lazy"></iframe>
                 </div>
             </div>
             <div class="tab-content" id="tab-av-tracker">
