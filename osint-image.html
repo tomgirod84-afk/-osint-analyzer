@@ -196,6 +196,7 @@
             <a href="#" onclick="showSection('phone',this)">Phone</a>
             <a href="#" onclick="showSection('username',this)">Username</a>
             <a href="#" onclick="showSection('hash',this)">Hash</a>
+            <a href="#" onclick="showSection('aviation',this)">&#9992; Avion</a>
             <a href="#" onclick="showSection('paste',this)">Paste</a>
             <a href="#" onclick="showSection('history',this)">Historique</a>
             <a href="#" onclick="showSection('ai',this)">&#129302; IA</a>
@@ -485,6 +486,36 @@
             <div class="result-box" id="hashResults"><h3>&#128274; Resultats</h3><div class="result-grid" id="hashData"></div></div>
         </div>
 
+        <!-- AVIATION -->
+        <div class="section" id="aviation">
+            <div class="section-header"><h2><span class="emoji">&#9992;</span> Traffic Aerien</h2><p>Recherche un avion en temps reel via OpenSky Network (ICAO24, callsign, immatriculation).</p></div>
+            <div class="tabs"><button class="active" onclick="switchTab('av-tracker',this)">&#128663; Tracker Vol</button><button onclick="switchTab('av-aircraft',this)">&#9992; Avion</button><button onclick="switchTab('av-airport',this)>&#127969; Aeroport</button></div>
+            <div class="tab-content active" id="tab-av-tracker">
+                <div class="input-group">
+                    <input type="text" id="avTrackerInput" placeholder="ICAO24 ex: 3C6586 ou callsign ex: DLH456">
+                    <button class="btn btn-primary" onclick="trackFlight()">Tracker</button>
+                </div>
+                <div class="loading" id="avTrackerLoading"><div class="spinner"></div></div>
+                <div class="result-box" id="avTrackerResults"><h3>&#128663; Position en temps reel</h3><div id="avTrackerData"></div></div>
+            </div>
+            <div class="tab-content" id="tab-av-aircraft">
+                <div class="input-group">
+                    <input type="text" id="avAircraftInput" placeholder="ICAO24 ex: 3C6586">
+                    <button class="btn btn-primary" onclick="searchAircraft()">Rechercher</button>
+                </div>
+                <div class="loading" id="avAircraftLoading"><div class="spinner"></div></div>
+                <div class="result-box" id="avAircraftResults"><h3>&#9992; Historique vol</h3><div id="avAircraftData"></div></div>
+            </div>
+            <div class="tab-content" id="tab-av-airport">
+                <div class="input-group">
+                    <input type="text" id="avAirportInput" placeholder="ICAO code ex: LFPG (Paris CDG)">
+                    <button class="btn btn-primary" onclick="searchAirport()">Vols</button>
+                </div>
+                <div class="loading" id="avAirportLoading"><div class="spinner"></div></div>
+                <div class="result-box" id="avAirportResults"><h3>&#127969; Arrivees/Departs</h3><div id="avAirportData"></div></div>
+            </div>
+        </div>
+
         <!-- PASTE -->
         <div class="section" id="paste">
             <div class="section-header"><h2><span class="emoji">&#128203;</span> Paste Search</h2><p>Cherche un email ou username sur les pastebins et GitHub gists.</p></div>
@@ -733,9 +764,115 @@ document.getElementById('phoneResults').classList.add('active');document.getElem
     }
 
     // WORLD CLOCKS
-    const clocks=[{id:'paris',tz:'Europe/Paris'},{id:'reunion',tz:'Indian/Reunion'},{id:'newyork',tz:'America/New_York'},{id:'london',tz:'Europe/London'},{id:'tokyo',tz:'Asia/Tokyo'},{id:'sydney',tz:'Australia/Sydney'}];
-    function updateClocks(){const now=new Date();clocks.forEach(c=>{document.getElementById('clock-'+c.id).textContent=now.toLocaleTimeString('fr-FR',{timeZone:c.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});document.getElementById('date-'+c.id).textContent=now.toLocaleDateString('fr-FR',{timeZone:c.tz,weekday:'short',day:'numeric',month:'short'})})}
+    var clocks=[{id:'paris',tz:'Europe/Paris'},{id:'reunion',tz:'Indian/Reunion'},{id:'newyork',tz:'America/New_York'},{id:'london',tz:'Europe/London'},{id:'tokyo',tz:'Asia/Tokyo'},{id:'sydney',tz:'Australia/Sydney'}];
+    function updateClocks(){var now=new Date();clocks.forEach(function(c){document.getElementById('clock-'+c.id).textContent=now.toLocaleTimeString('fr-FR',{timeZone:c.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});document.getElementById('date-'+c.id).textContent=now.toLocaleDateString('fr-FR',{timeZone:c.tz,weekday:'short',day:'numeric',month:'short'})})}
     setInterval(updateClocks,1000);updateClocks();
+
+    // AVIATION
+    var OSKY='https://opensky-network.org/api';
+    var AV_COUNTRIES={0:'Inconnu',1:'USA',2:'UK/Canada',16:'France',20:'Allemagne',46:'Russie',55:'Japon',127:'Australie',159:'Chine',196:'Inde'};
+    function avAlt(v){return v!=null?(v*3.28084).toFixed(0)+' ft ('+v.toFixed(0)+' m)':''}
+    function avSpeed(v){return v!=null?(v*3.6).toFixed(0)+' km/h':''}
+    function avCoord(v){return v!=null?v.toFixed(4):''}
+    function avDeg(v){return v!=null?(v*180/Math.PI).toFixed(1)+'°':''}
+    function avTime(v){return v?new Date(v*1000).toLocaleTimeString('fr-FR'):''}
+
+    async function trackFlight(){
+        var q=document.getElementById('avTrackerInput').value.trim().toUpperCase();
+        if(!q){showToast('Entrez un ICAO24 ou callsign');return}
+        document.getElementById('avTrackerLoading').classList.add('active');
+        document.getElementById('avTrackerResults').classList.remove('active');
+        addHistory('Avion',q);
+        try{
+            var r=await fetch(OSKY+'/states/all?icao24='+encodeURIComponent(q.toLowerCase()));
+            if(!r.ok)throw new Error('Not found');
+            var d=await r.json();
+            var s=(d.states||[])[0];
+            if(!s){document.getElementById('avTrackerData').innerHTML='<p style="color:var(--text3)">Avion non trouve en vol. ICAO24: '+q+'</p>';document.getElementById('avTrackerResults').classList.add('active');return}
+            var callsign=s[1]?s[1].trim():'N/A';
+            var country=AV_COUNTRIES[s[5]]||('Code '+s[5]);
+            var onGround=s[8];
+            var alt=avAlt(s[7]);
+            var spd=avSpeed(s[9]);
+            var trk=avDeg(s[10]);
+            var vs=avSpeed(s[11]);
+            var lat=avCoord(s[6]);
+            var lon=avCoord(s[5]);
+            var squawk=s[14]||'N/A';
+            var pos=s[8]?'AU SOL':'EN VOL';
+            var posBadge=s[8]?'badge-warn':'badge-ok';
+            var html='<div class="result-grid">';
+            html+='<div class="result-item"><div class="label">ICAO24</div><div class="value" style="font-family:JetBrains Mono,monospace">'+s[0].toUpperCase()+'</div></div>';
+            html+='<div class="result-item"><div class="label">Callsign</div><div class="value" style="font-weight:700">'+callsign+'</div></div>';
+            html+='<div class="result-item"><div class="label">Pays</div><div class="value">'+country+'</div></div>';
+            html+='<div class="result-item"><div class="label">Statut</div><div class="value"><span class="badge '+posBadge+'">'+pos+'</span></div></div>';
+            html+='<div class="result-item"><div class="label">Altitude</div><div class="value">'+alt+'</div></div>';
+            html+='<div class="result-item"><div class="label">Vitesse</div><div class="value">'+spd+'</div></div>';
+            html+='<div class="result-item"><div class="label">Cap</div><div class="value">'+trk+'</div></div>';
+            html+='<div class="result-item"><div class="label">Position</div><div class="value">'+lat+', '+lon+'</div></div>';
+            html+='<div class="result-item"><div class="label">Squawk</div><div class="value" style="font-family:JetBrains Mono,monospace">'+squawk+'</div></div>';
+            html+='<div class="result-item"><div class="label">Derniere MAJ</div><div class="value">'+avTime(s[3])+'</div></div>';
+            html+='</div>';
+            html+='<div style="margin-top:12px"><a href="https://www.flightradar24.com/data/aircraft/icao/'+s[0]+'" target="_blank" class="btn btn-sm" style="color:var(--accent2)">Flightradar24 &rarr;</a> ';
+            html+='<a href="https://www.radarbox.com/data/aircraft/'+s[0]+'" target="_blank" class="btn btn-sm" style="color:var(--accent2)">RadarBox &rarr;</a></div>';
+            document.getElementById('avTrackerData').innerHTML=html;
+            document.getElementById('avTrackerResults').classList.add('active');
+        }catch(e){document.getElementById('avTrackerData').innerHTML='<p style="color:var(--text3)">Avion non trouve ou API indisponible.</p>';document.getElementById('avTrackerResults').classList.add('active')}
+        document.getElementById('avTrackerLoading').classList.remove('active');
+    }
+
+    async function searchAircraft(){
+        var q=document.getElementById('avAircraftInput').value.trim().toLowerCase();
+        if(!q){showToast('Entrez un ICAO24');return}
+        document.getElementById('avAircraftLoading').classList.add('active');
+        document.getElementById('avAircraftResults').classList.remove('active');
+        addHistory('Avion',q);
+        try{
+            var end=Math.floor(Date.now()/1000);
+            var begin=end-86400;
+            var r=await fetch(OSKY+'/flights/aircraft?icao24='+encodeURIComponent(q)+'&begin='+begin+'&end='+end);
+            if(!r.ok)throw new Error('Not found');
+            var flights=await r.json();
+            if(!flights||!flights.length){document.getElementById('avAircraftData').innerHTML='<p style="color:var(--text3)">Aucun vol trouve pour '+q.toUpperCase()+' (24h).</p>';document.getElementById('avAircraftResults').classList.add('active');return}
+            var html='<div style="display:flex;flex-direction:column;gap:6px">';
+            flights.slice(0,15).forEach(function(f){
+                html+='<div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px">';
+                html+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">';
+                html+='<span style="font-weight:700;font-size:0.95em">'+(f.callsign||'N/A').trim().toUpperCase()+'</span>';
+                html+='<span class="badge badge-info">'+f.estDepartureAirport||'?'+ ' → '+(f.estArrivalAirport||'?')+'</span>';
+                html+='</div>';
+                html+='<div style="font-size:0.8em;color:var(--text3);margin-top:4px">'+new Date(f.firstSeen*1000).toLocaleTimeString('fr-FR')+' → '+new Date(f.lastSeen*1000).toLocaleTimeString('fr-FR')+'</div>';
+                html+='</div>';
+            });
+            html+='</div>';
+            document.getElementById('avAircraftData').innerHTML=html;
+            document.getElementById('avAircraftResults').classList.add('active');
+        }catch(e){document.getElementById('avAircraftData').innerHTML='<p style="color:var(--text3)">Erreur ou API indisponible.</p>';document.getElementById('avAircraftResults').classList.add('active')}
+        document.getElementById('avAircraftLoading').classList.remove('active');
+    }
+
+    async function searchAirport(){
+        var q=document.getElementById('avAirportInput').value.trim().toUpperCase();
+        if(!q){showToast('Entrez un code ICAO (ex: LFPG)');return}
+        document.getElementById('avAirportLoading').classList.add('active');
+        document.getElementById('avAirportResults').classList.remove('active');
+        addHistory('Avion',q);
+        try{
+            var end=Math.floor(Date.now()/1000);
+            var begin=end-7200;
+            var r1=await fetch(OSKY+'/flights/arrival?airport='+encodeURIComponent(q)+'&begin='+begin+'&end='+end);
+            var arr=await r1.json();
+            var r2=await fetch(OSKY+'/flights/departure?airport='+encodeURIComponent(q)+'&begin='+begin+'&end='+end);
+            var dep=await r2.json();
+            var html='';
+            if(dep&&dep.length){html+='<h4 style="color:var(--accent);margin:10px 0 6px">Departs ('+dep.length+')</h4>';html+='<div style="display:flex;flex-direction:column;gap:4px">';dep.slice(0,10).forEach(function(f){html+='<div style="padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:0.9em"><span style="font-weight:600">'+(f.callsign||'').trim().toUpperCase()+'</span> <span class="badge badge-ok">'+(f.estArrivalAirport||'?')+'</span> <span style="color:var(--text3);font-size:0.85em">'+new Date(f.firstSeen*1000).toLocaleTimeString('fr-FR')+'</span></div>'});html+='</div>'}
+            if(arr&&arr.length){html+='<h4 style="color:var(--accent2);margin:12px 0 6px">Arrivees ('+arr.length+')</h4>';html+='<div style="display:flex;flex-direction:column;gap:4px">';arr.slice(0,10).forEach(function(f){html+='<div style="padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:0.9em"><span style="font-weight:600">'+(f.callsign||'').trim().toUpperCase()+'</span> <span class="badge badge-info">'+(f.estDepartureAirport||'?')+'</span> <span style="color:var(--text3);font-size:0.85em">'+new Date(f.lastSeen*1000).toLocaleTimeString('fr-FR')+'</span></div>'});html+='</div>'}
+            if(!html)html='<p style="color:var(--text3)">Aucun vol dans les 2 dernières heures pour '+q+'</p>';
+            document.getElementById('avAirportData').innerHTML=html;
+            document.getElementById('avAirportResults').classList.add('active');
+        }catch(e){document.getElementById('avAirportData').innerHTML='<p style="color:var(--text3)">Erreur ou API indisponible.</p>';document.getElementById('avAirportResults').classList.add('active')}
+        document.getElementById('avAirportLoading').classList.remove('active');
+    }
 
     // DASHBOARD FEEDS
     var dashInterval=null,dashCountdown=60;
