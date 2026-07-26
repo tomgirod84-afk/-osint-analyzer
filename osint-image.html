@@ -597,6 +597,17 @@
             <div class="result-box" id="wafResults"><h3>&#128737; Resultat</h3><div id="wafData"></div></div>
         </div>
 
+        <!-- WEB SCRAPER -->
+        <div class="section" id="scraper">
+            <div class="section-header"><h2><span class="emoji">&#128270;</span> Web Scraper</h2><p>Extrait les informations d'une page web (noms, emails, liens, meta, technologies).</p></div>
+            <div class="input-group">
+                <input type="text" id="scraperInput" placeholder="https://exemple.com">
+                <button class="btn btn-primary" onclick="scrapeWeb()">Extraire</button>
+            </div>
+            <div class="loading" id="scraperLoading"><div class="spinner"></div><p style="color:var(--text2)">Scraping en cours...</p></div>
+            <div class="result-box" id="scraperResults"><h3>&#128270; Resultats du Scraper</h3><div id="scraperData"></div></div>
+        </div>
+
         <!-- PASTE -->
         <div class="section" id="paste">
             <div class="section-header"><h2><span class="emoji">&#128203;</span> Paste Search</h2><p>Cherche un email ou username sur les pastebins et GitHub gists.</p></div>
@@ -1163,6 +1174,79 @@ document.getElementById('phoneResults').classList.add('active');document.getElem
             document.getElementById('wafResults').classList.add('active');
         }catch(e){document.getElementById('wafData').innerHTML='<p style="color:var(--text3)">Impossible d\'acceder au site.</p>';document.getElementById('wafResults').classList.add('active')}
         document.getElementById('wafLoading').classList.remove('active');
+    }
+
+    // WEB SCRAPER
+    async function scrapeWeb(){
+        var url=document.getElementById('scraperInput').value.trim();
+        if(!url){showToast('Entrez une URL');return}
+        if(!url.startsWith('http'))url='https://'+url;
+        document.getElementById('scraperLoading').classList.add('active');
+        document.getElementById('scraperResults').classList.remove('active');
+        try{
+            var r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(url));
+            var html=await r.text();
+            var parser=new DOMParser();
+            var doc=parser.parseFromString(html,'text/html');
+            var h='';
+
+            // Meta tags
+            var title=doc.querySelector('title')?.textContent||'';
+            var desc=doc.querySelector('meta[name="description"]')?.getAttribute('content')||'';
+            var keywords=doc.querySelector('meta[name="keywords"]')?.getAttribute('content')||'';
+            var author=doc.querySelector('meta[name="author"]')?.getAttribute('content')||'';
+            var ogTitle=doc.querySelector('meta[property="og:title"]')?.getAttribute('content')||'';
+            var ogDesc=doc.querySelector('meta[property="og:description"]')?.getAttribute('content')||'';
+            var ogImage=doc.querySelector('meta[property="og:image"]')?.getAttribute('content')||'';
+
+            h+='<div style="margin-bottom:15px"><span class="badge badge-info">Page scrapee avec succes</span></div>';
+            if(title)h+=`<div class="result-item"><div class="label">Title</div><div class="value">${title}</div></div>`;
+            if(desc)h+=`<div class="result-item"><div class="label">Description</div><div class="value">${desc}</div></div>`;
+            if(keywords)h+=`<div class="result-item"><div class="label">Keywords</div><div class="value">${keywords}</div></div>`;
+            if(author)h+=`<div class="result-item"><div class="label">Auteur</div><div class="value">${author}</div></div>`;
+            if(ogTitle)h+=`<div class="result-item"><div class="label">OG Title</div><div class="value">${ogTitle}</div></div>`;
+            if(ogDesc)h+=`<div class="result-item"><div class="label">OG Description</div><div class="value">${ogDesc}</div></div>`;
+            if(ogImage)h+=`<div class="result-item"><div class="label">OG Image</div><div class="value"><a href="${ogImage}" target="_blank" style="color:var(--accent2)">${ogImage} &rarr;</a></div></div>`;
+
+            // Emails
+            var emailRegex=/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+            var emails=(html.match(emailRegex)||[]).filter(function(e,i,a){return a.indexOf(e)===i});
+            if(emails.length)h+=`<div style="margin-top:15px"><span class="badge badge-warn" style="margin-bottom:8px">${emails.length} emails trouves</span></div>`;emails.slice(0,20).forEach(function(e){h+=`<div class="result-item"><div class="label">Email</div><div class="value"><a href="mailto:${e}" style="color:var(--accent2)">${e}</a></div></div>`});
+
+            // Phone numbers
+            var phoneRegex=/[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}/g;
+            var phones=(html.match(phoneRegex)||[]).filter(function(p){return p.replace(/\D/g,'').length>=8}).filter(function(e,i,a){return a.indexOf(e)===i});
+            if(phones.length)h+=`<div style="margin-top:15px"><span class="badge badge-warn" style="margin-bottom:8px">${phones.length} telephones trouves</span></div>`;phones.slice(0,15).forEach(function(p){h+=`<div class="result-item"><div class="label">Tel</div><div class="value">${p.trim()}</div></div>`});
+
+            // Links
+            var links=[];
+            doc.querySelectorAll('a[href]').forEach(function(a){var href=a.getAttribute('href');if(href&&href.startsWith('http')&&href!==url)links.push(href)});
+            var uniqueLinks=[...new Set(links)];
+            if(uniqueLinks.length)h+=`<div style="margin-top:15px"><span class="badge badge-info" style="margin-bottom:8px">${uniqueLinks.length} liens externes</span></div>`;uniqueLinks.slice(0,30).forEach(function(l){h+=`<div class="result-item"><div class="label">Link</div><div class="value"><a href="${l}" target="_blank" style="color:var(--accent2);font-size:0.85em">${l.substring(0,80)}${l.length>80?'...':''}</a></div></div>`});
+
+            // Images
+            var imgs=[];
+            doc.querySelectorAll('img[src]').forEach(function(i){var src=i.getAttribute('src');if(src)imgs.push(src)});
+            var uniqueImgs=[...new Set(imgs)];
+            if(uniqueImgs.length)h+=`<div style="margin-top:15px"><span class="badge badge-info" style="margin-bottom:8px">${uniqueImgs.length} images</span></div>`;uniqueImgs.slice(0,10).forEach(function(i){h+=`<div style="padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin:3px 0;font-size:0.85em"><a href="${i}" target="_blank" style="color:var(--accent2)">${i.substring(0,80)}</a></div>`});
+
+            // External scripts
+            var scripts=[];
+            doc.querySelectorAll('script[src]').forEach(function(s){var src=s.getAttribute('src');if(src)scripts.push(src)});
+            if(scripts.length)h+=`<div style="margin-top:15px"><span class="badge badge-info" style="margin-bottom:8px">${scripts.length} scripts externes</span></div>`;scripts.slice(0,10).forEach(function(s){h+=`<div class="result-item"><div class="label">Script</div><div class="value" style="font-size:0.85em">${s.substring(0,80)}</div></div>`});
+
+            // Forms
+            var forms=doc.querySelectorAll('form');
+            if(forms.length)h+=`<div style="margin-top:15px"><span class="badge badge-warn" style="margin-bottom:8px">${forms.length} formulaire(s)</span></div>`;
+
+            // Passwords / hidden fields
+            var pwFields=doc.querySelectorAll('input[type="password"]');
+            if(pwFields.length)h+=`<div class="result-item"><div class="label">Securite</div><div class="value"><span class="badge badge-danger">${pwFields.length} champ(s) mot de passe detecte(s)</span></div></div>`;
+
+            document.getElementById('scraperData').innerHTML=h||'<p style="color:var(--text3)">Aucune donnee extraite.</p>';
+            document.getElementById('scraperResults').classList.add('active');
+        }catch(e){document.getElementById('scraperData').innerHTML='<p style="color:var(--text3)">Erreur: '+e.message+'</p>';document.getElementById('scraperResults').classList.add('active')}
+        document.getElementById('scraperLoading').classList.remove('active');
     }
 
     // AVIATION
