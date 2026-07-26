@@ -38,6 +38,7 @@
         .tool-card:hover{border-color:rgba(0,255,136,0.3);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.3)}
         .tool-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transition:opacity 0.3s}
         .tool-card:hover::after{opacity:1}
+        .tool-card.locked{opacity:0.45;cursor:default}.tool-card.locked:hover{transform:none;box-shadow:none}.tool-card.locked:hover::after{opacity:0}
         .tool-card .icon{font-size:1.8em;margin-bottom:12px}
         .tool-card h3{color:#fff;margin-bottom:6px;font-size:1.05em;font-weight:600}
         .tool-card p{color:var(--text2);font-size:0.82em;line-height:1.5}
@@ -188,20 +189,20 @@
         <div class="logo" id="logo"><span class="logo-dot"></span>SENTINEL</div>
         <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')"><span></span><span></span><span></span></button>
         <div class="nav-links" id="navLinks">
-            <a href="#" class="active" onclick="showSection('home',this)">Accueil</a>
-            <a href="#" onclick="showSection('dashboard',this)">Dashboard</a>
-            <a href="#" onclick="showSection('investigation',this)">Investigation</a>
-            <a href="#" onclick="showSection('domain',this)">Domain</a>
-            <a href="#" onclick="showSection('image',this)">Image</a>
-            <a href="#" onclick="showSection('ip',this)">IP</a>
-            <a href="#" onclick="showSection('email',this)">Email</a>
-            <a href="#" onclick="showSection('phone',this)">Phone</a>
-            <a href="#" onclick="showSection('username',this)">Username</a>
-            <a href="#" onclick="showSection('hash',this)">Hash</a>
+            <a href="#" class="active" onclick="showSection('home',this)">&#127968; Accueil</a>
+            <a href="#" onclick="showSection('dashboard',this)">&#128200; Dashboard</a>
+            <a href="#" onclick="showSection('investigation',this)">&#128270; Investigation</a>
+            <a href="#" onclick="showSection('domain',this)">&#127760; Domain</a>
+            <a href="#" onclick="showSection('image',this)">&#128247; Image</a>
+            <a href="#" onclick="showSection('ip',this)">&#128421; IP</a>
+            <a href="#" onclick="showSection('email',this)">&#128231; Email</a>
+            <a href="#" onclick="showSection('username',this)">&#128100; Username</a>
             <a href="#" onclick="showSection('aviation',this)">&#9992; Avion</a>
-            <a href="#" onclick="showSection('paste',this)">Paste</a>
-            <a href="#" onclick="showSection('history',this)">Historique</a>
+            <a href="#" onclick="showSection('history',this)">&#128214; Historique</a>
             <a href="#" onclick="showSection('ai',this)">&#129302; IA</a>
+            <a href="#" onclick="showToast('Bientot disponible !');return false" style="opacity:0.4;pointer-events:auto">&#128241; Phone</a>
+            <a href="#" onclick="showToast('Bientot disponible !');return false" style="opacity:0.4;pointer-events:auto">&#128274; Hash</a>
+            <a href="#" onclick="showToast('Bientot disponible !');return false" style="opacity:0.4;pointer-events:auto">&#128203; Paste</a>
         </div>
         <div class="nav-right">
             <div class="badge-live">OSINT LIVE</div>
@@ -241,21 +242,25 @@
                     <div class="icon">&#128231;</div>
                     <h3>Email Analyze</h3><p>Verification DNS, MX, SPF, DMARC, detection emails jetables.</p>
                 </div>
-                <div class="tool-card" onclick="showSection('phone',null,true)">
+                <div class="tool-card locked" onclick="showToast('Bientot disponible !')">
                     <div class="icon">&#128241;</div>
-                    <h3>Phone Lookup</h3><p>Operateur, pays, type de ligne, fuseaux horaires.</p>
+                    <h3>Phone Lookup</h3><p style="opacity:0.5">Bientot disponible...</p>
                 </div>
                 <div class="tool-card" onclick="showSection('username',null,true)">
                     <div class="badge-new">NEW</div><div class="icon">&#128100;</div>
                     <h3>Username Search</h3><p>Cherche un username sur les reseaux sociaux et plateformes.</p>
                 </div>
-                <div class="tool-card" onclick="showSection('hash',null,true)">
+                <div class="tool-card locked" onclick="showToast('Bientot disponible !')">
                     <div class="icon">&#128274;</div>
-                    <h3>Hash Cracker</h3><p>Identifie un hash MD5, SHA1, SHA256 par dictionnaire.</p>
+                    <h3>Hash Cracker</h3><p style="opacity:0.5">Bientot disponible...</p>
                 </div>
-                <div class="tool-card" onclick="showSection('paste',null,true)">
+                <div class="tool-card locked" onclick="showToast('Bientot disponible !')">
                     <div class="icon">&#128203;</div>
-                    <h3>Paste Search</h3><p>Recherche sur pastebins, GitHub gists, sources publiques.</p>
+                    <h3>Paste Search</h3><p style="opacity:0.5">Bientot disponible...</p>
+                </div>
+                <div class="tool-card" onclick="showSection('aviation',null,true)">
+                    <div class="badge-new">&#9992;</div><div class="icon">&#127758;</div>
+                    <h3>Traffic Aerien</h3><p>Carte en temps reel des avions en vol, tracking, aeroports.</p>
                 </div>
                 <div class="tool-card" onclick="showSection('ai',null,true)">
                     <div class="badge-new">IA</div><div class="icon">&#129302;</div>
