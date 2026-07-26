@@ -1188,7 +1188,7 @@ document.getElementById('phoneResults').classList.add('active');document.getElem
         document.getElementById('scraperLoading').classList.add('active');
         document.getElementById('scraperResults').classList.remove('active');
         try{
-            var r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(url));
+            var r=await fetch('https://corsproxy.io/?url='+encodeURIComponent(url));
             var html=await r.text();
             var parser=new DOMParser();
             var doc=parser.parseFromString(html,'text/html');
