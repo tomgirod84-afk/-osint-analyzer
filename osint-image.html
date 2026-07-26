@@ -331,7 +331,7 @@
                     <h3>Filtres d'identification</h3>
                     <div class="inv-field"><label>Nom de famille</label><input type="text" id="inv-nom" placeholder="Dupont"></div>
                     <div class="inv-field"><label>Prenom</label><input type="text" id="inv-prenom" placeholder="Jean"></div>
-                    <div class="inv-field"><label>Date de naissance</label><input type="date" id="inv-naissance"></div>
+                    <div class="inv-field"><label>Annee de naissance</label><input type="text" id="inv-naissance" placeholder="2000" maxlength="4"></div>
                     <div class="inv-field"><label>Telephone</label><input type="tel" id="inv-telephone" placeholder="+33 6 12 34 56 78"></div>
                     <div class="inv-field"><label>Email</label><input type="email" id="inv-email" placeholder="jean@email.com"></div>
                 </div>
@@ -819,7 +819,7 @@
         let idR=[],locR=[],crossR=[],sections={};
 
         if(nom||prenom){idR.push({t:'Nom complet',d:fn,c:'info'})}
-        if(naissance){const d=new Date(naissance),age=Math.floor((Date.now()-d.getTime())/(365.25*86400000));idR.push({t:'Date naissance',d:`${d.toLocaleDateString('fr-FR')} (${age} ans)`,c:'info'})}
+        if(naissance){const year=parseInt(naissance);if(year>=1900&&year<=2026){const age=new Date().getFullYear()-year;idR.push({t:'Age estime',d:`${age} ans (nee en ${year})`,c:age<18?'warn':'info'})}}
         if(tel){
             const c=tel.replace(/[\s-]/g,'');let info='',typeL='',operateur='',regionTel='';
             if(c.startsWith('+33')||c.startsWith('0033')){
