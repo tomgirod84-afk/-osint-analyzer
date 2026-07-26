@@ -798,7 +798,7 @@ document.getElementById('phoneResults').classList.add('active');document.getElem
         try{
             var r=await fetch(AV_PROXY+encodeURIComponent(OSKY+'/states/all?icao24='+encodeURIComponent(q.toLowerCase())));
             if(!r.ok)throw new Error('Not found');
-            var w=await r.json();var d=typeof w.contents==='string'?JSON.parse(w.contents):w;
+            var w=await r.json();var d=w;
             var s=(d.states||[])[0];
             if(!s){document.getElementById('avTrackerData').innerHTML='<p style="color:var(--text3)">Avion non trouve en vol. ICAO24: '+q+'</p>';document.getElementById('avTrackerResults').classList.add('active');return}
             var callsign=s[1]?s[1].trim():'N/A';
@@ -844,7 +844,7 @@ document.getElementById('phoneResults').classList.add('active');document.getElem
             var begin=end-86400;
             var r=await fetch(AV_PROXY+encodeURIComponent(OSKY+'/flights/aircraft?icao24='+encodeURIComponent(q)+'&begin='+begin+'&end='+end));
             if(!r.ok)throw new Error('Not found');
-            var w=await r.json();var flights=typeof w.contents==='string'?JSON.parse(w.contents):w;
+            var w=await r.json();var flights=w;
             if(!flights||!flights.length){document.getElementById('avAircraftData').innerHTML='<p style="color:var(--text3)">Aucun vol trouve pour '+q.toUpperCase()+' (24h).</p>';document.getElementById('avAircraftResults').classList.add('active');return}
             var html='<div style="display:flex;flex-direction:column;gap:6px">';
             flights.slice(0,15).forEach(function(f){
@@ -872,8 +872,8 @@ document.getElementById('phoneResults').classList.add('active');document.getElem
         try{
             var end=Math.floor(Date.now()/1000);
             var begin=end-7200;
-            var w1=await fetch(AV_PROXY+encodeURIComponent(OSKY+'/flights/arrival?airport='+encodeURIComponent(q)+'&begin='+begin+'&end='+end));var arr=typeof w1.contents==='string'?JSON.parse(w1.contents):w1;
-            var w2=await fetch(AV_PROXY+encodeURIComponent(OSKY+'/flights/departure?airport='+encodeURIComponent(q)+'&begin='+begin+'&end='+end));var dep=typeof w2.contents==='string'?JSON.parse(w2.contents):w2;
+            var w1=await fetch(AV_PROXY+encodeURIComponent(OSKY+'/flights/arrival?airport='+encodeURIComponent(q)+'&begin='+begin+'&end='+end));var arr=await w1.json();
+            var w2=await fetch(AV_PROXY+encodeURIComponent(OSKY+'/flights/departure?airport='+encodeURIComponent(q)+'&begin='+begin+'&end='+end));var dep=await w2.json();
             var html='';
             if(dep&&dep.length){html+='<h4 style="color:var(--accent);margin:10px 0 6px">Departs ('+dep.length+')</h4>';html+='<div style="display:flex;flex-direction:column;gap:4px">';dep.slice(0,10).forEach(function(f){html+='<div style="padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:0.9em"><span style="font-weight:600">'+(f.callsign||'').trim().toUpperCase()+'</span> <span class="badge badge-ok">'+(f.estArrivalAirport||'?')+'</span> <span style="color:var(--text3);font-size:0.85em">'+new Date(f.firstSeen*1000).toLocaleTimeString('fr-FR')+'</span></div>'});html+='</div>'}
             if(arr&&arr.length){html+='<h4 style="color:var(--accent2);margin:12px 0 6px">Arrivees ('+arr.length+')</h4>';html+='<div style="display:flex;flex-direction:column;gap:4px">';arr.slice(0,10).forEach(function(f){html+='<div style="padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:0.9em"><span style="font-weight:600">'+(f.callsign||'').trim().toUpperCase()+'</span> <span class="badge badge-info">'+(f.estDepartureAirport||'?')+'</span> <span style="color:var(--text3);font-size:0.85em">'+new Date(f.lastSeen*1000).toLocaleTimeString('fr-FR')+'</span></div>'});html+='</div>'}
@@ -894,7 +894,7 @@ document.getElementById('phoneResults').classList.add('active');document.getElem
         }
         refreshAvMap();
     }
-    var AV_PROXY='https://api.allorigins.win/get?url=';
+    var AV_PROXY='https://osint-proxy.tomgirod84.workers.dev/?url=';
     function refreshAvMap(){
         if(!avMap){loadAvMap();return}
         document.getElementById('avMapCount').textContent='Chargement...';
@@ -902,7 +902,7 @@ document.getElementById('phoneResults').classList.add('active');document.getElem
             if(!r.ok)throw new Error(r.status);
             return r.json();
         }).then(function(wrapped){
-            var d=typeof wrapped.contents==='string'?JSON.parse(wrapped.contents):wrapped;
+            var d=wrapped;
             if(avLayer)avLayer.clearLayers();
             var count=0;
             (d.states||[]).forEach(function(s){
