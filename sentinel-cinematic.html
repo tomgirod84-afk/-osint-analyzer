@@ -205,9 +205,9 @@ function initVoice(){
 
 function unlockVoice(){
     if(voiceUnlocked)return;
-    var a=new Audio('voice_lines/'+(voiceManifest?voiceManifest['sr1']||Object.values(voiceManifest)[0]:'sr1.mp3'));
+    var a=new Audio('voice_lines/'+(voiceManifest&&voiceManifest['sr1']?voiceManifest['sr1']:'sr1.mp3'));
     a.volume=0.001;
-    a.play().then(function(){voiceUnlocked=true;console.log('[VOICE] unlocked');a.pause()}).catch(function(e){console.log('[VOICE] unlock err:',e)});
+    a.play().then(function(){voiceUnlocked=true;a.pause();a.currentTime=0;console.log('[VOICE] unlocked via Audio')}).catch(function(e){console.log('[VOICE] unlock blocked:',e.message)});
 }
 
 function speakAudio(id){
@@ -219,8 +219,8 @@ function speakAudio(id){
         currentAudio=a;
         var done=false;
         a.onended=function(){if(!done){done=true;currentAudio=null;res()}};
-        a.onerror=function(e){console.log('[VOICE] play err:',id,e);if(!done){done=true;currentAudio=null;res()}};
-        a.play().then(function(){console.log('[VOICE] playing',id)}).catch(function(e){console.log('[VOICE] blocked:',id,e.message);if(!done){done=true;currentAudio=null;res()}});
+        a.onerror=function(e){console.log('[VOICE] err:',id);if(!done){done=true;currentAudio=null;res()}};
+        a.play().then(function(){console.log('[VOICE] playing',id)}).catch(function(e){console.log('[VOICE] blocked:',id);if(!done){done=true;currentAudio=null;res()}});
     });
 }
     });
@@ -481,8 +481,7 @@ function showChoices(choices){
 async function start(){
     document.getElementById('title').style.display='none';
     initAudio();
-    await initVoice();
-    unlockVoice();
+    initVoice();
 
     // Boot sequence - fast cuts
     sfxDialup();await wait(200);
