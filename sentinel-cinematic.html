@@ -230,6 +230,7 @@ function speakAudio(id){
             if(!buffer){res();return}
             var src=ac.createBufferSource();
             src.buffer=buffer;
+            src.playbackRate.value=1.25;
             src.connect(mg);
             src.onended=function(){currentVoiceSrc=null;res()};
             currentVoiceSrc=src;
