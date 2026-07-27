@@ -207,7 +207,7 @@ async function initVoice(){
 
 function speakAudio(id){
     return new Promise(function(res){
-        if(!voiceManifest||!voiceManifest[id]){res();return}
+        if(!id||!voiceManifest||!voiceManifest[id]){res();return}
         if(currentAudio){currentAudio.pause();currentAudio=null}
         var src='voice_lines/'+voiceManifest[id];
         console.log('[VOICE] playing',id);
@@ -487,7 +487,7 @@ function showChoices(choices){
 async function start(){
     document.getElementById('title').style.display='none';
     initAudio();
-    await initVoice();
+    initVoice();
 
     // Boot sequence - fast cuts
     sfxDialup();await wait(200);
@@ -496,16 +496,16 @@ async function start(){
     staticI=0.8;glitch(250,0.6);sfxScare();await wait(150);
     staticI=0.3;glitch(100,0.2);await wait(300);
 
-    // System text - no voice needed, pure atmosphere
+    // System text - silent, pure atmosphere
     narrEl.style.display='flex';
     showName('SYSTEM');
-    await narrate('SYSTEM','sys1','Initialisation du protocole SENTINEL...',18);
+    await reveal('Initialisation du protocole SENTINEL...',18);
     await wait(500);sfxDialup();
-    await narrate('SYSTEM','sys2','Bypass du firewall... <span class="g">OK</span>',18);
+    await reveal('Bypass du firewall... <span class="g">OK</span>',18);
     await wait(300);
-    await narrate('SYSTEM','sys3','Injection du code... <span class="g">OK</span>',18);
+    await reveal('Injection du code... <span class="g">OK</span>',18);
     await wait(250);
-    await narrate('SYSTEM','sys4','Acc\u00e8s au noeud... <span class="g">ACCES ACCORDE</span>',18);
+    await reveal('Acc\u00e8s au noeud... <span class="g">ACCES ACCORDE</span>',18);
     await wait(400);
     hideName();staticI=0.6;glitch(400,0.7);sfxScare();await wait(400);
 
@@ -521,7 +521,7 @@ async function start(){
     await wait(1200);staticI=0.15;await wait(800);
 
     // === CHAPTER 1: THE HOOK ===
-    await narrate('SENTINEL','s1',"...",2500);
+    await narrate('SENTINEL',null,"...",2500);
     sfxHB();await wait(300);sfxHB();
 
     await narrate('SENTINEL','s2',"Hey. Toi. Ouais, toi.",1500);
@@ -555,7 +555,7 @@ async function start(){
 
     if(r1==='help'){
         await wait(300);glitch(200,0.3);
-        await narrate('SENTINEL','h1',"...",600);
+        await narrate('SENTINEL',null,"...",600);
         await narrate('SENTINEL','h2',"Respire. T'as fait le bon choix.",800);
         sfxWhine();
         await narrate('SENTINEL','h3',"3 serveurs \u00e0 bouffer. Le premier, c'est dans le nord.",700);glitch(150,0.2);
@@ -605,7 +605,7 @@ async function start(){
     await wait(2000);glitch(700,1);sfxScare();sfxStatic();
     await wait(1200);glitch(500,1);sfxScare();lightning=1;
     await wait(800);staticI=0.5;
-    await narrate('SENTINEL','sv1',"...",2000);glitch(350,0.6);
+    await narrate('SENTINEL',null,"...",2000);glitch(350,0.6);
     await narrate('SENTINEL','sv2',"Wesh... c'est pas bon \u00e7a...",600);glitch(550,0.9);sfxScare();
     await narrate('SENTINEL','sv3',"Le serveur maitre... il m'a <span class=\"r\">trouv\u00e9</span>.",700);glitch(350,0.5);
     sfxWhine();
