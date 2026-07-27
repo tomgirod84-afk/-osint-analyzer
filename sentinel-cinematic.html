@@ -223,8 +223,6 @@ function speakAudio(id){
         a.play().then(function(){console.log('[VOICE] playing',id)}).catch(function(e){console.log('[VOICE] blocked:',id);if(!done){done=true;currentAudio=null;res()}});
     });
 }
-    });
-}
 
 // ===== FIGURE - Hooded + Skull Mask =====
 var figA=0,figT=0,breathe=0,bDir=1,headBob=0,headDir=1,typing=0,mFlicker=1,mFDir=-1;
