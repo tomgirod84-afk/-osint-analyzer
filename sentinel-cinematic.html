@@ -274,9 +274,6 @@ function genPeds(){
 genPeds();
 addEventListener('resize',function(){genCity();genTargets();genConns();genPeds()});
 
-// Fish-eye distortion buffer
-var fisheyeBuf=null;
-
 // Grain
 var grainBuf=null;
 function drawGrain(){
@@ -534,30 +531,6 @@ function render(){
     // Scan lines (very subtle)
     fx.fillStyle='rgba(0,0,0,0.03)';
     for(var y=0;y<H;y+=3)fx.fillRect(0,y,W,1);
-
-    // Fish-eye lens distortion
-    if(!fisheyeBuf||fisheyeBuf.width!==W){
-        fisheyeBuf=document.createElement('canvas');fisheyeBuf.width=W;fisheyeBuf.height=H;
-    }
-    var feCtx=fisheyeBuf.getContext('2d');
-    feCtx.clearRect(0,0,W,H);
-    var strength=0.15;
-    var step=4;
-    for(var y2=0;y2<H;y2+=step){
-        for(var x2=0;x2<W;x2+=step){
-            var nx=(x2-W/2)/(W/2);
-            var ny=(y2-H/2)/(H/2);
-            var r2=nx*nx+ny*ny;
-            var distort=1+strength*r2;
-            var sx2=W/2+(x2-W/2)*distort;
-            var sy2=H/2+(y2-H/2)*distort;
-            if(sx2>=0&&sx2<W&&sy2>=0&&sy2<H){
-                feCtx.drawImage(fC,sx2,sy2,1,1,x2,y2,step,step);
-            }
-        }
-    }
-    mx.clearRect(0,0,W,H);
-    mx.drawImage(fisheyeBuf,0,0);
 
     requestAnimationFrame(render);
 }
