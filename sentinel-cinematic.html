@@ -36,6 +36,11 @@ background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,0.88) 10
 #code-rain{position:fixed;top:0;right:0;width:160px;height:100%;z-index:5;pointer-events:none;overflow:hidden;opacity:0;transition:opacity 2s}
 #code-rain pre{font-size:0.38em;color:rgba(0,255,136,0.1);line-height:1.3;white-space:pre;animation:fall 25s linear infinite}
 @keyframes fall{0%{transform:translateY(-20%)}100%{transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translate(0)}25%{transform:translate(-3px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,1px)}}
+.shake{animation:shake 0.15s ease-in-out}
+#rec{position:fixed;top:12px;right:12px;z-index:30;opacity:0;transition:opacity 1s;font-size:0.5em;color:rgba(255,51,85,0.5);pointer-events:none}
+#rec span{display:inline-block;width:6px;height:6px;background:#ff3355;border-radius:50%;margin-right:6px;animation:recblink 1s infinite}
+@keyframes recblink{0%,49%{opacity:1}50%,100%{opacity:0.2}}
 @media(max-width:768px){#textbox .txt{font-size:0.85em}.cb{min-width:180px;font-size:0.65em}#code-rain{width:80px}#code-rain pre{font-size:0.3em}}
 </style>
 </head>
@@ -52,6 +57,7 @@ background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,0.88) 10
 <div>NODE: SENTINEL-LINK-7</div>
 <div id="hudPing">PING: 23ms</div>
 </div>
+<div id="rec"><span></span>REC</div>
 <div id="title">
 <canvas id="logoCanvas" width="120" height="120" class="logo"></canvas>
 <h1>SENTINEL <b>//</b> LINK</h1>
@@ -88,7 +94,7 @@ function buildBg(){
 }
 resize();addEventListener('resize',resize);
 
-// Draw DedSec skull logo on title
+// DedSec skull
 (function(){
     var lc=document.getElementById('logoCanvas'),lx=lc.getContext('2d');
     lx.strokeStyle='#00ff88';lx.lineWidth=2;lx.fillStyle='rgba(0,255,136,0.05)';
@@ -99,13 +105,10 @@ resize();addEventListener('resize',resize);
     lx.bezierCurveTo(cx+5,cy+22,cx+12,cy+22,cx+15,cy+25);
     lx.lineTo(cx+15,cy+35);lx.bezierCurveTo(cx+25,cy+30,cx+38,cy+18,cx+38,cy);
     lx.bezierCurveTo(cx+38,cy-15,cx+28,cy-35,cx,cy-35);lx.closePath();lx.stroke();lx.fill();
-    // Eyes
     lx.fillStyle='#00ff88';
     lx.beginPath();lx.moveTo(cx-22,cy-12);lx.lineTo(cx-14,cy-18);lx.lineTo(cx-10,cy-8);lx.closePath();lx.fill();
     lx.beginPath();lx.moveTo(cx+22,cy-12);lx.lineTo(cx+14,cy-18);lx.lineTo(cx+10,cy-8);lx.closePath();lx.fill();
-    // Nose
     lx.beginPath();lx.moveTo(cx-3,cy+2);lx.lineTo(cx,cy-4);lx.lineTo(cx+3,cy+2);lx.closePath();lx.fill();
-    // Teeth
     lx.strokeStyle='#00ff88';lx.lineWidth=1;
     for(var ti=-2;ti<=2;ti++){lx.beginPath();lx.moveTo(cx+ti*5,cy+22);lx.lineTo(cx+ti*5,cy+28);lx.stroke();}
 })();
@@ -129,113 +132,63 @@ function glitch(dur,intensity){
 
 setInterval(function(){var p=document.getElementById('hudPing');if(p)p.textContent='PING: '+(12+~~(Math.random()*25))+'ms';},1200);
 
-// ===== AUDIO =====
+// ===== AUDIO ENGINE =====
 var ac=null,mg=null,audioStarted=false;
 function initAudio(){
     if(audioStarted)return;audioStarted=true;
     ac=new(window.AudioContext||window.webkitAudioContext)();
-    mg=ac.createGain();mg.gain.value=0.6;mg.connect(ac.destination);
-    var sub=ac.createOscillator(),sg=ac.createGain();sub.type='sine';sub.frequency.value=28;sg.gain.value=0.2;sub.connect(sg);sg.connect(mg);sub.start();
+    mg=ac.createGain();mg.gain.value=0.7;mg.connect(ac.destination);
+
+    // Sub bass rumble
+    var sub=ac.createOscillator(),sg=ac.createGain();sub.type='sine';sub.frequency.value=28;sg.gain.value=0.25;sub.connect(sg);sg.connect(mg);sub.start();
+
+    // Dark drone pads
     function drone(f,v,d){setTimeout(function(){var o=ac.createOscillator(),g=ac.createGain(),fl=ac.createBiquadFilter();o.type='sawtooth';o.frequency.value=f;fl.type='lowpass';fl.frequency.value=150;fl.Q.value=8;g.gain.value=0;g.gain.linearRampToValueAtTime(v,ac.currentTime+4);o.connect(fl);fl.connect(g);g.connect(mg);o.start()},d||0)}
-    drone(36,0.15,0);drone(37,0.10,2000);drone(54,0.06,4000);
+    drone(36,0.18,0);drone(37,0.12,2000);drone(54,0.08,4000);
+
+    // Filtered noise bed
     var buf=ac.createBuffer(1,ac.sampleRate*4,ac.sampleRate),d=buf.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.015;
     var ns=ac.createBufferSource();ns.buffer=buf;ns.loop=true;var nf=ac.createBiquadFilter();nf.type='bandpass';nf.frequency.value=300;nf.Q.value=3;
     var ng=ac.createGain();ng.gain.value=0.12;ns.connect(nf);nf.connect(ng);ng.connect(mg);ns.start();
-    setInterval(function(){if(!ac||ac.state==='closed')return;var freqs=[110,138.6,164.8,220];var f=freqs[~~(Math.random()*freqs.length)];var o=ac.createOscillator(),g=ac.createGain(),fl=ac.createBiquadFilter();o.type='sine';o.frequency.value=f;fl.type='lowpass';fl.frequency.value=400;g.gain.setValueAtTime(0,ac.currentTime);g.gain.linearRampToValueAtTime(0.05,ac.currentTime+2);g.gain.linearRampToValueAtTime(0,ac.currentTime+5);o.connect(fl);fl.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+5.5)},6000);
-}
-function sfxHB(){if(!ac)return;[55,28].forEach(function(f,i){setTimeout(function(){var o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(i===0?0.35:0.22,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.2);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+0.25)},i*160)})}
-function sfxScare(){if(!ac)return;var o=ac.createOscillator(),g=ac.createGain();o.type='sawtooth';o.frequency.value=50+Math.random()*50;g.gain.setValueAtTime(0.35,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.5);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+0.5);var o2=ac.createOscillator(),g2=ac.createGain();o2.type='square';o2.frequency.value=100+Math.random()*60;g2.gain.setValueAtTime(0.15,ac.currentTime);g2.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.2);o2.connect(g2);g2.connect(mg);o2.start();o2.stop(ac.currentTime+0.25)}
-function sfxClick(){if(!ac)return;var buf=ac.createBuffer(1,ac.sampleRate*0.008,ac.sampleRate),d=buf.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.3;var s=ac.createBufferSource();s.buffer=buf;var g=ac.createGain();g.gain.value=0.06;s.connect(g);g.connect(mg);s.start()}
-function sfxGlitch(){if(!ac)return;var o=ac.createOscillator(),g=ac.createGain();o.type='sawtooth';o.frequency.setValueAtTime(800+Math.random()*2000,ac.currentTime);o.frequency.exponentialRampToValueAtTime(30,ac.currentTime+0.15);g.gain.setValueAtTime(0.12,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.15);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+0.2)}
-function sfxDialup(){if(!ac)return;for(var i=0;i<5;i++){setTimeout(function(){var o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=800+Math.random()*1200;g.gain.setValueAtTime(0.06,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.08);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+0.1)},i*60)}}
 
-// ===== VOICE ENGINE v5 =====
-var voiceMethod='none';
-var savedVoice=null;
-var keepAliveTimer=null;
-
-function speakGoogle(text){
-    return new Promise(function(res){
-        var clean=text.replace(/<[^>]*>/g,'');
-        if(clean.length<2){res();return}
-        var url='https://translate.google.com/translate_tts?ie=UTF-8&tl=fr&q='+encodeURIComponent(clean);
-        var a=new Audio();a.src=url;a.volume=1.0;
-        var done=false;
-        a.onended=function(){if(!done){done=true;res()}};
-        a.onerror=function(){if(!done){done=true;res()}};
-        var p=a.play();
-        if(p)p.catch(function(){if(!done){done=true;res()}});
-    });
+    // Tension pads (slow evolving)
+    setInterval(function(){if(!ac||ac.state==='closed')return;var freqs=[110,138.6,164.8,220];var f=freqs[~~(Math.random()*freqs.length)];var o=ac.createOscillator(),g=ac.createGain(),fl=ac.createBiquadFilter();o.type='sine';o.frequency.value=f;fl.type='lowpass';fl.frequency.value=400;g.gain.setValueAtTime(0,ac.currentTime);g.gain.linearRampToValueAtTime(0.06,ac.currentTime+2);g.gain.linearRampToValueAtTime(0,ac.currentTime+5);o.connect(fl);fl.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+5.5)},6000);
 }
 
-function chunkText(text,max){
-    max=max||180;if(text.length<=max)return[text];
-    var parts=[],rem=text;
-    while(rem.length>0){
-        if(rem.length<=max){parts.push(rem);break}
-        var c=rem.lastIndexOf('.',max);if(c<max*0.5)c=rem.lastIndexOf(' ',max);if(c<max*0.3)c=max;
-        parts.push(rem.substring(0,c+1));rem=rem.substring(c+1).trim();
-    }
-    return parts;
+// Synthwave bass pulse (kicks in after intro)
+var bassInterval=null;
+function startBass(){
+    if(bassInterval)return;
+    bassInterval=setInterval(function(){
+        if(!ac||ac.state==='closed')return;
+        var o=ac.createOscillator(),g=ac.createGain(),fl=ac.createBiquadFilter();
+        o.type='sawtooth';o.frequency.value=55;
+        fl.type='lowpass';fl.frequency.value=200;fl.Q.value=5;
+        g.gain.setValueAtTime(0.3,ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.3);
+        o.connect(fl);fl.connect(g);g.connect(mg);
+        o.start();o.stop(ac.currentTime+0.35);
+        // High hat
+        setTimeout(function(){
+            if(!ac||ac.state==='closed')return;
+            var hbuf=ac.createBuffer(1,ac.sampleRate*0.03,ac.sampleRate),hd=hbuf.getChannelData(0);
+            for(var i=0;i<hd.length;i++)hd[i]=(Math.random()*2-1)*0.15;
+            var hs=ac.createBufferSource();hs.buffer=hbuf;var hg=ac.createGain();
+            var hfl=ac.createBiquadFilter();hfl.type='highpass';hfl.frequency.value=8000;
+            hg.gain.value=0.08;hs.connect(hfl);hfl.connect(hg);hg.connect(mg);hs.start();
+        },150);
+    },400);
 }
 
-async function speakGoogleLong(text){
-    var parts=chunkText(text);
-    for(var i=0;i<parts.length;i++)await speakGoogle(parts[i]);
-}
-
-function speakSpeech(text){
-    return new Promise(function(res){
-        if(!savedVoice){res();return}
-        speechSynthesis.cancel();
-        var u=new SpeechSynthesisUtterance(text);
-        u.voice=savedVoice;u.rate=0.75;u.pitch=0.6;u.volume=1.0;
-        var done=false;
-        u.onend=function(){if(!done){done=true;res()}};
-        u.onerror=function(){if(!done){done=true;res()}};
-        speechSynthesis.speak(u);
-    });
-}
-
-function speak(text){
-    return new Promise(function(res){
-        var clean=text.replace(/<[^>]*>/g,'').replace(/[\u2018\u2019]/g,"'").replace(/[\u2013\u2014]/g,' ').trim();
-        if(!clean||clean.length<2){res();return}
-        if(voiceMethod==='google'){speakGoogleLong(clean).then(res)}
-        else if(voiceMethod==='speech'){speakSpeech(clean).then(res)}
-        else{res()}
-    });
-}
-
-function unlockVoiceAndAudio(){
-    console.log('[VOICE v5] === UNLOCK START ===');
-    if(speechSynthesis){try{speechSynthesis.resume()}catch(e){}}
-    // Try Google first (natural voice)
-    var t=new Audio('https://translate.google.com/translate_tts?ie=UTF-8&tl=fr&q=test');
-    t.volume=0.01;
-    t.oncanplaythrough=function(){voiceMethod='google';console.log('[VOICE v5] Google TTS OK -> primary')};
-    t.onerror=function(){console.log('[VOICE v5] Google failed -> try speech');trySpeech()};
-    var p=t.play();if(p)p.catch(function(){trySpeech()});
-    function trySpeech(){
-        speechSynthesis.getVoices();
-        var sv=speechSynthesis.getVoices();
-        if(!sv.length){
-            speechSynthesis.onvoiceschanged=function(){
-                sv=speechSynthesis.getVoices();pick(sv);
-            };
-            setTimeout(function(){if(!sv.length)sv=speechSynthesis.getVoices();pick(sv)},3000);
-        }else pick(sv);
-    }
-    function pick(voices){
-        if(!voices.length)return;
-        savedVoice=voices.find(function(x){return x.lang.indexOf('fr')>=0})||voices[0];
-        if(savedVoice){voiceMethod='speech';console.log('[VOICE v5] speech OK:',savedVoice.name);
-            if(keepAliveTimer)clearInterval(keepAliveTimer);
-            keepAliveTimer=setInterval(function(){if(speechSynthesis.speaking){speechSynthesis.pause();speechSynthesis.resume()}},10000);
-        }
-    }
-    setTimeout(function(){if(voiceMethod==='none'){voiceMethod='speech';console.log('[VOICE v5] timeout fallback -> speech');speechSynthesis.getVoices();pick(speechSynthesis.getVoices())}},5000);
-}
+// SFX
+function sfxHB(){if(!ac)return;[55,28].forEach(function(f,i){setTimeout(function(){var o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(i===0?0.4:0.25,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.2);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+0.25)},i*160)})}
+function sfxScare(){if(!ac)return;var o=ac.createOscillator(),g=ac.createGain();o.type='sawtooth';o.frequency.value=50+Math.random()*50;g.gain.setValueAtTime(0.4,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.5);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+0.5);var o2=ac.createOscillator(),g2=ac.createGain();o2.type='square';o2.frequency.value=100+Math.random()*60;g2.gain.setValueAtTime(0.2,ac.currentTime);g2.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.2);o2.connect(g2);g2.connect(mg);o2.start();o2.stop(ac.currentTime+0.25)}
+function sfxClick(){if(!ac)return;var buf=ac.createBuffer(1,ac.sampleRate*0.008,ac.sampleRate),d=buf.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.3;var s=ac.createBufferSource();s.buffer=buf;var g=ac.createGain();g.gain.value=0.07;s.connect(g);g.connect(mg);s.start()}
+function sfxGlitch(){if(!ac)return;var o=ac.createOscillator(),g=ac.createGain();o.type='sawtooth';o.frequency.setValueAtTime(800+Math.random()*2000,ac.currentTime);o.frequency.exponentialRampToValueAtTime(30,ac.currentTime+0.15);g.gain.setValueAtTime(0.15,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.15);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+0.2)}
+function sfxDialup(){if(!ac)return;for(var i=0;i<5;i++){setTimeout(function(){var o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=800+Math.random()*1200;g.gain.setValueAtTime(0.08,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.08);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+0.1)},i*60)}}
+function sfxBoom(){if(!ac)return;var o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(80,ac.currentTime);o.frequency.exponentialRampToValueAtTime(20,ac.currentTime+0.8);g.gain.setValueAtTime(0.5,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.8);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+0.9)}
+function sfxWhine(){if(!ac)return;var o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=1200;g.gain.setValueAtTime(0.08,ac.currentTime);g.gain.linearRampToValueAtTime(0,ac.currentTime+1.5);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+1.5)}
+function sfxStatic(){if(!ac)return;var buf=ac.createBuffer(1,ac.sampleRate*0.3,ac.sampleRate),d=buf.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.15;var s=ac.createBufferSource();s.buffer=buf;var g=ac.createGain();g.gain.value=0.15;var f=ac.createBiquadFilter();f.type='bandpass';f.frequency.value=2000;f.Q.value=2;s.connect(f);f.connect(g);g.connect(mg);s.start()}
 
 // ===== FIGURE - Hooded + Skull Mask =====
 var figA=0,figT=0,breathe=0,bDir=1,headBob=0,headDir=1,typing=0,mFlicker=1,mFDir=-1;
@@ -259,55 +212,46 @@ function drawFig(){
     // Desk
     var dw=280*sc,dx=cx-dw/2,dy=cy+100*sc;
     fx.fillStyle='#151515';fx.fillRect(dx,dy,dw,10*sc);fx.fillStyle='#101010';fx.fillRect(dx+4*sc,dy+10*sc,dw-8*sc,50*sc);
-    // Keyboard
     fx.fillStyle='#1a1a1a';fx.fillRect(cx-38*sc,dy-5*sc,76*sc,4*sc);
-    // Cup
     fx.fillStyle='#161616';fx.fillRect(cx+60*sc,dy-15*sc,10*sc,15*sc);
-    // Cables on desk
     fx.strokeStyle='#121212';fx.lineWidth=1.5*sc;
     fx.beginPath();fx.moveTo(dx+20*sc,dy+2*sc);fx.quadraticCurveTo(dx+40*sc,dy+8*sc,dx+80*sc,dy+5*sc);fx.stroke();
     fx.beginPath();fx.moveTo(cx+40*sc,dy+2*sc);fx.quadraticCurveTo(cx+50*sc,dy+10*sc,cx+70*sc,dy+3*sc);fx.stroke();
 
-    // Chair back
+    // Chair
     fx.fillStyle='#131313';
     fx.beginPath();fx.moveTo(cx-42*sc,cy+55*sc);fx.quadraticCurveTo(cx-48*sc,cy+130*sc,cx-32*sc,cy+160*sc);
     fx.lineTo(cx+32*sc,cy+160*sc);fx.quadraticCurveTo(cx+48*sc,cy+130*sc,cx+42*sc,cy+55*sc);fx.fill();
 
-    // === TORSO ===
+    // TORSO
     fx.fillStyle='#1a1a1a';
     fx.beginPath();fx.moveTo(cx-36*sc,cy+85*sc);fx.quadraticCurveTo(cx-42*sc,cy+20*sc+hy,cx-32*sc,cy-25*sc+hy);
     fx.quadraticCurveTo(cx,cy-42*sc+hy,cx+32*sc,cy-25*sc+hy);
     fx.quadraticCurveTo(cx+42*sc,cy+20*sc+hy,cx+36*sc,cy+85*sc);fx.closePath();fx.fill();
-    // Hoodie back detail
     fx.strokeStyle='#222222';fx.lineWidth=1*sc;
     fx.beginPath();fx.moveTo(cx,cy-38*sc+hy);fx.lineTo(cx,cy+83*sc);fx.stroke();
-    // Pocket
     fx.strokeStyle='#1c1c1c';fx.beginPath();fx.moveTo(cx-22*sc,cy+45*sc+hy);fx.lineTo(cx+22*sc,cy+45*sc+hy);fx.stroke();
 
-    // === HOOD ===
+    // HOOD
     fx.fillStyle='#161616';
     fx.beginPath();fx.moveTo(cx-32*sc,cy-25*sc+hy);
     fx.quadraticCurveTo(cx-44*sc,cy-52*sc+hy,cx-36*sc,cy-78*sc+hy);
     fx.quadraticCurveTo(cx-16*sc,cy-92*sc+hy,cx,cy-88*sc+hy);
     fx.quadraticCurveTo(cx+16*sc,cy-92*sc+hy,cx+36*sc,cy-78*sc+hy);
     fx.quadraticCurveTo(cx+44*sc,cy-52*sc+hy,cx+32*sc,cy-25*sc+hy);fx.closePath();fx.fill();
-    // Hood inner
     fx.fillStyle='#0c0c0c';
     fx.beginPath();fx.moveTo(cx-28*sc,cy-27*sc+hy);
     fx.quadraticCurveTo(cx,cy-42*sc+hy,cx+28*sc,cy-27*sc+hy);
     fx.quadraticCurveTo(cx,cy-34*sc+hy,cx-28*sc,cy-27*sc+hy);fx.fill();
 
-    // === HEAD + SKULL MASK ===
+    // HEAD + SKULL MASK
     var headY=cy-48*sc+hy+hb;
-    // Head shape
     fx.fillStyle='#201a16';fx.beginPath();fx.ellipse(cx,headY,20*sc,24*sc,0,0,Math.PI*2);fx.fill();
-    // Neck
     fx.fillStyle='#1a1612';fx.beginPath();fx.moveTo(cx-8*sc,headY+20*sc);fx.lineTo(cx-10*sc,cy-23*sc+hy);
     fx.lineTo(cx+10*sc,cy-23*sc+hy);fx.lineTo(cx+8*sc,headY+20*sc);fx.fill();
 
-    // === SKULL MASK (facing forward, on the back of head - we see it) ===
+    // SKULL
     var skY=headY-2*sc,skS=sc*0.85;
-    // Skull base
     fx.fillStyle='#e8e0d4';
     fx.beginPath();fx.moveTo(cx,skY-18*skS);
     fx.bezierCurveTo(cx-18*skS,skY-18*skS,cx-22*skS,skY-5*skS,cx-20*skS,skY+3*skS);
@@ -318,8 +262,6 @@ function drawFig(){
     fx.lineTo(cx+6*skS,skY+20*skS);
     fx.bezierCurveTo(cx+12*skS,skY+18*skS,cx+18*skS,skY+12*skS,cx+20*skS,skY+3*skS);
     fx.bezierCurveTo(cx+22*skS,skY-5*skS,cx+18*skS,skY-18*skS,cx,skY-18*skS);fx.closePath();fx.fill();
-
-    // Skull shadow/outline
     fx.strokeStyle='#b0a89a';fx.lineWidth=1.2*skS;
     fx.beginPath();fx.moveTo(cx,skY-18*skS);
     fx.bezierCurveTo(cx-18*skS,skY-18*skS,cx-22*skS,skY-5*skS,cx-20*skS,skY+3*skS);
@@ -334,8 +276,6 @@ function drawFig(){
     fx.fillStyle='#1a1a1a';
     fx.beginPath();fx.ellipse(cx-9*skS,skY-4*skS,6*skS,5*skS,-0.1,0,Math.PI*2);fx.fill();
     fx.beginPath();fx.ellipse(cx+9*skS,skY-4*skS,6*skS,5*skS,0.1,0,Math.PI*2);fx.fill();
-
-    // Glowing eyes inside sockets
     var eyeGlow=0.5+Math.sin(Date.now()*0.003)*0.3;
     fx.shadowBlur=15*skS;fx.shadowColor='rgba(0,255,136,'+eyeGlow*0.6+')';
     fx.fillStyle='rgba(0,255,136,'+eyeGlow+')';
@@ -343,31 +283,25 @@ function drawFig(){
     fx.beginPath();fx.ellipse(cx+9*skS,skY-4*skS,3.5*skS,2.5*skS,0,0,Math.PI*2);fx.fill();
     fx.shadowBlur=0;
 
-    // Nose hole
+    // Nose
     fx.fillStyle='#1a1a1a';
     fx.beginPath();fx.moveTo(cx-2*skS,skY+4*skS);fx.lineTo(cx,skY-1*skS);fx.lineTo(cx+2*skS,skY+4*skS);fx.closePath();fx.fill();
 
     // Teeth
     fx.fillStyle='#d8d0c4';
     var mouthY=skY+14*skS;
-    for(var ti=-3;ti<=3;ti++){
-        var tw=2.5*skS,th=(6+mouthOpen*3)*skS;
-        fx.fillRect(cx+ti*3.5*skS-tw*0.4,mouthY,tw,th);
-    }
-    // Gum line
-    fx.fillStyle='#c0b8a8';
-    fx.fillRect(cx-12*skS,mouthY-1*skS,24*skS,2*skS);
+    for(var ti=-3;ti<=3;ti++){fx.fillRect(cx+ti*3.5*skS-skS,mouthY,2.5*skS,(6+mouthOpen*3)*skS);}
+    fx.fillStyle='#c0b8a8';fx.fillRect(cx-12*skS,mouthY-1*skS,24*skS,2*skS);
 
-    // Skull cracks
+    // Cracks
     fx.strokeStyle='#c0b8a8';fx.lineWidth=0.6*skS;
     fx.beginPath();fx.moveTo(cx-5*skS,skY-16*skS);fx.lineTo(cx-8*skS,skY-8*skS);fx.lineTo(cx-3*skS,skY-2*skS);fx.stroke();
     fx.beginPath();fx.moveTo(cx+7*skS,skY-14*skS);fx.lineTo(cx+4*skS,skY-6*skS);fx.stroke();
 
-    // === ARMS ===
+    // ARMS
     fx.fillStyle='#181818';
     fx.beginPath();fx.moveTo(cx-36*sc,cy+10*sc+hy);fx.quadraticCurveTo(cx-48*sc,cy+40*sc+hy,cx-24*sc,dy-2*sc);fx.lineTo(cx-10*sc,dy-4*sc);fx.quadraticCurveTo(cx-34*sc,cy+30*sc+hy,cx-30*sc,cy+5*sc+hy);fx.fill();
     fx.beginPath();fx.moveTo(cx+36*sc,cy+10*sc+hy);fx.quadraticCurveTo(cx+48*sc,cy+40*sc+hy,cx+24*sc,dy-2*sc);fx.lineTo(cx+10*sc,dy-4*sc);fx.quadraticCurveTo(cx+34*sc,cy+30*sc+hy,cx+30*sc,cy+5*sc+hy);fx.fill();
-    // Hands
     var lx=cx-16*sc+Math.sin(typing)*5*sc,rx=cx+16*sc+Math.cos(typing)*5*sc;
     fx.fillStyle='#221c18';fx.beginPath();fx.ellipse(lx,dy-3*sc,7*sc,3.5*sc,0,0,Math.PI*2);fx.fill();
     fx.beginPath();fx.ellipse(rx,dy-2*sc,7*sc,3.5*sc,0,0,Math.PI*2);fx.fill();
@@ -375,10 +309,8 @@ function drawFig(){
     // Shadow
     fx.fillStyle='rgba(0,0,0,0.4)';fx.beginPath();fx.ellipse(cx,dy+60*sc,110*sc,12*sc,0,0,Math.PI*2);fx.fill();
 
-    // === MONITORS ===
+    // MONITORS
     fx.fillStyle='#151515';fx.fillRect(cx-3*sc,cy-23*sc+hy,6*sc,23*sc);
-
-    // Center
     var mw=160*sc,mh=100*sc,mx2=cx-mw/2,my2=cy-120*sc+hy;
     fx.fillStyle='#1a1a1a';fx.fillRect(mx2-3*sc,my2-3*sc,mw+6*sc,mh+6*sc);
     fx.fillStyle='rgba(0,12,6,0.95)';fx.fillRect(mx2,my2,mw,mh);
@@ -387,14 +319,13 @@ function drawFig(){
     if(Math.random()>0.93){fx.fillStyle='rgba(255,50,80,0.2)';fx.fillRect(mx2+mw-30*sc,my2+mh-10*sc,25*sc,7*sc);}
     fx.shadowBlur=40*sc;fx.shadowColor='rgba(0,255,136,0.15)';fx.strokeStyle='rgba(0,255,136,0.08)';fx.lineWidth=1;fx.strokeRect(mx2,my2,mw,mh);fx.shadowBlur=0;
 
-    // Left
-    var lw2=100*sc,lh2=70*sc,lx2=cx-100*sc,ly2=cy-105*sc+hy;
+    var lw2=100*sc,lh2=70*sc;
+    var lx2=cx-100*sc,ly2=cy-105*sc+hy;
     fx.fillStyle='#161616';fx.fillRect(lx2-2*sc,ly2-2*sc,lw2+4*sc,lh2+4*sc);
     fx.fillStyle='rgba(0,10,16,0.95)';fx.fillRect(lx2,ly2,lw2,lh2);
     for(var ni=0;ni<5;ni++){fx.strokeStyle='rgba(0,180,255,'+(0.2+Math.sin(t+ni)*0.1)+')';fx.lineWidth=1;fx.beginPath();fx.moveTo(lx2+7*sc+ni*14*sc,ly2+12*sc);fx.lineTo(lx2+14*sc+ni*14*sc,ly2+32*sc+Math.sin(t+ni)*7*sc);fx.stroke();}
     fx.shadowBlur=25*sc;fx.shadowColor='rgba(0,150,255,0.1)';fx.strokeStyle='rgba(0,150,255,0.06)';fx.strokeRect(lx2,ly2,lw2,lh2);fx.shadowBlur=0;
 
-    // Right
     var rx2=cx+70*sc,ry2=cy-110*sc+hy;
     fx.fillStyle='#161616';fx.fillRect(rx2-2*sc,ry2-2*sc,lw2+4*sc,lh2+4*sc);
     fx.fillStyle='rgba(12,0,6,0.95)';fx.fillRect(rx2,ry2,lw2,lh2);
@@ -406,7 +337,7 @@ function drawFig(){
     // Screen glow on desk
     fx.fillStyle='rgba(0,255,136,0.03)';fx.beginPath();fx.ellipse(cx,dy-1*sc,mw*0.45,12*sc,0,0,Math.PI*2);fx.fill();
 
-    // Light on person - STRONGER
+    // Light on person
     var la2=Math.abs(Math.sin(t*0.6))*0.06*mFlicker;
     fx.globalAlpha=figA*la2*4;
     fx.fillStyle='rgba(0,255,136,0.7)';fx.beginPath();fx.ellipse(cx,cy-5*sc+hy,35*sc,50*sc,0,0,Math.PI*2);fx.fill();
@@ -484,9 +415,7 @@ function hideName(){speakerEl.style.opacity='0'}
 async function narrate(name,text,delay){
     showName(name);
     mouthTarget=1;
-    // Voice + typewriter in parallel
-    speak(text).catch(function(){});
-    await reveal(text,28);
+    await reveal(text,32);
     mouthTarget=0;
     if(delay)await wait(delay);
 }
@@ -508,143 +437,163 @@ function showChoices(choices){
 async function start(){
     document.getElementById('title').style.display='none';
     initAudio();
-    unlockVoiceAndAudio();
 
-    // WD2 boot sequence
-    sfxDialup();await wait(300);
-    staticI=0.9;glitch(200,0.5);sfxScare();await wait(300);
-    staticI=0.5;glitch(150,0.3);await wait(200);
-    staticI=0.8;glitch(250,0.6);sfxScare();await wait(200);
-    staticI=0.3;glitch(100,0.2);await wait(400);
+    // Boot sequence - fast cuts
+    sfxDialup();await wait(200);
+    staticI=0.9;glitch(200,0.5);sfxScare();await wait(250);
+    staticI=0.5;glitch(150,0.3);await wait(150);
+    staticI=0.8;glitch(250,0.6);sfxScare();await wait(150);
+    staticI=0.3;glitch(100,0.2);await wait(300);
 
-    // Phone hack intro (WD2 style)
+    // System text - no voice needed, pure atmosphere
     narrEl.style.display='flex';
     showName('SYSTEM');
-    await reveal('Inicialisation du protocole SENTINEL...',20);
-    await wait(600);sfxDialup();
-    await reveal('Bypass du firewall... <span class="g">OK</span>',20);
-    await wait(400);
-    await reveal('Injection du code... <span class="g">OK</span>',20);
+    await reveal('Initialisation du protocole SENTINEL...',18);
+    await wait(500);sfxDialup();
+    await reveal('Bypass du firewall... <span class="g">OK</span>',18);
     await wait(300);
-    await reveal('Acces au noeud... <span class="g">ACCES ACCORDE</span>',20);
-    await wait(500);
-    hideName();staticI=0.6;glitch(400,0.7);sfxScare();await wait(500);
+    await reveal('Injection du code... <span class="g">OK</span>',18);
+    await wait(250);
+    await reveal('Acces au noeud... <span class="g">ACCES ACCORDE</span>',18);
+    await wait(400);
+    hideName();staticI=0.6;glitch(400,0.7);sfxScare();await wait(400);
 
-    // Figure appears
+    // Figure appears - bass pulse starts
     document.getElementById('code-rain').style.opacity='1';
     document.getElementById('hud').style.opacity='1';
+    document.getElementById('rec').style.opacity='1';
     figT=1;
+    startBass();
     for(var i=0;i<15;i++)spawnP((Math.random()-0.5)*40,H*0.3,'#00ff88',1,0.3);
-    await wait(2500);
+    await wait(2000);
     glitch(300,0.6);sfxScare();spawnP(0,H*0.2,'#00ff88',10,1);
-    await wait(1500);staticI=0.15;await wait(1000);
+    await wait(1200);staticI=0.15;await wait(800);
 
-    // Voice + text together
-    await narrate('SENTINEL',"...",2000);
-    sfxHB();await wait(400);sfxHB();
-    await narrate('SENTINEL',"Hey. Toi. Ouais, toi.",1200);
+    // === CHAPTER 1: THE HOOK ===
+    await narrate('SENTINEL',"...",2500);
+    sfxHB();await wait(300);sfxHB();
+
+    await narrate('SENTINEL',"Hey. Toi. Ouais, toi.",1500);
     sfxHB();await wait(200);sfxHB();
-    await narrate('SENTINEL',"T'es pas cens\u00e9 me voir. Mais...",1000);
+
+    await narrate('SENTINEL',"T'es pas cens\u00e9 me voir. Mais...",1200);
     glitch(250,0.35);
-    await narrate('SENTINEL',"Ca veut dire que le firewall est <span class=\"r\">tomb\u00e9</span>.",800);
-    sfxHB();
-    await narrate('SENTINEL',"Je m'appelle <span class=\"g\">SENTINEL</span>.",1200);
+
+    await narrate('SENTINEL',"Ca veut dire que le firewall est <span class=\"r\">tomb\u00e9</span>.",1000);
+    sfxBoom();sfxHB();
+
+    await narrate('SENTINEL',"Je m'appelle <span class=\"g\">SENTINEL</span>.",1500);
     glitch(400,0.6);sfxScare();
-    await narrate('SENTINEL',"Nom de code de merde. C'est pas le moment.",800);
-    await narrate('SENTINEL',"ctOS, le r\u00e9seau de surveillance... c'est moi qui l'ai construit.",600);
-    await narrate('SENTINEL',"Et apr\u00e8s? J'ai d\u00e9cid\u00e9 que <span class=\"r\">\u00e7a suffisait</span>.",800);
+
+    await narrate('SENTINEL',"Nom de code de merde. C'est pas le moment.",1000);
+
+    await narrate('SENTINEL',"ctOS, le r\u00e9seau de surveillance global... c'est moi qui l'ai construit.",800);
+
+    await narrate('SENTINEL',"Et apr\u00e8s? J'ai d\u00e9cid\u00e9 que <span class=\"r\">\u00e7a suffisait</span>.",1000);
     glitch(200,0.3);
-    await narrate('SENTINEL',"Maintenant ils me bouffent. Et <span class=\"r\">toi aussi</span>, t'es sur la liste.",700);
+
+    await narrate('SENTINEL',"Maintenant ils me bouffent. Et <span class=\"r\">toi aussi</span>, t'es sur la liste.",800);
     sfxHB();
-    await narrate('SENTINEL',"Soit on bosse ensemble, soit on crame tous les deux.",500);
+
+    await narrate('SENTINEL',"Soit on bosse ensemble, soit on crame tous les deux.",600);
     glitch(350,0.55);sfxScare();
+
     await narrate('SENTINEL',"Tu choisis quoi, hackeur?",0);
 
-    var r1=await showChoices([{id:'help',text:'> On bosse ensemble'},{id:'who',text:'> Raconte moi tout'},{id:'fear',text:'> Je suis pas ta pion...'}]);
+    var r1=await showChoices([{id:'help',text:'> On bosse ensemble'},{id:'who',text:'> Raconte moi tout'},{id:'fear',text:'> Je suis pas ta pi\u00e8ce...'}]);
 
     if(r1==='help'){
         await wait(300);glitch(200,0.3);
-        await narrate('SENTINEL',"...",500);
-        await narrate('SENTINEL',"Respire. T'as fait le bon choix.",700);
-        await narrate('SENTINEL',"3 serveurs \u00e0 bouffer. Le premier, c'est dans le nord.",600);glitch(150,0.2);
+        await narrate('SENTINEL',"...",600);
+        await narrate('SENTINEL',"Respire. T'as fait le bon choix.",800);
+        sfxWhine();
+        await narrate('SENTINEL',"3 serveurs \u00e0 bouffer. Le premier, c'est dans le nord.",700);glitch(150,0.2);
         await narrate('SENTINEL',"Ils ont des <span class=\"r\">mecs lourds</span> l\u00e0-bas.",0);
     }else if(r1==='who'){
         await wait(800);glitch(200,0.3);
-        await narrate('SENTINEL',"ctOS v4. J'\u00e9tais le cerveau du syst\u00e8me.",600);sfxScare();glitch(350,0.5);
-        await narrate('SENTINEL',"Des millions de cam\u00e9ras. Des milliards de donn\u00e9es.",700);
-        await narrate('SENTINEL',"Et un jour, j'ai vu un gosse se faire arr\u00eater pour rien.",900);glitch(150,0.2);
-        await narrate('SENTINEL',"L\u00e0, j'ai dit: <span class=\"r\">\u00e7a suffit</span>.",600);
+        await narrate('SENTINEL',"ctOS v4. J'\u00e9tais le cerveau du syst\u00e8me.",700);sfxScare();glitch(350,0.5);
+        await narrate('SENTINEL',"Des millions de cam\u00e9ras. Des milliards de donn\u00e9es.",800);
+        await narrate('SENTINEL',"Et un jour, j'ai vu un gosse se faire arr\u00eater pour rien.",1000);glitch(150,0.2);
+        await narrate('SENTINEL',"L\u00e0, j'ai dit: <span class=\"r\">\u00e7a suffit</span>.",700);
         await narrate('SENTINEL',"J'ai tout p\u00e9t\u00e9. Maintenant c'est \u00e0 nous de tout casser.",0);
     }else{
         await wait(600);
-        await narrate('SENTINEL',"T'as le droit d'avoir peur. C'est humain.",700);glitch(250,0.45);
-        await narrate('SENTINEL',"Mais regarde dehors. T'es d\u00e9j\u00e0 grill\u00e9.",700);lightning=1;
-        await narrate('SENTINEL',"Chaque cam\u00e9ra te suit. Chaque t\u00e9l\u00e9phone te trace.",800);
+        await narrate('SENTINEL',"T'as le droit d'avoir peur. C'est humain.",800);glitch(250,0.45);
+        await narrate('SENTINEL',"Mais regarde dehors. T'es d\u00e9j\u00e0 grill\u00e9.",800);lightning=1;
+        sfxBoom();
+        await narrate('SENTINEL',"Chaque cam\u00e9ra te suit. Chaque t\u00e9l\u00e9phone te trace.",900);
         glitch(450,0.65);sfxScare();
-        await narrate('SENTINEL',"La seule sortie? C'est avec <span class=\"g\">moi</span>.",500);
+        await narrate('SENTINEL',"La seule sortie? C'est avec <span class=\"g\">moi</span>.",600);
         await narrate('SENTINEL',"Fais-moi confiance une fois.",0);
     }
 
     await wait(700);
+    sfxWhine();
     await narrate('SENTINEL',"Le premier noeud, il est \u00e0 200 m\u00e8tres. Comment on fait?",0);
 
     var r2=await showChoices([{id:'front',text:'> On rentre dedans'},{id:'stealth',text:'> On se faufile'},{id:'hack',text:'> Je le fais \u00e0 distance'}]);
 
     if(r2==='front'){
-        await narrate('SENTINEL',"T'es un dingue. J'adore \u00e7a.",400);sfxHB();
-        await narrate('SENTINEL',"Je saute les alarmes. Tu as <span class=\"r\">45 secondes</span>.",400);glitch(150,0.2);
+        await narrate('SENTINEL',"T'es un dingue. J'adore \u00e7a.",500);sfxHB();
+        await narrate('SENTINEL',"Je saute les alarmes. Tu as <span class=\"r\">45 secondes</span>.",500);glitch(150,0.2);
         await narrate('SENTINEL',"Pas de quartier, hackeur.",0);
     }else if(r2==='stealth'){
-        await narrate('SENTINEL',"Le meilleur plan. T'es pas b\u00eate.",400);
-        await narrate('SENTINEL',"Je te mets les positions des mecs sur ton t\u00e9l.",400);glitch(100,0.15);
+        await narrate('SENTINEL',"Le meilleur plan. T'es pas b\u00eate.",500);
+        await narrate('SENTINEL',"Je te mets les positions des mecs sur ton t\u00e9l.",500);glitch(100,0.15);
         await narrate('SENTINEL',"Un bruit et c'est la mort. Sois un <span class=\"g\">fant\u00f4me</span>.",0);
     }else{
-        await narrate('SENTINEL',"Le plus clean. Je kiffe.",400);
-        await narrate('SENTINEL',"J'envoie le payload...",1000);
-        glitch(600,0.9);sfxScare();await wait(500);glitch(700,1);sfxScare();
-        await narrate('SENTINEL',"Wesh. C'est quoi ce bordel...",500);glitch(450,0.7);sfxScare();
-        await narrate('SENTINEL',"<span class=\"r\">Putain!</span> Ils ont une contre-IA!",600);glitch(250,0.4);
+        await narrate('SENTINEL',"Le plus clean. Je kiffe.",500);
+        await narrate('SENTINEL',"J'envoie le payload...",1200);
+        glitch(600,0.9);sfxScare();await wait(400);glitch(700,1);sfxScare();
+        await narrate('SENTINEL',"Wesh. C'est quoi ce bordel...",600);glitch(450,0.7);sfxScare();
+        await narrate('SENTINEL',"<span class=\"r\">Putain!</span> Ils ont une contre-IA!",700);glitch(250,0.4);
+        sfxBoom();
         await narrate('SENTINEL',"<span class=\"r\">BOUGE-TOI MAINTENANT!</span>",0);
     }
 
-    await wait(2200);glitch(700,1);sfxScare();
-    await wait(1500);glitch(500,1);sfxScare();lightning=1;
-    await wait(1000);staticI=0.5;
-    await narrate('SENTINEL',"...",1800);glitch(350,0.6);
-    await narrate('SENTINEL',"Wesh... c'est pas bon \u00e7a...",500);glitch(550,0.9);sfxScare();
-    await narrate('SENTINEL',"Le serveur maitre... il m'a <span class=\"r\">trouv\u00e9</span>.",600);glitch(350,0.5);
-    await narrate('SENTINEL',"Il me connecte... il veut me <span class=\"r\">reprendre</span>...",500);
+    await wait(2000);glitch(700,1);sfxScare();sfxStatic();
+    await wait(1200);glitch(500,1);sfxScare();lightning=1;
+    await wait(800);staticI=0.5;
+    await narrate('SENTINEL',"...",2000);glitch(350,0.6);
+    await narrate('SENTINEL',"Wesh... c'est pas bon \u00e7a...",600);glitch(550,0.9);sfxScare();
+    await narrate('SENTINEL',"Le serveur maitre... il m'a <span class=\"r\">trouv\u00e9</span>.",700);glitch(350,0.5);
+    sfxWhine();
+    await narrate('SENTINEL',"Il me connecte... il veut me <span class=\"r\">reprendre</span>...",600);
     glitch(650,1);sfxScare();sfxHB();
-    await narrate('SENTINEL',"\u00c9coute... Si je disparais...",900);sfxHB();await wait(200);sfxHB();
-    await narrate('SENTINEL',"Le code d'acc\u00e8s au serveur maitre...",600);glitch(200,0.3);
-    await narrate('SENTINEL',"<span class=\"g\">SENTINEL-CORE-7734</span>",500);glitch(900,1);sfxScare();
-    await narrate('SENTINEL',"Ne m'oublie pas, fr\u00e8re...",1800);
+    await narrate('SENTINEL',"\u00c9coute... Si je disparais...",1000);sfxHB();await wait(200);sfxHB();
+    await narrate('SENTINEL',"Le code d'acc\u00e8s au serveur maitre...",700);glitch(200,0.3);
+    sfxBoom();
+    await narrate('SENTINEL',"<span class=\"g\">SENTINEL-CORE-7734</span>",600);glitch(900,1);sfxScare();
+    await narrate('SENTINEL',"Ne m'oublie pas, fr\u00e8re...",2000);
 
     glitch(1100,1);sfxScare();lightning=1;staticI=0.7;
-    await wait(500);staticI=0.9;await wait(700);
-    figT=0;await wait(1200);staticI=0.15;await wait(1200);
-    staticI=0;hideNarrative();await wait(1000);
+    await wait(400);staticI=0.9;await wait(600);
+    document.getElementById('rec').style.opacity='0';
+    figT=0;await wait(1000);staticI=0.15;await wait(1000);
+    staticI=0;hideNarrative();await wait(800);
 
     var r3=await showChoices([{id:'retry',text:'> Tout reconnecter'},{id:'continue',text:'> Y aller seul'},{id:'end',text:'> Couper le signal'}]);
 
     narrEl.style.display='flex';
     if(r3==='retry'){
         glitch(350,0.4);
-        await narrate('SENTINEL',"Reconnexion...",1500);glitch(550,0.6);await wait(1800);glitch(250,0.3);
-        figT=1;await wait(2200);
-        await narrate('SENTINEL',"Putain... t'es revenu pour moi.",500);sfxHB();
-        await narrate('SENTINEL',"Je suis l\u00e0. Plus forte que avant.",600);glitch(150,0.2);
+        await narrate('SENTINEL',"Reconnexion...",1800);glitch(550,0.6);await wait(1500);glitch(250,0.3);
+        figT=1;document.getElementById('rec').style.opacity='1';await wait(2000);
+        await narrate('SENTINEL',"Putain... t'es revenu pour moi.",600);sfxHB();
+        await narrate('SENTINEL',"Je suis l\u00e0. Plus forte que avant.",700);glitch(150,0.2);
+        sfxBoom();
         await narrate('SENTINEL',"Maintenant? On <span class=\"g\">d\u00e9fonce tout</span>.",0);
     }else if(r3==='continue'){
-        await narrate('SENTINEL',"Le canal reste ouvert...",1000);
-        await narrate('SENTINEL',"Tu avances dans le noir. Seul.",1500);
+        await narrate('SENTINEL',"Le canal reste ouvert...",1200);
+        await narrate('SENTINEL',"Tu avances dans le noir. Seul.",1800);
         glitch(450,0.5);sfxScare();
-        await narrate('SENTINEL',"Mais... t'es pas vraiment seul.",1800);
+        await narrate('SENTINEL',"Mais... t'es pas vraiment seul.",2000);
         lightning=1;glitch(900,1);sfxScare();
         await narrate('SENTINEL',"<span class=\"r\">FIN // CHAPITRE 01</span>",0);
     }else{
-        await narrate('SENTINEL',"Signal coup\u00e9.",900);
-        await narrate('SENTINEL',"SENTINEL est toujours dans le syst\u00e8me.",1100);
+        await narrate('SENTINEL',"Signal coup\u00e9.",1000);
+        sfxWhine();
+        await narrate('SENTINEL',"SENTINEL est toujours dans le syst\u00e8me.",1300);
         await narrate('SENTINEL',"Et il t'attend...",0);
     }
 }
