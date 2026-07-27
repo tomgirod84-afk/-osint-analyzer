@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>TikTok Hacker</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Courier New',monospace}
+canvas{display:block;width:100%;height:100%;object-fit:cover}
+#ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2}
+#subtitle{position:absolute;bottom:12%;left:50%;transform:translateX(-50%);
+  width:88%;text-align:center;color:#fff;font-size:clamp(14px,4vw,22px);
+  text-shadow:0 0 10px rgba(0,255,180,0.8),0 0 20px rgba(0,255,180,0.4),2px 2px 4px rgba(0,0,0,0.9);
+  line-height:1.4;letter-spacing:0.5px;padding:8px 12px;
+  background:rgba(0,0,0,0.5);border-radius:8px;display:none}
+#hud-top{position:absolute;top:12px;left:12px;color:rgba(0,220,180,0.5);font-size:10px;letter-spacing:1px}
+#hud-bot{position:absolute;bottom:30px;right:12px;color:rgba(0,220,180,0.3);font-size:9px;text-align:right}
+#record{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px;
+  color:rgba(255,40,40,0.8);font-size:10px;letter-spacing:1px}
+#record .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,40,40,0.8);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+#skip{position:absolute;bottom:6%;right:12px;pointer-events:all;
+  color:rgba(255,255,255,0.4);font-size:11px;padding:8px 14px;
+  border:1px solid rgba(255,255,255,0.15);border-radius:20px;background:rgba(0,0,0,0.3);cursor:pointer}
+#startScreen{position:absolute;top:0;left:0;width:100%;height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.85);z-index:10;pointer-events:all;cursor:pointer}
+#startScreen .icon{font-size:60px;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(0,220,180,0.6))}
+#startScreen .txt{color:rgba(0,220,180,0.8);font-size:14px;letter-spacing:2px}
+#startScreen .sub{color:rgba(255,255,255,0.3);font-size:10px;margin-top:8px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div id="hud-top">SENTINEL // LIVE FEED<br><span id="hudTime"></span></div>
+  <div id="hud-bot">ctOS 2.0 ACTIVE<br>SAN FRANCISCO</div>
+  <div id="record"><div class="dot"></div>LIVE</div>
+  <div id="subtitle"></div>
+  <div id="skip" onclick="nextLine()">SKIP >></div>
+  <div id="startScreen" onclick="start()">
+    <div class="icon">&#9654;</div>
+    <div class="txt">SENTINEL SPEAKS</div>
+    <div class="sub">tap to start</div>
+  </div>
+</div>
+
+<script>
+var W,H,cx,fx;
+var c=document.getElementById('c');
+function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight;cx=c.getContext('2d');fx=c.getContext('2d')}
+resize();addEventListener('resize',resize);
+
+// Lines to speak
+var lines=[
+  {t:"Tu savais que 93% des mots de passe sont crackés en moins de 6 heures ?",d:4500},
+  {t:"Chaque caméra de surveillance autour de toi est un port d'entrée.",d:4000},
+  {t:"Ton téléphone te track toutes les 30 secondes.",d:3500},
+  {t:"Le WiFi public c'est comme pisser dans la piscine. Tout le monde est impacted.",d:4500},
+  {t:"Un hacker ne casse pas la porte. Il te demande gentiment de l'ouvrir.",d:4000},
+  {t:"Ta smart TV t'écoute même éteinte.",d:3000},
+  {t:"98% des gens utilisent le même mot de passe partout.",d:3500},
+  {t:"Le dark web c'est pas un autre internet. C'est le même, sans filtre.",d:4000},
+  {t:"UnSIM swap et ton compte Instagram c'est à moi.",d:3500},
+  {t:"Le phishing c'est pas de la magie. C'est de la psychologie.",d:4000},
+  {t:"Ton IP c'est ton adresse postale sur internet.",d:3000},
+  {t:"Les mots de passe c'est mort. Passe au passkey.",d:3000},
+  {t:"Un hacker voit ce que tu ne vois pas. Les failles, les portes, les faiblesses.",d:4000},
+  {t:"Cybersécurité c'est pas un métier. C'est un état d'esprit.",d:3500},
+  {t:"Tout ce qui est connecté peut être compromis. Tout.",d:3000}
+];
+var lineIdx=0;
+var speaking=false;
+
+// Audio
+var ac=null;
+var voiceBufs={};
+function initAudio(){
+  if(ac)return;
+  try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}
+}
+
+// Pre-generate TTS lines using oscillator "hacker voice"
+function speak(text,dur){
+  if(!ac)initAudio();
+  if(!ac)return;
+  speaking=true;
+  // Show subtitle
+  var sub=document.getElementById('subtitle');
+  sub.textContent=text;sub.style.display='block';
+  sub.style.opacity='0';
+  setTimeout(function(){sub.style.opacity='1';sub.style.transition='opacity 0.3s'},50);
+
+  // Generate synthetic voice-like sound
+  var durSec=dur/1000;
+  // Low base
+  var osc1=ac.createOscillator();osc1.type='sawtooth';osc1.frequency.value=85;
+  var g1=ac.createGain();g1.gain.value=0.04;
+  osc1.connect(g1);g1.connect(ac.destination);
+  // Filter for voice-like quality
+  var filt=ac.createBiquadFilter();filt.type='bandpass';filt.frequency.value=1200;filt.Q.value=2;
+  var g2=ac.createGain();g2.gain.value=0.03;
+  osc1.connect(filt);filt.connect(g2);g2.connect(ac.destination);
+
+  // LFO for speech rhythm
+  var lfo=ac.createOscillator();lfo.type='sine';lfo.frequency.value=4+Math.random()*3;
+  var lfoG=ac.createGain();lfoG.gain.value=8;
+  lfo.connect(lfoG);lfoG.connect(osc1.frequency);
+
+  // Envelope
+  var now=ac.currentTime;
+  g1.gain.setValueAtTime(0,now);g1.gain.linearRampToValueAtTime(0.04,now+0.05);
+  g1.gain.setValueAtTime(0.04,now+durSec-0.2);g1.gain.linearRampToValueAtTime(0,now+durSec);
+  g2.gain.setValueAtTime(0,now);g2.gain.linearRampToValueAtTime(0.03,now+0.05);
+  g2.gain.setValueAtTime(0.03,now+durSec-0.2);g2.gain.linearRampToValueAtTime(0,now+durSec);
+
+  osc1.start(now);osc1.stop(now+durSec);
+  lfo.start(now);lfo.stop(now+durSec);
+}
+
+function nextLine(){
+  if(!speaking)return;
+  speaking=false;
+  document.getElementById('subtitle').style.display='none';
+  lineIdx++;
+  if(lineIdx>=lines.length)lineIdx=0;
+  setTimeout(function(){playLine()},500);
+}
+
+function playLine(){
+  var l=lines[lineIdx];
+  speak(l.t,l.d);
+  setTimeout(function(){
+    speaking=false;
+    document.getElementById('subtitle').style.opacity='0';
+    setTimeout(function(){
+      lineIdx++;
+      if(lineIdx>=lines.length)lineIdx=0;
+      playLine();
+    },800);
+  },l.d);
+}
+
+function start(){
+  document.getElementById('startScreen').style.display='none';
+  initAudio();
+  lineIdx=0;
+  playLine();
+}
+
+// Background animation - dark hacker scene
+var particles=[];
+for(var i=0;i<60;i++){
+  particles.push({
+    x:Math.random()*2000,y:Math.random()*2000,
+    vx:(Math.random()-0.5)*0.3,vy:-0.2-Math.random()*0.5,
+    s:1+Math.random()*2,a:0.1+Math.random()*0.3
+  });
+}
+
+// Character face - geometric/mask
+var facePulse=0;
+function drawFace(t){
+  var cx2=W/2,cy2=H*0.38;
+  var r=Math.min(W,H)*0.18;
+
+  // Glow behind head
+  var grd=cx.createRadialGradient(cx2,cy2,r*0.3,cx2,cy2,r*2.5);
+  grd.addColorStop(0,'rgba(0,200,150,0.06)');grd.addColorStop(1,'transparent');
+  cx.fillStyle=grd;cx.fillRect(0,0,W,H);
+
+  // Geometric face outline
+  cx.strokeStyle='rgba(0,220,180,0.4)';cx.lineWidth=1.5;
+  // Hexagonal mask shape
+  cx.beginPath();
+  for(var i=0;i<6;i++){
+    var a=Math.PI*2*i/6-Math.PI/2;
+    var px=cx2+Math.cos(a)*r,py=cy2+Math.sin(a)*r;
+    if(i===0)cx.moveTo(px,py);else cx.lineTo(px,py);
+  }
+  cx.closePath();cx.stroke();
+
+  // Inner face lines
+  cx.strokeStyle='rgba(0,220,180,0.15)';cx.lineWidth=0.5;
+  // Eyes - two rectangles
+  var eyeW=r*0.35,eyeH=r*0.12;
+  cx.strokeRect(cx2-r*0.45,cy2-r*0.15,eyeW,eyeH);
+  cx.strokeRect(cx2+r*0.1,cy2-r*0.15,eyeW,eyeH);
+  // Eye glow when speaking
+  if(speaking){
+    facePulse+=0.1;
+    var ep=0.3+Math.sin(facePulse)*0.15;
+    cx.fillStyle='rgba(0,220,180,'+ep+')';
+    cx.fillRect(cx2-r*0.45,cy2-r*0.15,eyeW,eyeH);
+    cx.fillRect(cx2+r*0.1,cy2-r*0.15,eyeW,eyeH);
+  }
+
+  // Mouth line (animated when speaking)
+  cx.strokeStyle=speaking?'rgba(0,220,180,0.6)':'rgba(0,220,180,0.2)';
+  cx.lineWidth=1;
+  cx.beginPath();
+  var mouthW=r*0.5;
+  cx.moveTo(cx2-mouthW/2,cy2+r*0.25);
+  if(speaking){
+    var mOff=Math.sin(facePulse*3)*r*0.04;
+    cx.lineTo(cx2-mouthW/4,cy2+r*0.25+mOff);
+    cx.lineTo(cx2,cy2+r*0.25-mOff);
+    cx.lineTo(cx2+mouthW/4,cy2+r*0.25+mOff);
+    cx.lineTo(cx2+mouthW/2,cy2+r*0.25);
+  }else{
+    cx.lineTo(cx2+mouthW/2,cy2+r*0.25);
+  }
+  cx.stroke();
+
+  // Scan line over face
+  var scanY=cy2-r+((t*0.03)%(r*2));
+  cx.strokeStyle='rgba(0,220,180,0.1)';cx.lineWidth=0.5;
+  cx.beginPath();cx.moveTo(cx2-r,scanY);cx.lineTo(cx2+r,scanY);cx.stroke();
+}
+
+function render(){
+  var t=Date.now();
+  cx.clearRect(0,0,W,H);
+
+  // Dark background
+  cx.fillStyle='#050710';cx.fillRect(0,0,W,H);
+
+  // Subtle grid
+  cx.strokeStyle='rgba(0,200,150,0.015)';cx.lineWidth=0.5;
+  for(var gx=0;gx<W;gx+=30){cx.beginPath();cx.moveTo(gx,0);cx.lineTo(gx,H);cx.stroke()}
+  for(var gy=0;gy<H;gy+=30){cx.beginPath();cx.moveTo(0,gy);cx.lineTo(W,gy);cx.stroke()}
+
+  // Floating code characters
+  cx.font='10px Courier New';
+  for(var i=0;i<particles.length;i++){
+    var p=particles[i];
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.y<-20){p.y=H+20;p.x=Math.random()*W}
+    if(p.x<-20)p.x=W+20;if(p.x>W+20)p.x=-20;
+    var ch=String.fromCharCode(0x30+~~(Math.random()*74));
+    cx.fillStyle='rgba(0,220,180,'+p.a+')';
+    cx.fillText(ch,p.x,p.y);
+  }
+
+  // Face
+  drawFace(t);
+
+  // Vignette
+  var vig=cx.createRadialGradient(W/2,H/2,W*0.2,W/2,H/2,W*0.7);
+  vig.addColorStop(0,'transparent');vig.addColorStop(1,'rgba(0,0,0,0.6)');
+  cx.fillStyle=vig;cx.fillRect(0,0,W,H);
+
+  // Scan lines
+  cx.fillStyle='rgba(0,0,0,0.04)';
+  for(var y=0;y<H;y+=3)cx.fillRect(0,y,W,1);
+
+  // HUD time
+  var now=new Date();
+  document.getElementById('hudTime').textContent=
+    ('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+':'+('0'+now.getSeconds()).slice(-2);
+
+  requestAnimationFrame(render);
+}
+render();
+</script>
+</body>
+</html>
