@@ -54,69 +54,82 @@ resize();addEventListener('resize',resize);
 
 // Lines to speak
 var lines=[
-  {t:"Tu savais que 93% des mots de passe sont crackés en moins de 6 heures ?",d:4500},
-  {t:"Chaque caméra de surveillance autour de toi est un port d'entrée.",d:4000},
-  {t:"Ton téléphone te track toutes les 30 secondes.",d:3500},
-  {t:"Le WiFi public c'est comme pisser dans la piscine. Tout le monde est impacted.",d:4500},
-  {t:"Un hacker ne casse pas la porte. Il te demande gentiment de l'ouvrir.",d:4000},
-  {t:"Ta smart TV t'écoute même éteinte.",d:3000},
-  {t:"98% des gens utilisent le même mot de passe partout.",d:3500},
-  {t:"Le dark web c'est pas un autre internet. C'est le même, sans filtre.",d:4000},
-  {t:"UnSIM swap et ton compte Instagram c'est à moi.",d:3500},
-  {t:"Le phishing c'est pas de la magie. C'est de la psychologie.",d:4000},
-  {t:"Ton IP c'est ton adresse postale sur internet.",d:3000},
-  {t:"Les mots de passe c'est mort. Passe au passkey.",d:3000},
-  {t:"Un hacker voit ce que tu ne vois pas. Les failles, les portes, les faiblesses.",d:4000},
-  {t:"Cybersécurité c'est pas un métier. C'est un état d'esprit.",d:3500},
-  {t:"Tout ce qui est connecté peut être compromis. Tout.",d:3000}
+  {id:"tk1",t:"Tu savais que 93% des mots de passe sont crackés en moins de 6 heures ?"},
+  {id:"tk2",t:"Chaque caméra de surveillance autour de toi est un port d'entrée."},
+  {id:"tk3",t:"Ton téléphone te track toutes les 30 secondes."},
+  {id:"tk4",t:"Le WiFi public c'est comme pisser dans la piscine. Tout le monde est impacté."},
+  {id:"tk5",t:"Un hacker ne casse pas la porte. Il te demande gentiment de l'ouvrir."},
+  {id:"tk6",t:"Ta smart TV t'écoute même éteinte."},
+  {id:"tk7",t:"98% des gens utilisent le même mot de passe partout."},
+  {id:"tk8",t:"Le dark web c'est pas un autre internet. C'est le même, sans filtre."},
+  {id:"tk9",t:"Un SIM swap et ton compte Instagram c'est à moi."},
+  {id:"tk10",t:"Le phishing c'est pas de la magie. C'est de la psychologie."},
+  {id:"tk11",t:"Ton IP c'est ton adresse postale sur internet."},
+  {id:"tk12",t:"Les mots de passe c'est mort. Passe au passkey."},
+  {id:"tk13",t:"Un hacker voit ce que tu ne vois pas. Les failles, les portes, les faiblesses."},
+  {id:"tk14",t:"Cybersécurité c'est pas un métier. C'est un état d'esprit."},
+  {id:"tk15",t:"Tout ce qui est connecté peut être compromis. Tout."}
 ];
 var lineIdx=0;
 var speaking=false;
 
-// Audio
+// Audio context + decoded buffers
 var ac=null;
-var voiceBufs={};
+var audioBuffers={};
+var loadingDone=false;
+
 function initAudio(){
   if(ac)return;
   try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}
 }
 
-// Pre-generate TTS lines using oscillator "hacker voice"
-function speak(text,dur){
-  if(!ac)initAudio();
+function loadAllVoices(){
+  var basePath='tiktok_voices/';
+  var loaded=0;
+  lines.forEach(function(l){
+    fetch(basePath+l.id+'.mp3')
+      .then(function(r){return r.arrayBuffer()})
+      .then(function(buf){
+        return ac.decodeAudioData(buf);
+      })
+      .then(function(decoded){
+        audioBuffers[l.id]=decoded;
+        loaded++;
+        if(loaded===lines.length){loadingDone=true;document.querySelector('#startScreen .sub').textContent='tap to start'}
+      })
+      .catch(function(e){console.warn('Failed to load '+l.id,e);loaded++});
+  });
+}
+
+function playBuffer(id,cb){
+  if(!audioBuffers[id])return;
+  var src=ac.createBufferSource();
+  src.buffer=audioBuffers[id];
+  src.playbackRate.value=1.1;
+  src.connect(ac.destination);
+  src.onended=cb||function(){};
+  src.start();
+}
+
+function speak(text,id){
   if(!ac)return;
   speaking=true;
-  // Show subtitle
   var sub=document.getElementById('subtitle');
   sub.textContent=text;sub.style.display='block';
   sub.style.opacity='0';
   setTimeout(function(){sub.style.opacity='1';sub.style.transition='opacity 0.3s'},50);
-
-  // Generate synthetic voice-like sound
-  var durSec=dur/1000;
-  // Low base
-  var osc1=ac.createOscillator();osc1.type='sawtooth';osc1.frequency.value=85;
-  var g1=ac.createGain();g1.gain.value=0.04;
-  osc1.connect(g1);g1.connect(ac.destination);
-  // Filter for voice-like quality
-  var filt=ac.createBiquadFilter();filt.type='bandpass';filt.frequency.value=1200;filt.Q.value=2;
-  var g2=ac.createGain();g2.gain.value=0.03;
-  osc1.connect(filt);filt.connect(g2);g2.connect(ac.destination);
-
-  // LFO for speech rhythm
-  var lfo=ac.createOscillator();lfo.type='sine';lfo.frequency.value=4+Math.random()*3;
-  var lfoG=ac.createGain();lfoG.gain.value=8;
-  lfo.connect(lfoG);lfoG.connect(osc1.frequency);
-
-  // Envelope
-  var now=ac.currentTime;
-  g1.gain.setValueAtTime(0,now);g1.gain.linearRampToValueAtTime(0.04,now+0.05);
-  g1.gain.setValueAtTime(0.04,now+durSec-0.2);g1.gain.linearRampToValueAtTime(0,now+durSec);
-  g2.gain.setValueAtTime(0,now);g2.gain.linearRampToValueAtTime(0.03,now+0.05);
-  g2.gain.setValueAtTime(0.03,now+durSec-0.2);g2.gain.linearRampToValueAtTime(0,now+durSec);
-
-  osc1.start(now);osc1.stop(now+durSec);
-  lfo.start(now);lfo.stop(now+durSec);
+  playBuffer(id,function(){
+    setTimeout(function(){
+      speaking=false;
+      sub.style.opacity='0';
+      setTimeout(function(){
+        sub.style.display='none';
+        lineIdx++;
+        if(lineIdx>=lines.length)lineIdx=0;
+        playLine();
+      },600);
+    },400);
+  });
 }
 
 function nextLine(){
@@ -125,28 +138,28 @@ function nextLine(){
   document.getElementById('subtitle').style.display='none';
   lineIdx++;
   if(lineIdx>=lines.length)lineIdx=0;
-  setTimeout(function(){playLine()},500);
+  playLine();
 }
 
 function playLine(){
   var l=lines[lineIdx];
-  speak(l.t,l.d);
-  setTimeout(function(){
-    speaking=false;
-    document.getElementById('subtitle').style.opacity='0';
-    setTimeout(function(){
-      lineIdx++;
-      if(lineIdx>=lines.length)lineIdx=0;
-      playLine();
-    },800);
-  },l.d);
+  speak(l.t,l.id);
 }
 
 function start(){
   document.getElementById('startScreen').style.display='none';
   initAudio();
-  lineIdx=0;
-  playLine();
+  document.querySelector('#startScreen .sub').textContent='chargement des voix...';
+  document.getElementById('startScreen').style.display='flex';
+  if(!loadingDone){
+    loadAllVoices();
+    var wait=setInterval(function(){
+      if(loadingDone){clearInterval(wait);document.getElementById('startScreen').style.display='none';lineIdx=0;playLine()}
+    },300);
+  }else{
+    document.getElementById('startScreen').style.display='none';
+    lineIdx=0;playLine();
+  }
 }
 
 // Background animation - dark hacker scene
