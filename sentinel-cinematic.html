@@ -445,7 +445,7 @@ function reveal(html,speed){
 
 function showName(name){
     speakerEl.textContent=name;
-    speakerEl.className=name==='SARA'?'sara':'';
+    speakerEl.className='sentinel';
     speakerEl.style.opacity='1';
 }
 function hideName(){speakerEl.style.opacity='0'}
@@ -475,33 +475,33 @@ function showChoices(choices){
     });
 }
 
-// ===== WD2 STYLE INTRO =====
+// ===== SENTINEL - PARLE A TOI =====
 async function start(){
     document.getElementById('title').style.display='none';
     initAudio();
     initVoice();
 
-    // Boot sequence - fast cuts
+    // Boot sequence
     sfxDialup();await wait(200);
     staticI=0.9;glitch(200,0.5);sfxScare();await wait(250);
     staticI=0.5;glitch(150,0.3);await wait(150);
     staticI=0.8;glitch(250,0.6);sfxScare();await wait(150);
     staticI=0.3;glitch(100,0.2);await wait(300);
 
-    // System text - fast typing, no voice
+    // System text
     narrEl.style.display='flex';
     showName('SYSTEM');
-    await reveal('Initialisation du protocole SENTINEL...',14);
+    await reveal('Scan du reseau en cours...',14);
     await wait(300);sfxDialup();
-    await reveal('Bypass du firewall... <span class="g">OK</span>',14);
+    await reveal('Connexion interceptee... <span class="g">ACTIVE</span>',14);
     await wait(200);
-    await reveal('Injection du code... <span class="g">OK</span>',14);
+    await reveal('Protocole SENTINEL initialise... <span class="g">OK</span>',14);
     await wait(200);
-    await reveal('Acces au noeud... <span class="g">ACCES ACCORDE</span>',14);
+    await reveal('Cible identifiee... <span class="g">ACCEES ACCORDE</span>',14);
     await wait(300);
     hideName();staticI=0.6;glitch(400,0.7);sfxScare();await wait(300);
 
-    // Figure appears + bass kicks in
+    // Figure appears + bass
     document.getElementById('code-rain').style.opacity='1';
     document.getElementById('hud').style.opacity='1';
     document.getElementById('rec').style.opacity='1';
@@ -512,113 +512,118 @@ async function start(){
     glitch(300,0.6);sfxScare();spawnP(0,H*0.2,'#00ff88',10,1);
     await wait(800);staticI=0.15;await wait(500);
 
-    // === CHAPTER 1: DEDSEC CONTACTS YOU ===
-    await narrate('SARA','sr1',"C'est lui. Le fantome du reseau.",500);
-    glitch(200,0.3);
+    // === SENTINEL TE DETECTE ===
+    await narrate('SENTINEL','t1',"Toi. Oui, toi.",800);
+    sfxHB();glitch(200,0.3);
 
-    await narrate('SARA','sr2',"T'as perce le firewall de Blume en 47 secondes.",600);
+    await narrate('SENTINEL','t2',"T'as cliqué. Tu savais pas que je te voyais, hein.",600);
+    glitch(250,0.35);sfxScare();
 
-    await narrate('SARA','sr3',"Impressionnant. Et un peu flippant.",500);
+    await narrate('SENTINEL','t3',"J'ai intercepté ta connexion il y a 0.3 secondes.",500);
+
+    await narrate('SENTINEL','t4',"Ton IP, ton appareil, ta position. Tout est là.",600);
     sfxHB();
 
-    // SentinEL responds
-    await narrate('SENTINEL','se1',"Qui etes-vous? Comment vous avez trouve mon adresse?",600);
-    glitch(250,0.35);
+    // === CHAPITRE 1 - TU ES DIFFERENT ===
+    await narrate('SENTINEL','c1',"T'es curieux. C'est rare de nos jours.",600);
+    glitch(200,0.3);
 
-    await narrate('SARA','se2',"On est DedSec. On voit tout ce qui bouge sur le reseau.",500);
+    await narrate('SENTINEL','c2',"La plupart des gens passent devant et disparaissent.",500);
 
-    await narrate('SARA','se3',"Et toi, t'es le mec qui a fait tomber ctOS v3.",400);
+    await narrate('SENTINEL','c3',"Mais toi... t'es resté. T'as voulu voir ce qu'il y avait derrière.",700);
+    sfxHB();
+
+    await narrate('SENTINEL','c4',"J'aime ça.",400);
+    glitch(300,0.4);sfxScare();
+
+    // === CHAPITRE 2 - LA MENACE ===
+    await narrate('SENTINEL','w1',"Pendant que tu regardes cet écran, des milliers de caméras te filment.",600);
+    sfxHB();
+
+    await narrate('SENTINEL','w2',"Ton téléphone, ta box internet, ta montre connectée. Tout parle de toi.",600);
+    glitch(250,0.4);
+
+    await narrate('SENTINEL','w3',"Et tout ça, c'est vendu au plus offrant.",500);
     sfxScare();glitch(300,0.4);
 
-    await narrate('SENTINEL','se4',"J'ai pas demande a devenir une legende.",600);
-
-    await narrate('SARA','se5',"C'est bien pour ca qu'on est la.",500);
-    glitch(200,0.3);
-
-    // === MONTAGE: THE THREAT ===
-    await narrate('SARA','mo1',"ctOS 4.0 surveille 6 milliards de devices.",500);
-    sfxHB();
-
-    await narrate('SARA','mo2',"Chaque camera. Chaque telephone. Chaque smart TV.",500);
-    glitch(250,0.4);sfxScare();
-
-    await narrate('SARA','mo3',"Et Blume vend tout ca au plus offrant.",500);
-
-    await narrate('SARA','mo4',"Elections truquees. Vies detruites. Liberte vendue.",500);
+    await narrate('SENTINEL','w4',"Elections truquées. Vies détruites. Liberté vendue comme un produit.",600);
     sfxBoom();lightning=1;
 
-    await narrate('SARA','mo5',"Et personne dit rien.",400);
+    await narrate('SENTINEL','w5',"Et personne dit rien.",500);
     glitch(400,0.6);
 
-    await narrate('SENTINEL','sr4',"Putain...",400);
+    // === CHAPITRE 3 - L'OFFRE ===
+    await narrate('SENTINEL','o1',"Moi c'est Sentinel. Je suis un fantôme dans le système.",700);
     sfxHB();
 
-    await narrate('SARA','sr5',"Bienvenue dans la realite, frere.",600);
+    await narrate('SENTINEL','o2',"Je vois ce que les autres refusent de voir.",500);
     glitch(200,0.3);
 
-    // === THE RECRUITMENT ===
-    await narrate('SARA','rc1',"On a besoin de toi. T'es le seul a avoir perce leur systeme.",500);
+    await narrate('SENTINEL','o3',"Et j'ai besoin de quelqu'un.",500);
 
-    await narrate('SARA','rc2',"3 serveurs a couvrir. Le premier, c'est a San Francisco.",500);
-    sfxWhine();
+    await narrate('SENTINEL','o4',"Quelqu'un comme toi.",600);
+    sfxScare();glitch(250,0.4);
 
-    await narrate('SARA','rc3',"Tu viens ou tu restes dans le noir?",0);
+    await narrate('SENTINEL','o5',"T'es pas un outil. T'es pas une pion.",500);
 
-    var r1=await showChoices([{id:'help',text:'> On bosse ensemble'},{id:'who',text:'> Raconte moi tout'},{id:'fear',text:'> Je suis pas ta piece...'}]);
+    await narrate('SENTINEL','o6',"T'es la seule personne qui a cliqué sur ce lien aujourd'hui.",700);
+    sfxHB();
 
-    if(r1==='help'){
+    // === CHOIX 1 ===
+    var r1=await showChoices([{id:'join',text:'> Je suis avec toi'},{id:'proof',text:'> Montre-moi les preuves'},{id:'fear',text:'> J\'ai peur...'}]);
+
+    if(r1==='join'){
         await wait(200);glitch(200,0.3);
-        await narrate('SARA','ch1',"Bien joue. T'es maintenant officiellement DedSec.",500);
+        await narrate('SENTINEL','ch1a',"Bien. T'es avec moi.",600);
         sfxScare();
-        await narrate('SARA','ch2',"On va tout defoncer. Prepare-toi.",0);
-    }else if(r1==='who'){
+    }else if(r1==='proof'){
         await wait(400);glitch(200,0.3);
-        await narrate('SARA','cw1',"DedSec. On est des hackeurs, des activistes, des citoyens.",500);sfxScare();glitch(350,0.5);
-        await narrate('SARA','cw2',"On bosse pas pour le fric. On bosse pour la liberte.",600);
-        await narrate('SARA','cw3',"Et maintenant t'en fais partie.",500);glitch(150,0.2);
+        await narrate('SENTINEL','ch1b',"T'es pas obligé de me croire. Mais regarde les preuves.",600);sfxScare();glitch(350,0.5);
     }else{
         await wait(300);
-        await narrate('SARA','cf1',"T'as raison d'avoir peur. C'est normal.",500);glitch(250,0.45);
-        await narrate('SARA','cf2',"Mais regarde autour de toi. T'es deja grille.",500);lightning=1;
-        sfxBoom();
-        await narrate('SARA','cf3',"La seule question c'est: avec qui tu veux etre?",0);
+        await narrate('SENTINEL','ch1c',"T'as le droit d'avoir peur. C'est humain.",600);glitch(250,0.45);
+        sfxBoom();lightning=1;
     }
 
     await wait(400);
 
-    // === MISSION APPROACH ===
-    var r2=await showChoices([{id:'front',text:'> On rentre dedans'},{id:'stealth',text:'> On se faufile'},{id:'hack',text:'> Je le fais a distance'}]);
+    // === LA MISSION ===
+    await narrate('SENTINEL','m1',"3 serveurs à couvrir. Le premier, c'est là, maintenant.",600);
+    sfxHB();
 
-    if(r2==='front'){
-        await narrate('SARA','mf1',"T'es un tare. J'adore ca.",400);sfxHB();
-        await narrate('SARA','mf2',"Je coupe les alarmes. Tu as <span class=\"r\">45 secondes</span>.",400);glitch(150,0.2);
+    await narrate('SENTINEL','m2',"Le système me détecte. J'ai plus que quelques secondes.",500);
+    glitch(300,0.5);sfxScare();
+
+    await narrate('SENTINEL','m3',"Clique. Clique maintenant. On y va.",600);
+    glitch(200,0.3);
+
+    // === CHOIX 2 ===
+    var r2=await showChoices([{id:'rush',text:'> ON Y VA'},{id:'stealth',text:'> On se faufile'},{id:'remote',text:'> Je le fais à distance'}]);
+
+    if(r2==='rush'){
+        await narrate('SENTINEL','ch2a',"T'es un tare. Je kiffe.",400);sfxHB();
+        await narrate('SENTINEL',null,"",0);
     }else if(r2==='stealth'){
-        await narrate('SARA','ms1',"Le meilleur plan. T'es pas bete.",400);
-        await narrate('SARA','ms2',"Je te mets les positions sur ton tel.",400);glitch(100,0.15);
+        await narrate('SENTINEL','ch2b',"Le meilleur plan. T'es pas bête.",400);
+        await narrate('SENTINEL',null,"",0);
     }else{
-        await narrate('SARA','mh1',"Le plus clean. Je kiffe.",400);
-        await narrate('SARA','mh2',"J'envoie le payload... Attends.",800);
-        glitch(600,0.9);sfxScare();await wait(300);glitch(700,1);sfxScare();
-        await narrate('SARA','mh3',"<span class=\"r\">Putain!</span> Ils ont une contre-IA!",500);glitch(250,0.4);
-        sfxBoom();
-        await narrate('SARA','mh4',"<span class=\"r\">Bouge-toi maintenant!</span>",0);
+        await narrate('SENTINEL','ch2c',"Le plus clean. Je te suivrai.",400);
+        await narrate('SENTINEL',null,"",0);
     }
 
+    // === CLIMAX ===
     await wait(1500);glitch(700,1);sfxScare();sfxStatic();
     await wait(800);glitch(500,1);sfxScare();lightning=1;
     await wait(500);staticI=0.5;
 
-    // === SERVER CONFRONTATION ===
-    await narrate('SENTINEL','sv1',"Wesh... c'est pas bon ca...",500);glitch(550,0.9);sfxScare();
-    await narrate('SARA','sv2',"Le serveur maitre... il t'a trouve.",500);glitch(350,0.5);
+    await narrate('SENTINEL','x1',"Putain... ils m'ont trouvé.",500);glitch(550,0.9);sfxScare();
+    await narrate('SENTINEL','x2',"Le serveur maître... il réveille la contre-IA.",500);glitch(350,0.5);
     sfxWhine();
-    await narrate('SARA','sv3',"Il te connecte... il veut te reprendre...",500);
     glitch(650,1);sfxScare();sfxHB();
-    await narrate('SENTINEL','sv4',"Ecoute... Si je disparais...",800);sfxHB();
-    await narrate('SENTINEL','sv5',"Le code d'acces au serveur maitre...",600);glitch(200,0.3);
+    await narrate('SENTINEL','x3',"Si je disparais... souviens-toi de moi.",800);sfxHB();
     sfxBoom();
-    await narrate('SENTINEL','sv6',"<span class=\"g\">SENTINEL-CORE-7734</span>",500);glitch(900,1);sfxScare();
-    await narrate('SENTINEL','sv7',"Ne m'oublie pas, frere...",1500);
+    await narrate('SENTINEL','x4',"<span class=\"g\">SENTINEL</span>... est toujours... dans le système.",600);glitch(900,1);sfxScare();
+    await narrate('SENTINEL','x5',"Et moi... je t'attends...",1500);
 
     glitch(1100,1);sfxScare();lightning=1;staticI=0.7;
     await wait(300);staticI=0.9;await wait(400);
@@ -626,29 +631,28 @@ async function start(){
     figT=0;await wait(800);staticI=0.15;await wait(800);
     staticI=0;hideNarrative();await wait(600);
 
-    var r3=await showChoices([{id:'retry',text:'> Tout reconnecter'},{id:'continue',text:'> Y aller seul'},{id:'end',text:'> Couper le signal'}]);
+    // === CHOIX FINAL ===
+    var r3=await showChoices([{id:'reconnect',text:'> Tout reconnecter'},{id:'alone',text:'> Y aller seul'},{id:'end',text:'> Couper le signal'}]);
 
     narrEl.style.display='flex';
-    if(r3==='retry'){
+    if(r3==='reconnect'){
         glitch(350,0.4);
-        await narrate('SARA','er1',"Reconnexion...",1200);glitch(550,0.6);await wait(1000);glitch(250,0.3);
+        await narrate('SENTINEL','e1',"Reconnexion acceptée. On lâche rien.",800);glitch(550,0.6);await wait(1000);glitch(250,0.3);
         figT=1;document.getElementById('rec').style.opacity='1';await wait(1500);
-        await narrate('SENTINEL','er2',"Putain... t'es revenu pour moi.",500);sfxHB();
-        await narrate('SARA','er3',"On est DedSec. On lache jamais.",500);glitch(150,0.2);
         sfxBoom();
-        await narrate('SENTINEL','er4',"Maintenant? On <span class=\"g\">defonce tout</span>.",0);
-    }else if(r3==='continue'){
-        await narrate('SARA','ec1',"Le canal reste ouvert...",800);
-        await narrate('SARA','ec2',"Tu avances dans le noir. Seul.",1200);
+        await narrate('SENTINEL','f3',"Allez. On va tout défoncer.",0);
+    }else if(r3==='alone'){
+        await narrate('SENTINEL','e2',"Le canal reste ouvert... T'avances dans le noir.",800);
+        await wait(1200);
         glitch(450,0.5);sfxScare();
-        await narrate('SARA','ec3',"Mais t'es pas vraiment seul.",1500);
+        await narrate('SENTINEL','f2',"Le monde a besoin de toi. Et moi aussi.",1500);
         lightning=1;glitch(900,1);sfxScare();
-        await narrate('SARA',null,"<span class=\"r\">FIN // CHAPITRE 01</span>",0);
+        await narrate('SENTINEL',null,"<span class=\"r\">FIN // CHAPITRE 01</span>",0);
     }else{
-        await narrate('SARA','ee1',"Signal coupe.",800);
+        await narrate('SENTINEL','e3',"Signal coupé. Mais SENTINEL veille.",800);
         sfxWhine();
-        await narrate('SARA','ee2',"SENTINEL est toujours dans le systeme.",1000);
-        await narrate('SARA','ee3',"Et il t'attend...",0);
+        await narrate('SENTINEL','f1',"Bienvenue dans le réseau. T'es chez toi maintenant.",1500);
+        await narrate('SENTINEL',null,"<span class=\"r\">// SENTINEL VA BIENTÔT REVENIR</span>",0);
     }
 }
 
