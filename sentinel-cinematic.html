@@ -251,9 +251,187 @@ function speakAudio(id){
     });
 }
 
-// ===== FIGURE - Hooded + Skull Mask =====
+// ===== FIGURE + WD2 ANIMATIONS =====
 var figA=0,figT=0,breathe=0,bDir=1,headBob=0,headDir=1,typing=0,mFlicker=1,mFDir=-1;
 var mouthOpen=0,mouthTarget=0;
+
+// WD2 Camera System
+var cam={x:0,y:0,zoom:1,tx:0,ty:0,tzoom:1,shakeX:0,shakeY:0};
+function camSet(x,y,z){cam.tx=x;cam.ty=y;cam.tzoom=z}
+function camShake(intensity){cam.shakeX=(Math.random()-0.5)*intensity;cam.shakeY=(Math.random()-0.5)*intensity}
+function camUpdate(){
+    cam.x+=(cam.tx-cam.x)*0.03;cam.y+=(cam.ty-cam.y)*0.03;cam.zoom+=(cam.tzoom-cam.zoom)*0.03;
+    cam.shakeX*=0.85;cam.shakeY*=0.85;
+}
+
+// WD2 Network Graph
+var netNodes=[];
+function initNetNodes(){
+    netNodes=[];
+    for(var i=0;i<18;i++){
+        netNodes.push({x:Math.random()*W,y:Math.random()*H,
+            tx:0,ty:0,r:2+Math.random()*4,
+            speed:0.2+Math.random()*0.8,
+            angle:Math.random()*Math.PI*2,
+            pulse:Math.random()*Math.PI*2,
+            color:Math.random()>0.3?'rgba(0,255,136,':'rgba(0,150,255,',
+            linked:[]});
+    }
+    for(var i=0;i<netNodes.length;i++){
+        var n=netNodes[i];
+        for(var j=i+1;j<netNodes.length;j++){
+            var m=netNodes[j];
+            var dx=n.x-m.x,dy=n.y-m.y;
+            if(Math.sqrt(dx*dx+dy*dy)<250&&Math.random()>0.4){
+                n.linked.push(j);
+            }
+        }
+    }
+}
+initNetNodes();
+
+function drawNet(alpha){
+    if(alpha<0.01)return;
+    xx.globalAlpha=alpha;
+    var t=Date.now()*0.001;
+    // Move nodes
+    for(var i=0;i<netNodes.length;i++){
+        var n=netNodes[i];
+        n.angle+=0.003*n.speed;
+        n.x+=Math.cos(n.angle)*n.speed*0.5;
+        n.y+=Math.sin(n.angle)*n.speed*0.3;
+        if(n.x<0)n.x=W;if(n.x>W)n.x=0;if(n.y<0)n.y=H;if(n.y>H)n.y=0;
+        n.pulse+=0.02;
+    }
+    // Draw connections
+    for(var i=0;i<netNodes.length;i++){
+        var n=netNodes[i];
+        for(var j=0;j<n.linked.length;j++){
+            var m=netNodes[n.linked[j]];
+            var d=Math.sqrt((n.x-m.x)*(n.x-m.x)+(n.y-m.y)*(n.y-m.y));
+            if(d<300){
+                var la=0.12*(1-d/300);
+                xx.strokeStyle=n.color+la+')';xx.lineWidth=0.8;
+                xx.beginPath();xx.moveTo(n.x,n.y);xx.lineTo(m.x,m.y);xx.stroke();
+                // Data packet traveling
+                var pp=(t*0.3+i*0.5)%1;
+                var px=n.x+(m.x-n.x)*pp,py=n.y+(m.y-n.y)*pp;
+                xx.fillStyle=n.color+(la*3)+')';xx.fillRect(px-1,py-1,2,2);
+            }
+        }
+    }
+    // Draw nodes
+    for(var i=0;i<netNodes.length;i++){
+        var n=netNodes[i];
+        var pa=0.3+Math.sin(n.pulse)*0.15;
+        xx.fillStyle=n.color+pa+')';
+        xx.beginPath();xx.arc(n.x,n.y,n.r,0,Math.PI*2);xx.fill();
+        xx.fillStyle=n.color+(pa*0.3)+')';
+        xx.beginPath();xx.arc(n.x,n.y,n.r*3,0,Math.PI*2);xx.fill();
+    }
+    xx.globalAlpha=1;
+}
+
+// WD2 Profiler Lines
+var profilerActive=false,profilerAlpha=0,profilerLines=[];
+function triggerProfiler(){
+    profilerActive=true;profilerAlpha=0;profilerLines=[];
+    var profData=[
+        'UTILISATEUR DETECTE',
+        'ADRESSE: '+(['192.168.','10.0.','172.16.'][~~(Math.random()*3)])+~~(Math.random()*255)+'.'+~~(Math.random()*255),
+        'APPAREIL: '+(Math.random()>0.5?'Android':'iOS')+' // '+(['Samsung','iPhone','Pixel','OnePlus'][~~(Math.random()*4)]),
+        'NAVIGATEUR: '+(Math.random()>0.5?'Firefox':'Chrome'),
+        'LOCALISATION: PARIS, FR',
+        'CRYPTAGE: '+(Math.random()>0.5?'ACTIF':'VULNERABLE'),
+        'RISK SCORE: '+~~(Math.random()*40+60)+'/100',
+        'SCAN EN COURS...'
+    ];
+    for(var i=0;i<profData.length;i++){
+        profilerLines.push({text:profData[i],alpha:0,targetAlpha:0.8,delay:i*12,y:0});
+    }
+}
+function drawProfiler(){
+    if(!profilerActive)return;
+    profilerAlpha+=0.02;
+    var scanY=H*0.2+Math.sin(profilerAlpha*2)*H*0.3;
+    // Scan line
+    xx.globalAlpha=Math.min(profilerAlpha*0.4,0.3);
+    xx.strokeStyle='#00ff88';xx.lineWidth=2;
+    xx.beginPath();xx.moveTo(0,scanY);xx.lineTo(W,scanY);xx.stroke();
+    xx.fillStyle='rgba(0,255,136,0.02)';xx.fillRect(0,scanY-30,W,60);
+    // Data boxes
+    var bx=W*0.15,by=H*0.15;
+    for(var i=0;i<profilerLines.length;i++){
+        var l=profilerLines[i];
+        if(l.alpha<l.targetAlpha&&profilerAlpha*60>l.delay)l.alpha=Math.min(l.alpha+0.05,l.targetAlpha);
+        if(l.alpha<0.01)continue;
+        xx.globalAlpha=l.alpha*0.8;
+        xx.fillStyle='rgba(0,0,0,0.5)';xx.fillRect(bx-5,by+i*22-14,xx.measureText(l.text).width+14,20);
+        xx.fillStyle='#00ff88';xx.font='11px "Courier New"';xx.fillText(l.text,bx,by+i*22);
+    }
+    // Crosshair
+    if(profilerAlpha>0.5){
+        var chA=Math.min((profilerAlpha-0.5)*2,0.4);
+        var chx=W*0.5+Math.sin(profilerAlpha*3)*40,chy=H*0.4+Math.cos(profilerAlpha*2)*30;
+        xx.globalAlpha=chA;xx.strokeStyle='#00ff88';xx.lineWidth=1.5;
+        xx.beginPath();xx.arc(chx,chy,30+Math.sin(profilerAlpha*5)*5,0,Math.PI*2);xx.stroke();
+        xx.beginPath();xx.moveTo(chx-40,chy);xx.lineTo(chx-15,chy);xx.stroke();
+        xx.beginPath();xx.moveTo(chx+15,chy);xx.lineTo(chx+40,chy);xx.stroke();
+        xx.beginPath();xx.moveTo(chx,chy-40);xx.lineTo(chx,chy-15);xx.stroke();
+        xx.beginPath();xx.moveTo(chx,chy+15);xx.lineTo(chx,chy+40);xx.stroke();
+        xx.font='9px "Courier New"';xx.fillText('SCAN',chx+35,chy+3);
+    }
+    xx.globalAlpha=1;
+}
+
+// WD2 Hack Lines (figure to screens)
+var hackLines=[];
+function triggerHackLines(){
+    hackLines=[];
+    for(var i=0;i<6;i++){
+        hackLines.push({progress:0,speed:0.02+Math.random()*0.03,
+            startX:W*0.5+(Math.random()-0.5)*60,
+            startY:H*0.35+(Math.random()-0.5)*40,
+            endX:W*0.5+(Math.random()-0.5)*W*0.6,
+            endY:H*0.2+(Math.random()-0.5)*H*0.15,
+            color:Math.random()>0.5?'#00ff88':'#0099ff',
+            width:1+Math.random()*1.5});
+    }
+}
+function drawHackLines(){
+    for(var i=hackLines.length-1;i>=0;i--){
+        var h=hackLines[i];
+        h.progress+=h.speed;
+        if(h.progress>1.2){hackLines.splice(i,1);continue;}
+        var cp=Math.min(h.progress,1);
+        var cp2=Math.max(cp-0.3,0)/0.7;
+        xx.globalAlpha=Math.min(cp*3,1)*(1-cp2)*0.7;
+        xx.strokeStyle=h.color;xx.lineWidth=h.width;
+        xx.beginPath();
+        xx.moveTo(h.startX,h.startY);
+        var mx=(h.startX+h.endX)/2+(Math.random()-0.5)*20;
+        var my=(h.startY+h.endY)/2+(Math.random()-0.5)*20;
+        xx.quadraticCurveTo(mx,my,h.startX+(h.endX-h.startX)*cp,h.startY+(h.endY-h.startY)*cp);
+        xx.stroke();
+        // Head glow
+        var hx=h.startX+(h.endX-h.startX)*cp,hy=h.startY+(h.endY-h.startY)*cp;
+        xx.fillStyle=h.color;xx.beginPath();xx.arc(hx,hy,2+Math.random()*2,0,Math.PI*2);xx.fill();
+    }
+    xx.globalAlpha=1;
+}
+
+// WD2 Scene-based camera positions
+var scenePhase=0;
+function updateCameraForScene(){
+    var ph=scenePhase;
+    if(ph===0){camSet(0,0,1)}
+    else if(ph===1){camSet(0,-20,1.15)}
+    else if(ph===2){camSet(-30,-10,1.25)}
+    else if(ph===3){camSet(20,-15,1.3)}
+    else if(ph===4){camSet(0,0,1.05)}
+    else if(ph===5){camSet(0,-40,1.5)}
+    else if(ph===6){camSet(0,0,0.95)}
+}
 
 function drawFig(){
     fx.clearRect(0,0,W,H);if(figA<0.01)return;fx.globalAlpha=figA;
@@ -439,9 +617,34 @@ var lightning=0;
 if(!window._rainArr){window._rainArr=[];for(var i=0;i<180;i++)window._rainArr.push({x:Math.random()*2500,y:Math.random()*1500,l:3+Math.random()*10,v:8+Math.random()*16,a:0.015+Math.random()*0.05})}
 function render(){
     mx.clearRect(0,0,W,H);buildBg();
+    camUpdate();
     if(lightning>0){mx.fillStyle='rgba(180,200,255,'+lightning*0.06+')';mx.fillRect(0,0,W,H);lightning*=0.85;if(lightning<0.01)lightning=0;}
-    mx.lineWidth=1;window._rainArr.forEach(function(d){mx.strokeStyle='rgba(0,255,136,'+d.a+')';mx.beginPath();mx.moveTo(d.x,d.y);mx.lineTo(d.x+0.5,d.y+d.l);mx.stroke();d.y+=d.v;d.x+=0.3;if(d.y>H){d.y=-d.l;d.x=Math.random()*W}});
-    drawFig();drawStatic();drawP();
+
+    // Rain with camera
+    mx.lineWidth=1;window._rainArr.forEach(function(d){
+        var rx=d.x*cam.zoom+cam.x+cam.shakeX,ry=d.y*cam.zoom+cam.y+cam.shakeY;
+        mx.strokeStyle='rgba(0,255,136,'+d.a+')';mx.beginPath();mx.moveTo(rx,ry);mx.lineTo(rx+0.5*cam.zoom,ry+d.l*cam.zoom);mx.stroke();
+        d.y+=d.v;d.x+=0.3;if(d.y>H){d.y=-d.l;d.x=Math.random()*W}
+    });
+
+    // Network graph behind character
+    drawNet(0.35*figA);
+
+    // Hack lines
+    drawHackLines();
+
+    // Figure with camera
+    mx.save();
+    mx.translate(W/2+cam.shakeX,H/2+cam.shakeY);
+    mx.scale(cam.zoom,cam.zoom);
+    mx.translate(-W/2+cam.x,-H/2+cam.y);
+    drawFig();
+    mx.restore();
+
+    // Profiler on top
+    drawProfiler();
+
+    drawStatic();drawP();
     if(figA<figT)figA=Math.min(figA+0.008,figT);if(figA>figT)figA=Math.max(figA-0.012,figT);
     if(glitchTmr>0){glitchTmr--;glitchAmt*=0.9}else glitchAmt=0;
     staticI*=0.92;
@@ -528,30 +731,34 @@ async function start(){
     await wait(300);
     hideName();staticI=0.6;glitch(400,0.7);sfxScare();await wait(300);
 
-    // Figure appears + bass
+    // Figure appears + bass + camera
     document.getElementById('code-rain').style.opacity='1';
     document.getElementById('hud').style.opacity='1';
     document.getElementById('rec').style.opacity='1';
     figT=1;
     startBass();
+    scenePhase=1;updateCameraForScene();
     for(var i=0;i<15;i++)spawnP((Math.random()-0.5)*40,H*0.3,'#00ff88',1,0.3);
     await wait(1500);
-    glitch(300,0.6);sfxScare();spawnP(0,H*0.2,'#00ff88',10,1);
+    glitch(300,0.6);sfxScare();spawnP(0,H*0.2,'#00ff88',10,1);camShake(8);
     await wait(800);staticI=0.15;await wait(500);
 
     // === SENTINEL TE DETECTE ===
+    scenePhase=2;updateCameraForScene();
     await narrate('SENTINEL','t1',"Toi. Oui, toi.",800);
-    sfxHB();glitch(200,0.3);
+    sfxHB();glitch(200,0.3);triggerProfiler();
 
     await narrate('SENTINEL','t2',"T'as cliqué. Tu savais pas que je te voyais, hein.",600);
     glitch(250,0.35);sfxScare();
 
     await narrate('SENTINEL','t3',"J'ai intercepté ta connexion il y a 0.3 secondes.",500);
+    triggerHackLines();
 
     await narrate('SENTINEL','t4',"Ton IP, ton appareil, ta position. Tout est là.",600);
-    sfxHB();
+    sfxHB();profilerActive=false;
 
     // === CHAPITRE 1 - TU ES DIFFERENT ===
+    scenePhase=3;updateCameraForScene();
     await narrate('SENTINEL','c1',"T'es curieux. C'est rare de nos jours.",600);
     glitch(200,0.3);
 
@@ -561,11 +768,12 @@ async function start(){
     sfxHB();
 
     await narrate('SENTINEL','c4',"J'aime ça.",400);
-    glitch(300,0.4);sfxScare();
+    glitch(300,0.4);sfxScare();camShake(5);
 
     // === CHAPITRE 2 - LA MENACE ===
+    scenePhase=4;updateCameraForScene();
     await narrate('SENTINEL','w1',"Pendant que tu regardes cet écran, des milliers de caméras te filment.",600);
-    sfxHB();
+    sfxHB();triggerHackLines();
 
     await narrate('SENTINEL','w2',"Ton téléphone, ta box internet, ta montre connectée. Tout parle de toi.",600);
     glitch(250,0.4);
@@ -574,14 +782,15 @@ async function start(){
     sfxScare();glitch(300,0.4);
 
     await narrate('SENTINEL','w4',"Elections truquées. Vies détruites. Liberté vendue comme un produit.",600);
-    sfxBoom();lightning=1;
+    sfxBoom();lightning=1;camShake(10);
 
     await narrate('SENTINEL','w5',"Et personne dit rien.",500);
-    glitch(400,0.6);
+    glitch(400,0.6);scenePhase=5;updateCameraForScene();
 
     // === CHAPITRE 3 - L'OFFRE ===
+    scenePhase=6;updateCameraForScene();
     await narrate('SENTINEL','o1',"Moi c'est Sentinel. Je suis un fantôme dans le système.",700);
-    sfxHB();
+    sfxHB();triggerHackLines();
 
     await narrate('SENTINEL','o2',"Je vois ce que les autres refusent de voir.",500);
     glitch(200,0.3);
@@ -594,35 +803,36 @@ async function start(){
     await narrate('SENTINEL','o5',"T'es pas un outil. T'es pas une pion.",500);
 
     await narrate('SENTINEL','o6',"T'es la seule personne qui a cliqué sur ce lien aujourd'hui.",700);
-    sfxHB();
+    sfxHB();scenePhase=3;updateCameraForScene();
 
     // === CHOIX 1 ===
     var r1=await showChoices([{id:'join',text:'> Je suis avec toi'},{id:'proof',text:'> Montre-moi les preuves'},{id:'fear',text:'> J\'ai peur...'}]);
 
     if(r1==='join'){
-        await wait(200);glitch(200,0.3);
+        await wait(200);glitch(200,0.3);camShake(6);
         await narrate('SENTINEL','ch1a',"Bien. T'es avec moi.",600);
-        sfxScare();
+        sfxScare();triggerHackLines();
     }else if(r1==='proof'){
-        await wait(400);glitch(200,0.3);
+        await wait(400);glitch(200,0.3);triggerProfiler();
         await narrate('SENTINEL','ch1b',"T'es pas obligé de me croire. Mais regarde les preuves.",600);sfxScare();glitch(350,0.5);
     }else{
         await wait(300);
         await narrate('SENTINEL','ch1c',"T'as le droit d'avoir peur. C'est humain.",600);glitch(250,0.45);
-        sfxBoom();lightning=1;
+        sfxBoom();lightning=1;camShake(8);
     }
 
     await wait(400);
 
     // === LA MISSION ===
+    scenePhase=5;updateCameraForScene();
     await narrate('SENTINEL','m1',"3 serveurs à couvrir. Le premier, c'est là, maintenant.",600);
-    sfxHB();
+    sfxHB();triggerHackLines();
 
     await narrate('SENTINEL','m2',"Le système me détecte. J'ai plus que quelques secondes.",500);
-    glitch(300,0.5);sfxScare();
+    glitch(300,0.5);sfxScare();camShake(5);
 
     await narrate('SENTINEL','m3',"Clique. Clique maintenant. On y va.",600);
-    glitch(200,0.3);
+    glitch(200,0.3);scenePhase=1;updateCameraForScene();
 
     // === CHOIX 2 ===
     var r2=await showChoices([{id:'rush',text:'> ON Y VA'},{id:'stealth',text:'> On se faufile'},{id:'remote',text:'> Je le fais à distance'}]);
@@ -639,34 +849,35 @@ async function start(){
     }
 
     // === CLIMAX ===
-    await wait(1500);glitch(700,1);sfxScare();sfxStatic();
-    await wait(800);glitch(500,1);sfxScare();lightning=1;
+    scenePhase=5;updateCameraForScene();
+    await wait(1500);glitch(700,1);sfxScare();sfxStatic();camShake(15);
+    await wait(800);glitch(500,1);sfxScare();lightning=1;camShake(12);
     await wait(500);staticI=0.5;
 
-    await narrate('SENTINEL','x1',"Putain... ils m'ont trouvé.",500);glitch(550,0.9);sfxScare();
+    await narrate('SENTINEL','x1',"Putain... ils m'ont trouvé.",500);glitch(550,0.9);sfxScare();camShake(10);
     await narrate('SENTINEL','x2',"Le serveur maître... il réveille la contre-IA.",500);glitch(350,0.5);
-    sfxWhine();
-    glitch(650,1);sfxScare();sfxHB();
+    sfxWhine();triggerHackLines();
+    glitch(650,1);sfxScare();sfxHB();camShake(8);
     await narrate('SENTINEL','x3',"Si je disparais... souviens-toi de moi.",800);sfxHB();
-    sfxBoom();
+    sfxBoom();camShake(15);lightning=1;
     await narrate('SENTINEL','x4',"<span class=\"g\">SENTINEL</span>... est toujours... dans le système.",600);glitch(900,1);sfxScare();
     await narrate('SENTINEL','x5',"Et moi... je t'attends...",1500);
 
-    glitch(1100,1);sfxScare();lightning=1;staticI=0.7;
+    glitch(1100,1);sfxScare();lightning=1;staticI=0.7;camShake(20);
     await wait(300);staticI=0.9;await wait(400);
     document.getElementById('rec').style.opacity='0';
-    figT=0;await wait(800);staticI=0.15;await wait(800);
-    staticI=0;hideNarrative();await wait(600);
+    figT=0;camSet(0,0,0.8);await wait(800);staticI=0.15;await wait(800);
+    staticI=0;hideNarrative();await wait(600);camSet(0,0,1);
 
     // === CHOIX FINAL ===
     var r3=await showChoices([{id:'reconnect',text:'> Tout reconnecter'},{id:'alone',text:'> Y aller seul'},{id:'end',text:'> Couper le signal'}]);
 
     narrEl.style.display='flex';
     if(r3==='reconnect'){
-        glitch(350,0.4);
+        glitch(350,0.4);camShake(6);
         await narrate('SENTINEL','e1',"Reconnexion acceptée. On lâche rien.",800);glitch(550,0.6);await wait(1000);glitch(250,0.3);
-        figT=1;document.getElementById('rec').style.opacity='1';await wait(1500);
-        sfxBoom();
+        figT=1;document.getElementById('rec').style.opacity='1';await wait(1500);scenePhase=1;updateCameraForScene();
+        sfxBoom();triggerHackLines();
         await narrate('SENTINEL','f3',"Allez. On va tout défoncer.",0);
     }else if(r3==='alone'){
         await narrate('SENTINEL','e2',"Le canal reste ouvert... T'avances dans le noir.",800);
