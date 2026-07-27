@@ -207,19 +207,21 @@ async function initVoice(){
 
 function speakAudio(id){
     return new Promise(function(res){
-        if(!voiceManifest||!voiceManifest[id]){res();return}
+        if(!voiceManifest||!voiceManifest[id]){console.log('[VOICE] no manifest for',id);res();return}
         if(currentAudio){currentAudio.pause();currentAudio=null}
         var src='voice_lines/'+voiceManifest[id];
+        console.log('[VOICE] playing',id,'->',src);
         if(voiceCache[id]){
             playCached(voiceCache[id]).then(res);return;
         }
-        var a=new Audio(src);a.volume=1.0;
+        var a=new Audio();a.volume=1.0;
         a.oncanplaythrough=function(){
+            console.log('[VOICE] loaded',id);
             voiceCache[id]=a;
             playCached(a).then(res);
         };
-        a.onerror=function(){res()};
-        a.load();
+        a.onerror=function(e){console.log('[VOICE] error loading',id,a.error);res()};
+        a.src=src;
     });
 }
 
@@ -645,8 +647,18 @@ async function start(){
     }
 }
 
-document.getElementById('title').addEventListener('click',start);
-document.getElementById('title').addEventListener('touchstart',function(e){e.preventDefault();start()});
+document.getElementById('title').addEventListener('click',function(){
+    // Unlock audio playback (browser autoplay policy)
+    var unlock=new Audio();unlock.src='voice_lines/sys1.mp3';unlock.volume=0.01;
+    unlock.play().then(function(){unlock.pause();unlock.currentTime=0}).catch(function(){});
+    start();
+});
+document.getElementById('title').addEventListener('touchstart',function(e){
+    e.preventDefault();
+    var unlock=new Audio();unlock.src='voice_lines/sys1.mp3';unlock.volume=0.01;
+    unlock.play().then(function(){unlock.pause();unlock.currentTime=0}).catch(function(){});
+    start();
+});
 </script>
 </body>
 </html>
