@@ -71,8 +71,7 @@
     // Game vars
     let gameRunning=false;
     let playerX=0;
-    let playerLane=1;
-    let targetLane=1;
+    let targetLane=0;
     let score=0;
     let distance=0;
     let baseSpeed=4;
@@ -92,11 +91,75 @@
     // Touch
     let touchLeft=false,touchRight=false,touchBoost=false;
 
+    // Music
+    let musicCtx=null;
+    function startMusic(){
+        try{
+            musicCtx=new(window.AudioContext||window.webkitAudioContext)();
+            const master=musicCtx.createGain();master.gain.value=0.25;master.connect(musicCtx.destination);
+
+            // Bass
+            function playBass(note,dur,when){
+                const o=musicCtx.createOscillator();const g=musicCtx.createGain();
+                o.type='sawtooth';o.frequency.value=note;
+                g.gain.setValueAtTime(0.3,when);g.gain.exponentialRampToValueAtTime(0.01,when+dur);
+                o.connect(g);g.connect(master);o.start(when);o.stop(when+dur);
+            }
+            // Lead
+            function playLead(note,dur,when){
+                const o=musicCtx.createOscillator();const g=musicCtx.createGain();
+                o.type='square';o.frequency.value=note;
+                g.gain.setValueAtTime(0.12,when);g.gain.exponentialRampToValueAtTime(0.01,when+dur);
+                o.connect(g);g.connect(master);o.start(when);o.stop(when+dur);
+            }
+            // Hi-hat
+            function playHat(when){
+                const buf=musicCtx.createBuffer(1,musicCtx.sampleRate*0.05,musicCtx.sampleRate);
+                const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,8);
+                const s=musicCtx.createBufferSource();s.buffer=buf;
+                const g=musicCtx.createGain();g.gain.value=0.08;
+                const hp=musicCtx.createBiquadFilter();hp.type='highpass';hp.frequency.value=8000;
+                s.connect(hp);hp.connect(g);g.connect(master);s.start(when);
+            }
+            // Kick
+            function playKick(when){
+                const o=musicCtx.createOscillator();const g=musicCtx.createGain();
+                o.type='sine';o.frequency.setValueAtTime(150,when);o.frequency.exponentialRampToValueAtTime(30,when+0.15);
+                g.gain.setValueAtTime(0.5,when);g.gain.exponentialRampToValueAtTime(0.01,when+0.2);
+                o.connect(g);g.connect(master);o.start(when);o.stop(when+0.2);
+            }
+
+            const bpm=128;const step=60/bpm;
+            const bassNotes=[55,55,65.4,65.4,73.4,73.4,65.4,65.4];
+            const leadNotes=[440,523,440,349,440,523,587,523];
+
+            const barMs=(step*8*4)*1000;
+            function scheduleLoop(){
+                if(!musicCtx||musicCtx.state==='closed')return;
+                const now=musicCtx.currentTime;
+                for(let bar=0;bar<4;bar++){
+                    const t=now+bar*step*8;
+                    for(let i=0;i<8;i++){
+                        const bt=t+i*step;
+                        playBass(bassNotes[i],step*0.8,bt);
+                        if(i%2===0)playKick(bt);
+                        if(i%2===1)playHat(bt);
+                        if(i%4===0)playHat(bt);
+                        if(i===0||i===3||i===5)playLead(leadNotes[i],step*0.6,bt);
+                        if(i===2||i===6)playHat(bt+step*0.5);
+                    }
+                }
+                setTimeout(scheduleLoop,barMs-200);
+            }
+            scheduleLoop();
+        }catch(e){}
+    }
+
     // Generate stars
     for(let i=0;i<100;i++)stars.push({x:Math.random()*2-1,y:Math.random(),s:0.5+Math.random()*1.5,b:Math.random()});
 
     function resetGame(){
-        playerX=0;playerLane=1;targetLane=1;score=0;distance=0;
+        playerX=0;targetLane=0;score=0;distance=0;
         baseSpeed=4;speed=4;boostFuel=100;boosting=false;
         obstacles=[];particles=[];buildings=[];combo=0;comboTimer=0;
         for(let i=0;i<20;i++)addBuilding(i*200);
@@ -408,20 +471,19 @@
             if(pt.life<=0)particles.splice(i,1);
         }
 
-        // Collision check
-        const playerW=1.0;
-        const playerD=2.0;
+        // Collision check (all in world units)
         for(const o of obstacles){
             if(o.passed)continue;
-            const dz=Math.abs(o.z-distance);
-            const dx=Math.abs(o.x-playerX)*100;
-            const ow=o.w*50;
-            if(dz<o.h*15&&dx<(ow/2+20)){
-                // Crash
+            const dz=o.z-distance;
+            const dx=Math.abs(o.x-playerX);
+            const hitW=o.w*0.45+0.45;
+            const hitD=6;
+            if(dz>-hitD&&dz<hitD&&dx<hitW){
                 gameRunning=false;
                 shake=15;
                 spawnParticles(playerX,1,distance,'#ff3355',30);
                 spawnParticles(playerX,1,distance,'#ffaa00',20);
+                if(musicCtx){musicCtx.close();musicCtx=null}
                 setTimeout(()=>{
                     document.getElementById('game-over').classList.add('show');
                     document.getElementById('final-score').textContent=score;
@@ -429,8 +491,7 @@
                 },800);
                 return;
             }
-            // Pass obstacle
-            if(o.z<distance&&!o.passed){
+            if(dz<-hitD&&!o.passed){
                 o.passed=true;
                 combo++;
                 comboTimer=60;
@@ -494,6 +555,7 @@
         document.getElementById('start-screen').style.display='none';
         gameRunning=true;
         resetGame();
+        startMusic();
         document.getElementById('score').textContent='0';
         document.getElementById('speed').textContent='0';
         document.getElementById('boost').textContent='100';
