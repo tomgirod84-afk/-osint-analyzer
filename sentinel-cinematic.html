@@ -149,75 +149,51 @@ function sfxClick(){if(!ac)return;var buf=ac.createBuffer(1,ac.sampleRate*0.008,
 function sfxGlitch(){if(!ac)return;var o=ac.createOscillator(),g=ac.createGain();o.type='sawtooth';o.frequency.setValueAtTime(800+Math.random()*2000,ac.currentTime);o.frequency.exponentialRampToValueAtTime(30,ac.currentTime+0.15);g.gain.setValueAtTime(0.12,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.15);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+0.2)}
 function sfxDialup(){if(!ac)return;for(var i=0;i<5;i++){setTimeout(function(){var o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=800+Math.random()*1200;g.gain.setValueAtTime(0.06,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.08);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+0.1)},i*60)}}
 
-// ===== VOICE ENGINE =====
+// ===== VOICE ENGINE v5 =====
 var voiceMethod='none';
+var savedVoice=null;
+var keepAliveTimer=null;
 
-// Detect browser/platform
-var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
-var isAndroid=/Android/.test(navigator.userAgent);
-console.log('[VOICE] platform: iOS='+isIOS+' Android='+isAndroid+' userAgent='+navigator.userAgent);
-
-function loadSpeechVoices(){
-    return new Promise(function(resolve){
-        var v=speechSynthesis.getVoices();
-        if(v.length>0){console.log('[VOICE] getVoices() returned',v.length,'voices immediately');resolve(v);return}
-        console.log('[VOICE] getVoices() empty, waiting for onvoiceschanged...');
-        var timer=setTimeout(function(){
-            var v2=speechSynthesis.getVoices();
-            console.log('[VOICE] timeout 3s, re-checking getVoices():',v2.length);
-            resolve(v2);
-        },3000);
-        speechSynthesis.onvoiceschanged=function(){
-            clearTimeout(timer);
-            var v2=speechSynthesis.getVoices();
-            console.log('[VOICE] onvoiceschanged fired:',v2.length,'voices');
-            resolve(v2);
-        };
+function speakGoogle(text){
+    return new Promise(function(res){
+        var clean=text.replace(/<[^>]*>/g,'');
+        if(clean.length<2){res();return}
+        var url='https://translate.google.com/translate_tts?ie=UTF-8&tl=fr&q='+encodeURIComponent(clean);
+        var a=new Audio();a.src=url;a.volume=1.0;
+        var done=false;
+        a.onended=function(){if(!done){done=true;res()}};
+        a.onerror=function(){if(!done){done=true;res()}};
+        var p=a.play();
+        if(p)p.catch(function(){if(!done){done=true;res()}});
     });
 }
 
-function pickBestVoice(voices){
-    if(!voices||!voices.length){console.log('[VOICE] no voices to pick from');return null}
-    var best=
-        voices.find(function(x){return x.lang.indexOf('fr')>=0&&x.name.indexOf('Google')>=0})||
-        voices.find(function(x){return x.lang.indexOf('fr')>=0&&x.name.indexOf('Thomas')>=0})||
-        voices.find(function(x){return x.lang.indexOf('fr')>=0&&(x.name.indexOf('Male')>=0||x.name.indexOf('Homme')>=0)})||
-        voices.find(function(x){return x.lang.indexOf('fr')>=0})||
-        voices.find(function(x){return x.name.indexOf('Google')>=0})||
-        voices[0];
-    console.log('[VOICE] picked:',best?best.name+'|'+best.lang:'null');
-    return best;
+function chunkText(text,max){
+    max=max||180;if(text.length<=max)return[text];
+    var parts=[],rem=text;
+    while(rem.length>0){
+        if(rem.length<=max){parts.push(rem);break}
+        var c=rem.lastIndexOf('.',max);if(c<max*0.5)c=rem.lastIndexOf(' ',max);if(c<max*0.3)c=max;
+        parts.push(rem.substring(0,c+1));rem=rem.substring(c+1).trim();
+    }
+    return parts;
 }
 
-var savedVoice=null;
-var keepAliveTimer=null;
+async function speakGoogleLong(text){
+    var parts=chunkText(text);
+    for(var i=0;i<parts.length;i++)await speakGoogle(parts[i]);
+}
 
 function speakSpeech(text){
     return new Promise(function(res){
         if(!savedVoice){res();return}
         speechSynthesis.cancel();
         var u=new SpeechSynthesisUtterance(text);
-        u.voice=savedVoice;u.rate=0.88;u.pitch=0.82;u.volume=1.0;
+        u.voice=savedVoice;u.rate=0.75;u.pitch=0.6;u.volume=1.0;
         var done=false;
         u.onend=function(){if(!done){done=true;res()}};
-        u.onerror=function(e){if(!done){done=true;console.log('[VOICE] speech error:',e.error);res()}};
+        u.onerror=function(){if(!done){done=true;res()}};
         speechSynthesis.speak(u);
-    });
-}
-
-function speakGoogle(text){
-    return new Promise(function(res){
-        var url='https://translate.google.com/translate_tts?ie=UTF-8&tl=fr&q='+encodeURIComponent(text);
-        console.log('[VOICE] Google TTS url:',url.substring(0,80)+'...');
-        var a=new Audio();
-        a.src=url;
-        a.volume=1.0;
-        var done=false;
-        a.onplay=function(){if(!done)console.log('[VOICE] Google TTS playing OK')};
-        a.onended=function(){if(!done){done=true;res()}};
-        a.onerror=function(e){if(!done){done=true;console.log('[VOICE] Google TTS error:',a.error?a.error.code:'unknown');res()}};
-        var playPromise=a.play();
-        if(playPromise){playPromise.catch(function(e){if(!done){done=true;console.log('[VOICE] Google TTS play() FAILED:',e.message);res()}})}
     });
 }
 
@@ -225,68 +201,40 @@ function speak(text){
     return new Promise(function(res){
         var clean=text.replace(/<[^>]*>/g,'').replace(/[\u2018\u2019]/g,"'").replace(/[\u2013\u2014]/g,' ').trim();
         if(!clean||clean.length<2){res();return}
-        if(voiceMethod==='speech'){speakSpeech(clean).then(res)}
-        else if(voiceMethod==='google'){speakGoogle(clean).then(res)}
+        if(voiceMethod==='google'){speakGoogleLong(clean).then(res)}
+        else if(voiceMethod==='speech'){speakSpeech(clean).then(res)}
         else{res()}
     });
 }
 
 function unlockVoiceAndAudio(){
-    console.log('[VOICE] === UNLOCK START ===');
-    console.log('[VOICE] speechSynthesis:',typeof speechSynthesis!=='undefined');
-    console.log('[VOICE] AudioContext:',typeof(window.AudioContext||window.webkitAudioContext));
-
-    // 1) Force resume speechSynthesis
-    if(speechSynthesis){
-        try{speechSynthesis.resume()}catch(e){}
-        console.log('[VOICE] speechSynthesis.resume() called');
+    console.log('[VOICE v5] === UNLOCK START ===');
+    if(speechSynthesis){try{speechSynthesis.resume()}catch(e){}}
+    // Try Google first (natural voice)
+    var t=new Audio('https://translate.google.com/translate_tts?ie=UTF-8&tl=fr&q=test');
+    t.volume=0.01;
+    t.oncanplaythrough=function(){voiceMethod='google';console.log('[VOICE v5] Google TTS OK -> primary')};
+    t.onerror=function(){console.log('[VOICE v5] Google failed -> try speech');trySpeech()};
+    var p=t.play();if(p)p.catch(function(){trySpeech()});
+    function trySpeech(){
+        speechSynthesis.getVoices();
+        var sv=speechSynthesis.getVoices();
+        if(!sv.length){
+            speechSynthesis.onvoiceschanged=function(){
+                sv=speechSynthesis.getVoices();pick(sv);
+            };
+            setTimeout(function(){if(!sv.length)sv=speechSynthesis.getVoices();pick(sv)},3000);
+        }else pick(sv);
     }
-
-    // 2) Load voices with timeout
-    loadSpeechVoices().then(function(voices){
-        savedVoice=pickBestVoice(voices);
-        if(savedVoice){
-            // Test with silent utterance first
-            var testU=new SpeechSynthesisUtterance('');
-            testU.voice=savedVoice;testU.volume=0;testU.rate=1;
-            testU.onend=function(){
-                console.log('[VOICE] silent test OK -> voiceMethod=speech');
-                voiceMethod='speech';
-                // Chrome bug: speech dies after ~15s. Keep it alive.
-                if(keepAliveTimer)clearInterval(keepAliveTimer);
-                keepAliveTimer=setInterval(function(){
-                    if(speechSynthesis.speaking){
-                        speechSynthesis.pause();speechSynthesis.resume();
-                    }
-                },10000);
-            };
-            testU.onerror=function(e){
-                console.log('[VOICE] silent test FAILED:',e.error,'-> try Google');
-                tryGoogle();
-            };
-            speechSynthesis.speak(testU);
-        }else{
-            console.log('[VOICE] no voice found -> try Google');
-            tryGoogle();
+    function pick(voices){
+        if(!voices.length)return;
+        savedVoice=voices.find(function(x){return x.lang.indexOf('fr')>=0})||voices[0];
+        if(savedVoice){voiceMethod='speech';console.log('[VOICE v5] speech OK:',savedVoice.name);
+            if(keepAliveTimer)clearInterval(keepAliveTimer);
+            keepAliveTimer=setInterval(function(){if(speechSynthesis.speaking){speechSynthesis.pause();speechSynthesis.resume()}},10000);
         }
-    });
-
-    function tryGoogle(){
-        console.log('[VOICE] testing Google TTS...');
-        var testA=new Audio('https://translate.google.com/translate_tts?ie=UTF-8&tl=fr&q=salut');
-        testA.volume=0.01;
-        testA.oncanplaythrough=function(){
-            console.log('[VOICE] Google TTS canplaythrough -> voiceMethod=google');
-            voiceMethod='google';
-        };
-        testA.onerror=function(e){
-            console.log('[VOICE] Google TTS FAILED:',testA.error?testA.error.code:'?','-> no voice available');
-        };
-        testA.play().then(function(){console.log('[VOICE] Google TTS play() started')}).catch(function(e){console.log('[VOICE] Google TTS play() rejected:',e.message)});
     }
-
-    // If nothing worked after 5s, give up
-    setTimeout(function(){console.log('[VOICE] final state: voiceMethod='+voiceMethod)},5000);
+    setTimeout(function(){if(voiceMethod==='none'){voiceMethod='speech';console.log('[VOICE v5] timeout fallback -> speech');speechSynthesis.getVoices();pick(speechSynthesis.getVoices())}},5000);
 }
 
 // ===== FIGURE - Hooded + Skull Mask =====
