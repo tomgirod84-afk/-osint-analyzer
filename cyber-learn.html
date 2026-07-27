@@ -72,7 +72,7 @@
         @keyframes glitch{0%,100%{text-shadow:2px 0 var(--accent),-2px 0 var(--danger)}20%{text-shadow:-2px -2px var(--accent),2px 2px var(--danger)}40%{text-shadow:2px -2px var(--accent),-2px 2px var(--danger)}60%{text-shadow:-2px 0 var(--accent),2px 0 var(--danger)}80%{text-shadow:2px 2px var(--accent),-2px -2px var(--danger)}}
         .hero h1:hover{animation:glitch 0.3s infinite}
         @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-        .section.active .card,.section.active .step{animation:fadeUp 0.5s ease forwards}
+        .section.active .card,.section.active .step{animation:fadeUp 0.5s ease forwards;opacity:0}
         .section.active .card:nth-child(1){animation-delay:0.05s}
         .section.active .card:nth-child(2){animation-delay:0.1s}
         .section.active .card:nth-child(3){animation-delay:0.15s}
@@ -83,6 +83,7 @@
         .badge-ok{animation:neonPulse 3s infinite}
         @keyframes scanline{0%{top:-100%}100%{top:100%}}
         .hero::after{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,rgba(0,200,255,0.15),transparent);animation:scanline 4s linear infinite;pointer-events:none}
+        @keyframes blink{50%{border-color:transparent}}
         #particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
         .particle{position:absolute;width:2px;height:2px;background:var(--accent);border-radius:50%;opacity:0;animation:float 8s infinite}
         @keyframes float{0%{opacity:0;transform:translateY(100vh)}10%{opacity:0.5}90%{opacity:0.5}100%{opacity:0;transform:translateY(-10vh)}}
@@ -112,7 +113,6 @@
         #mascot-speech{position:fixed;bottom:110px;right:20px;background:var(--bg2);border:1px solid var(--accent);border-radius:12px;padding:10px 16px;color:var(--text);font-size:0.82em;max-width:220px;z-index:150;display:none;box-shadow:0 0 20px rgba(0,200,255,0.1)}
         #mascot-speech::after{content:'';position:absolute;bottom:-8px;right:30px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid var(--accent)}
         @keyframes mascotBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-        #mascot svg{animation:mascotBounce 3s ease-in-out infinite}
         @keyframes mascotGlow{0%,100%{filter:drop-shadow(0 0 10px rgba(0,200,255,0.2))}50%{filter:drop-shadow(0 0 25px rgba(0,200,255,0.5))}}
         #mascot svg{animation:mascotBounce 3s ease-in-out infinite,mascotGlow 4s ease-in-out infinite}
     </style>
@@ -659,7 +659,7 @@
     // Typing effect
     const tText='Comprendre la cybersecurite, les techniques des hackers, et comment se defendre. Un guide complet et accessible.';
     const tEl=document.getElementById('hero-typing');let tIdx=0;
-    setTimeout(()=>{function typeChar(){if(tIdx<tText.length){tEl.textContent+=tText.charAt(tIdx);tIdx++;setTimeout(typeChar,30+Math.random()*30)}}typeChar()},3400);
+    setTimeout(()=>{function typeChar(){if(tIdx<tText.length){tEl.textContent+=tText.charAt(tIdx);tIdx++;setTimeout(typeChar,30+Math.random()*30)}}typeChar()},300);
 
     // 3D card tilt
     document.querySelectorAll('.card-3d .card').forEach(c=>{c.addEventListener('mousemove',e=>{const r=c.getBoundingClientRect();const x=(e.clientX-r.left)/r.width-0.5;const y=(e.clientY-r.top)/r.height-0.5;c.style.transform=`perspective(800px) rotateY(${x*8}deg) rotateX(${-y*8}deg) translateZ(5px)`;c.style.boxShadow=`${-x*10}px ${y*10}px 30px rgba(0,0,0,0.3),0 0 20px rgba(0,200,255,${0.05+Math.abs(x)*0.1})`});
