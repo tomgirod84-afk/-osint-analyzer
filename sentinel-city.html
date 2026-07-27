@@ -377,10 +377,10 @@
         // Player movement
         const speed=3.5;
         let dx=0,dy=0;
-        if(keys['z']||keys['w']||keys['arrowup'])dy=-speed;
-        if(keys['s']||keys['arrowdown'])dy=speed;
-        if(keys['q']||keys['a']||keys['arrowleft'])dx=-speed;
-        if(keys['d']||keys['arrowright'])dx=speed;
+        if(keys['KeyZ']||keys['KeyW']||keys['ArrowUp'])dy=-speed;
+        if(keys['KeyS']||keys['ArrowDown'])dy=speed;
+        if(keys['KeyQ']||keys['KeyA']||keys['ArrowLeft'])dx=-speed;
+        if(keys['KeyD']||keys['ArrowRight'])dx=speed;
 
         if(dx&&dy){dx*=0.707;dy*=0.707}
 
@@ -537,17 +537,17 @@
 
     // Input
     addEventListener('keydown',e=>{
-        keys[e.key.toLowerCase()]=true;
-        if(e.key==='1')currentWeapon=0;
-        if(e.key==='2')currentWeapon=1;
-        if(e.key==='3')currentWeapon=2;
-        if(e.key.toLowerCase()==='r'){
+        keys[e.code]=true;
+        if(e.code==='Digit1')currentWeapon=0;
+        if(e.code==='Digit2')currentWeapon=1;
+        if(e.code==='Digit3')currentWeapon=2;
+        if(e.code==='KeyR'){
             weapons[1].bullets=weapons[1].maxBullets;
             weapons[2].bullets=weapons[2].maxBullets;
             updateWeaponBar();
         }
     });
-    addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+    addEventListener('keyup',e=>keys[e.code]=false);
     addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
     addEventListener('mousedown',e=>{mouse.down=true});
     addEventListener('mouseup',e=>{mouse.down=false});
