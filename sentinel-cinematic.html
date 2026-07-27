@@ -167,6 +167,32 @@
     }
     setTimeout(bootNext,500);
 
+    // Voice
+    let voiceReady=false;
+    let aiVoice=null;
+    function initVoice(){
+        const voices=speechSynthesis.getVoices();
+        aiVoice=voices.find(v=>v.lang.startsWith('fr'))||voices.find(v=>v.lang.startsWith('en'))||voices[0];
+        voiceReady=true;
+    }
+    if(speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=initVoice;
+    initVoice();
+
+    function speak(text){
+        return new Promise(resolve=>{
+            if(!voiceReady||!speechSynthesis){resolve();return}
+            speechSynthesis.cancel();
+            const u=new SpeechSynthesisUtterance(text);
+            u.voice=aiVoice;
+            u.rate=0.9;
+            u.pitch=0.6;
+            u.volume=0.8;
+            u.onend=()=>resolve();
+            u.onerror=()=>resolve();
+            speechSynthesis.speak(u);
+        });
+    }
+
     // Phone messages
     const phoneBody=document.getElementById('phone-body');
     function addMsg(text,type,delay){
@@ -181,6 +207,7 @@
                     const cursor=document.createElement('span');
                     cursor.className='typing-cursor';
                     div.appendChild(cursor);
+                    const speakPromise=speak(text);
                     const iv=setInterval(()=>{
                         if(i<text.length){
                             div.textContent=text.substring(0,i+1);
@@ -191,7 +218,7 @@
                             clearInterval(iv);
                             cursor.remove();
                             div.classList.add('show');
-                            resolve();
+                            speakPromise.then(resolve);
                         }
                     },25);
                 }else{
