@@ -119,6 +119,16 @@
 
         .typing-text{display:inline}
         .typing-cursor{display:inline-block;width:2px;height:1.1em;background:var(--accent);margin-left:2px;animation:blink 0.7s step-end infinite;vertical-align:text-bottom}
+
+        #mascot{position:fixed;bottom:20px;right:20px;z-index:150;cursor:pointer;filter:drop-shadow(0 0 15px rgba(0,200,255,0.3));transition:transform 0.3s}
+        #mascot:hover{transform:scale(1.1) translateY(-5px)}
+        #mascot svg{width:80px;height:80px}
+        #mascot-speech{position:fixed;bottom:110px;right:20px;background:var(--bg2);border:1px solid var(--accent);border-radius:12px;padding:10px 16px;color:var(--text);font-size:0.82em;max-width:220px;z-index:150;display:none;box-shadow:0 0 20px rgba(0,200,255,0.1)}
+        #mascot-speech::after{content:'';position:absolute;bottom:-8px;right:30px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid var(--accent)}
+        @keyframes mascotBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+        #mascot svg{animation:mascotBounce 3s ease-in-out infinite}
+        @keyframes mascotGlow{0%,100%{filter:drop-shadow(0 0 10px rgba(0,200,255,0.2))}50%{filter:drop-shadow(0 0 25px rgba(0,200,255,0.5))}}
+        #mascot svg{animation:mascotBounce 3s ease-in-out infinite,mascotGlow 4s ease-in-out infinite}
     </style>
 </head>
 <body>
@@ -611,6 +621,27 @@
         <!-- TOOLS section existing content stays -->
     </div>
 
+    <div id="mascot-speech"></div>
+    <div id="mascot" onclick="mascotSpeak()">
+        <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><filter id="glow"><feGaussianBlur stdDeviation="2" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <ellipse cx="50" cy="95" rx="25" ry="8" fill="rgba(0,200,255,0.1)"/>
+            <rect x="30" y="40" width="40" height="50" rx="8" fill="#0b1020" stroke="#00c8ff" stroke-width="1.5" filter="url(#glow)"/>
+            <rect x="25" y="35" width="50" height="20" rx="10" fill="#111827" stroke="#00c8ff" stroke-width="1.5"/>
+            <circle cx="40" cy="45" r="5" fill="#00c8ff" opacity="0.9"><animate attributeName="opacity" values="0.9;0.4;0.9" dur="2s" repeatCount="indefinite"/></circle>
+            <circle cx="60" cy="45" r="5" fill="#00c8ff" opacity="0.9"><animate attributeName="opacity" values="0.9;0.4;0.9" dur="2s" begin="0.5s" repeatCount="indefinite"/></circle>
+            <line x1="42" y1="55" x2="58" y2="55" stroke="#00c8ff" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+            <rect x="38" y="60" width="24" height="3" rx="1.5" fill="#00c8ff" opacity="0.3"/>
+            <rect x="42" y="66" width="16" height="3" rx="1.5" fill="#00c8ff" opacity="0.2"/>
+            <line x1="50" y1="65" x2="50" y2="80" stroke="#1e2a3a" stroke-width="2"/>
+            <line x1="30" y1="55" x2="20" y2="70" stroke="#00c8ff" stroke-width="1.5" opacity="0.5"/>
+            <line x1="70" y1="55" x2="80" y2="70" stroke="#00c8ff" stroke-width="1.5" opacity="0.5"/>
+            <circle cx="20" cy="70" r="4" fill="none" stroke="#00c8ff" stroke-width="1" opacity="0.4"><animate attributeName="r" values="3;6;3" dur="2s" repeatCount="indefinite"/></circle>
+            <circle cx="80" cy="70" r="4" fill="none" stroke="#00c8ff" stroke-width="1" opacity="0.4"><animate attributeName="r" values="3;6;3" dur="2s" begin="1s" repeatCount="indefinite"/></circle>
+            <text x="50" y="25" text-anchor="middle" fill="#00c8ff" font-size="8" font-family="JetBrains Mono, monospace" opacity="0.6">SENTINEL</text>
+        </svg>
+    </div>
+
     <div class="footer">
         <p>CyberLearn &middot; Education a la cybersecurite &middot; <a href="https://discord.gg/9Hyuy68SrB" target="_blank">Discord</a> &middot; <a href="https://tomgirod84-afk.github.io/-osint-analyzer/osint-image.html" target="_blank">Sentinel OSINT</a></p>
     </div>
@@ -663,6 +694,25 @@
     // Particles
     const pc=document.getElementById('particles');
     for(let i=0;i<40;i++){const p=document.createElement('div');p.className='particle';p.style.left=Math.random()*100+'%';p.style.animationDelay=Math.random()*8+'s';p.style.animationDuration=(6+Math.random()*6)+'s';pc.appendChild(p)}
+
+    // Sound effects (Web Audio API)
+    const AC=window.AudioContext||window.webkitAudioContext;let actx;
+    function initAudio(){if(!actx)actx=new AC()}
+    function playTone(f,d,t,v){initAudio();const o=actx.createOscillator();const g=actx.createGain();o.type=t||'sine';o.frequency.value=f;g.gain.setValueAtTime(v||0.08,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d)}
+    function sfxClick(){playTone(800,0.08,'sine',0.06);setTimeout(()=>playTone(1200,0.06,'sine',0.04),30)}
+    function sfxHover(){playTone(600,0.05,'sine',0.03)}
+    function sfxNav(){playTone(500,0.1,'sine',0.05);setTimeout(()=>playTone(700,0.08,'sine',0.04),50)}
+    function sfxIntro(){playTone(200,0.5,'sine',0.06);setTimeout(()=>playTone(400,0.3,'sine',0.05),200);setTimeout(()=>playTone(600,0.4,'sine',0.06),400);setTimeout(()=>playTone(800,0.3,'sine',0.04),600)}
+    setTimeout(sfxIntro,500);
+    document.querySelectorAll('.nav-links a').forEach(a=>a.addEventListener('click',sfxNav));
+    document.querySelectorAll('.card').forEach(c=>{c.addEventListener('click',sfxClick);c.addEventListener('mouseenter',sfxHover)});
+    document.querySelectorAll('.tool-item').forEach(t=>{t.addEventListener('click',sfxClick);t.addEventListener('mouseenter',sfxHover)});
+
+    // Mascot
+    const mascotPhrases=['Protège tes données !','Utilise un mot de passe fort.','Le 2FA est ton ami.','Méfie des emails suspects.','Reste curieux, reste sécurisé.','N'oublie pas tes mises à jour !','Un VPN peut t\'aider.','Vérifie les liens avant de cliquer.'];
+    let lastSpeech=0;
+    function mascotSpeak(){if(Date.now()-lastSpeech<2000)return;lastSpeech=Date.now();const s=document.getElementById('mascot-speech');s.textContent=mascotPhrases[Math.floor(Math.random()*mascotPhrases.length)];s.style.display='block';sfxClick();setTimeout(()=>s.style.display='none',3500)}
+    setInterval(()=>{if(Math.random()>0.7)mascotSpeak()},8000);
 
     // Hamburger mobile
     if(window.innerWidth<=768){document.querySelector('.hamburger').style.display='block'}
