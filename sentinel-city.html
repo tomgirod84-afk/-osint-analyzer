@@ -38,7 +38,7 @@
         <p>Cyberpunk Top-Down Shooter</p>
         <button class="start-btn" onclick="startGame()">JOUER</button>
         <div class="controls">
-            <span>WASD</span> — Déplacer<br>
+            <span>ZQSD</span> — Déplacer<br>
             <span>Souris</span> — Viser<br>
             <span>Clic</span> — Tirer<br>
             <span>1-3</span> — Changer d'arme<br>
@@ -377,9 +377,9 @@
         // Player movement
         const speed=3.5;
         let dx=0,dy=0;
-        if(keys['w']||keys['arrowup'])dy=-speed;
+        if(keys['z']||keys['w']||keys['arrowup'])dy=-speed;
         if(keys['s']||keys['arrowdown'])dy=speed;
-        if(keys['a']||keys['arrowleft'])dx=-speed;
+        if(keys['q']||keys['a']||keys['arrowleft'])dx=-speed;
         if(keys['d']||keys['arrowright'])dx=speed;
 
         if(dx&&dy){dx*=0.707;dy*=0.707}
