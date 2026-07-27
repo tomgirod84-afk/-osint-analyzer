@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel CTF - Capture The Flag</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        html,body{overflow:hidden;height:100%}
+        body{font-family:'JetBrains Mono',monospace;background:#060810;color:#00ff88}
+        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#060810}::-webkit-scrollbar-thumb{background:#00ff8833;border-radius:2px}
+        canvas#bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.06}
+        #app{position:relative;z-index:10;height:100vh;display:flex;flex-direction:column}
+
+        #topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 15px;background:rgba(6,8,16,0.95);border-bottom:1px solid #1a1a2a;font-size:0.7em;color:#00ff8866}
+        #topbar .left{display:flex;align-items:center;gap:12px}
+        .status-dot{width:6px;height:6px;background:#00ff88;border-radius:50%;animation:blink 2s infinite}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+        #score-bar{display:flex;gap:10px;align-items:center}
+        .score-item{background:#0a0e18;border:1px solid #1a1a2a;border-radius:4px;padding:2px 8px;font-size:0.9em}
+        .score-item .val{color:#00ff88;font-weight:700}
+
+        #main-content{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;align-items:center}
+        #main-content::-webkit-scrollbar{width:4px}
+
+        .hero{text-align:center;padding:30px 0 20px}
+        .hero h1{font-size:2.2em;color:#fff;font-weight:900;letter-spacing:-1px}
+        .hero h1 span{color:#00ff88;text-shadow:0 0 20px #00ff8844}
+        .hero p{color:#556688;font-size:0.85em;margin-top:5px}
+
+        .challenges{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;max-width:1000px;width:100%;margin-top:15px}
+
+        .challenge{background:rgba(10,14,24,0.9);border:1px solid #1a1a2a;border-radius:10px;padding:18px;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden}
+        .challenge:hover{border-color:#00ff8844;transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,255,136,0.05)}
+        .challenge.solved{border-color:#00ff8833;opacity:0.6}
+        .challenge.solved::after{content:'SOLVED';position:absolute;top:12px;right:12px;background:#00ff8822;color:#00ff88;padding:2px 8px;border-radius:3px;font-size:0.65em;font-weight:700}
+
+        .ch-num{font-size:0.65em;color:#334466;font-weight:700;margin-bottom:6px}
+        .ch-title{font-size:1em;color:#fff;font-weight:700;margin-bottom:4px}
+        .ch-desc{font-size:0.75em;color:#556688;line-height:1.5}
+        .ch-diff{display:inline-block;padding:2px 6px;border-radius:3px;font-size:0.6em;font-weight:700;margin-top:8px}
+        .ch-diff.easy{background:#00ff8815;color:#00ff88;border:1px solid #00ff8833}
+        .ch-diff.medium{background:#ffaa0015;color:#ffaa00;border:1px solid #ffaa0033}
+        .ch-diff.hard{background:#ff335515;color:#ff3355;border:1px solid #ff335533}
+        .ch-diff.expert{background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33}
+
+        /* Modal */
+        .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px)}
+        .modal-overlay.open{display:flex}
+        .modal{background:#0a0e18;border:1px solid #1a1a2a;border-radius:12px;width:90%;max-width:600px;max-height:80vh;overflow-y:auto;padding:25px;position:relative}
+        .modal-close{position:absolute;top:12px;right:15px;background:none;border:none;color:#556688;font-size:1.3em;cursor:pointer;transition:color 0.2s}.modal-close:hover{color:#fff}
+
+        .modal h2{color:#fff;font-size:1.2em;margin-bottom:8px}
+        .modal .modal-desc{color:#556688;font-size:0.8em;margin-bottom:15px;line-height:1.6}
+        .modal .modal-code{background:#060810;border:1px solid #1a1a2a;border-radius:8px;padding:14px;margin-bottom:15px;font-size:0.8em;color:#00ccff;line-height:1.7;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+
+        .flag-input{display:flex;gap:8px;margin-top:12px}
+        .flag-input input{flex:1;background:#060810;border:1px solid #1a1a2a;border-radius:8px;padding:10px 14px;color:#00ff88;font-family:inherit;font-size:0.85em;outline:none}
+        .flag-input input:focus{border-color:#00ff88}
+        .flag-input input::placeholder{color:#334466}
+        .flag-btn{background:linear-gradient(135deg,#00ff88,#00cc66);border:none;border-radius:8px;padding:10px 18px;color:#060810;font-weight:700;font-size:0.82em;cursor:pointer;font-family:inherit}
+        .flag-btn:hover{box-shadow:0 4px 15px rgba(0,255,136,0.3)}
+
+        .hint-btn{background:none;border:1px solid #ffaa0044;color:#ffaa00;border-radius:6px;padding:6px 12px;font-size:0.72em;cursor:pointer;margin-top:10px;font-family:inherit}
+        .hint-btn:hover{background:#ffaa0011}
+        .hint-text{color:#ffaa00;font-size:0.78em;margin-top:8px;display:none}
+
+        .result-msg{margin-top:10px;padding:10px;border-radius:6px;font-size:0.82em;display:none}
+        .result-msg.correct{display:block;background:#00ff8811;border:1px solid #00ff8833;color:#00ff88}
+        .result-msg.wrong{display:block;background:#ff335511;border:1px solid #ff335533;color:#ff3355}
+
+        /* Victory */
+        #victory{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:300;align-items:center;justify-content:center;flex-direction:column;text-align:center}
+        #victory.show{display:flex}
+        #victory h1{font-size:2.5em;color:#00ff88;text-shadow:0 0 30px #00ff8866;margin-bottom:10px}
+        #victory p{color:#556688;font-size:1em}
+        #victory .stats{margin:20px 0;color:#00ccff;font-size:0.9em}
+
+        @media(max-width:768px){
+            .challenges{grid-template-columns:1fr}
+            .hero h1{font-size:1.6em}
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg"></canvas>
+    <div id="app">
+        <div id="topbar">
+            <div class="left">
+                <span><span class="status-dot"></span> SENTINEL CTF</span>
+                <span style="color:#334466">|</span>
+                <span id="timer">00:00:00</span>
+            </div>
+            <div id="score-bar">
+                <div class="score-item">Flags: <span class="val" id="flags-count">0/8</span></div>
+                <div class="score-item">Score: <span class="val" id="score-val">0</span></div>
+            </div>
+        </div>
+        <div id="main-content">
+            <div class="hero">
+                <h1>CAPTURE <span>THE FLAG</span></h1>
+                <p>Résous les énigmes, trouve les flags, prouve que tu es un hacker.</p>
+            </div>
+            <div class="challenges" id="challenges"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <h2 id="modal-title"></h2>
+            <div class="modal-desc" id="modal-desc"></div>
+            <div class="modal-code" id="modal-code"></div>
+            <button class="hint-btn" id="hint-btn" onclick="showHint()">💡 Indice (-5 points)</button>
+            <div class="hint-text" id="hint-text"></div>
+            <div class="flag-input">
+                <input type="text" id="flag-input" placeholder="FLAG{...}" autocomplete="off">
+                <button class="flag-btn" onclick="submitFlag()">Valider</button>
+            </div>
+            <div class="result-msg" id="result-msg"></div>
+        </div>
+    </div>
+
+    <div id="victory">
+        <h1>CTF COMPLETED</h1>
+        <p>Tous les flags ont été capturés!</p>
+        <div class="stats" id="victory-stats"></div>
+        <button class="flag-btn" onclick="location.reload()" style="margin-top:15px">Rejouer</button>
+    </div>
+
+    <script>
+    // Matrix bg
+    const c=document.getElementById('bg'),ctx=c.getContext('2d');
+    function resize(){c.width=innerWidth;c.height=innerHeight}
+    resize();addEventListener('resize',resize);
+    const chars='01アカサタナハマヤラワ';
+    let cols=Math.floor(c.width/14);const arr=[];for(let i=0;i<cols;i++)arr[i]=0;
+    function draw(){ctx.fillStyle='rgba(6,8,16,0.06)';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#00ff88';ctx.font='14px JetBrains Mono';
+    for(let i=0;i<arr.length;i++){const t=chars[Math.floor(Math.random()*chars.length)];ctx.fillText(t,i*14,arr[i]*14);if(arr[i]*14>c.height&&Math.random()>0.975)arr[i]=0;arr[i]++}}
+    setInterval(draw,60);
+
+    // Timer
+    let startTime=Date.now();let elapsed=0;
+    setInterval(()=>{elapsed=Math.floor((Date.now()-startTime)/1000);
+        const h=String(Math.floor(elapsed/3600)).padStart(2,'0');
+        const m=String(Math.floor((elapsed%3600)/60)).padStart(2,'0');
+        const s=String(elapsed%60).padStart(2,'0');
+        document.getElementById('timer').textContent=`${h}:${m}:${s}`;
+    },1000);
+
+    let score=0;let solved=new Set();let currentChallenge=null;let hintUsed=false;
+
+    // Challenges
+    const challenges=[
+        {
+            id:1,num:'CHALLENGE 01',title:'Le Message Caché',diff:'easy',diffLabel:'FACILE',
+            desc:'Un administrateur a laissé un message encodé dans une page HTML. Trouve le flag.',
+            code:`<!-- Message du sysadmin -->\n<!-- J'ai caché le mot de passe ici -->\n<!-- U2VjdXJpdHlQYXNzd29yZDEyMw== -->\n<!-- Ne partagez pas ce lien -->`,
+            hint:'Le message est encodé en Base64. Utilise la commande "decrypt" du terminal ou un décodeur en ligne.',
+            flag:'FLAG{b64_d3c0d3d}',
+            points:100
+        },
+        {
+            id:2,num:'CHALLENGE 02',title:'Le Hash Mystère',diff:'easy',diffLabel:'FACILE',
+            desc:'Tu as trouvé ce hash dans une base de données. Identifie le mot de passe original.',
+            code:`Hash trouvé dans la table "users":\n\nhash: 5d41402abc4b2a76b9719d911017c592\nalgo: MD5\nsalt: aucun`,
+            hint:'C\'est un hash MD5 d\'un mot de passe très court et courant. 5 lettres.',
+            flag:'FLAG{md5_cr4ck3d}',
+            points:150
+        },
+        {
+            id:3,num:'CHALLENGE 03',title:'Le Port Caché',diff:'medium',diffLabel:'MOYEN',
+            desc:'Un serveur tourne sur un port non standard. Trouve le bon port pour accéder au service.',
+            code:`Nmap scan de 192.168.1.50:\n\nPORT     STATE  SERVICE\n22/tcp   open   SSH\n80/tcp   open   HTTP\n443/tcp  open   HTTPS\n8080/tcp open   HTTP-Alt\n\nLe flag est sur un port que Nmap n'a pas scanné.\nIl se trouve entre 9000 et 9100.`,
+            hint:'Le flag est accessible via une requête HTTP sur le port 9042. L\'URL serait http://192.168.1.50:9042/flag',
+            flag:'FLAG{h1dd3n_p0rt_9042}',
+            points:200
+        },
+        {
+            id:4,num:'CHALLENGE 04',title:'Le Phishing',diff:'medium',diffLabel:'MOYEN',
+            desc:'Analyse cette URL et détermine si c\'est un phishing ou non. Quel est le domaine réel ?',
+            code:`URL suspecte:\n\nhttps://secure.paypa1-verify.account updating.com/login\n\nCaractéristiques:\n- Le domaine utilise "paypa1" avec un 1 au lieu d'un L\n- Le TLD est ".com" mais le domaine complet a 4 parties\n- Redirige vers un formulaire de connexion\n- Le certificat SSL est valide mais émis par Let's Encrypt`,
+            hint:'Le "1" remplace le "L" dans "paypal". Le vrai domaine caché est paypal.com mais le domaine DNS est "accountupdating.com".',
+            flag:'FLAG{ph1sh1ng_d3t3ct3d}',
+            points:200
+        },
+        {
+            id:5,num:'CHALLENGE 05',title:'Le Steganography',diff:'hard',diffLabel:'DIFFICILE',
+            desc:'Un fichier contient un message caché. Lis les métadonnées pour trouver le flag.',
+            code:`Fichier: photo_vacances.jpg\n\nExifTool output:\nFile Name                       : photo_vacances.jpg\nFile Size                       : 2.4 MB\nImage Width                     : 4032\nImage Height                    : 3024\nCamera Model                    : iPhone 13\nDate/Time Original              : 2024:01:15 14:32:05\nUser Comment                    : FLAG{3x1f_d4t4_r3v34l3d}\nGPS Latitude                    : 48.8566 N\nGPS Longitude                   : 2.3522 E`,
+            hint:'Les métadonnées EXIF contiennent un champ "User Comment" avec le flag.',
+            flag:'FLAG{3x1f_d4t4_r3v34l3d}',
+            points:250
+        },
+        {
+            id:6,num:'CHALLENGE 06',title:'Le SQL Injection',diff:'hard',diffLabel:'DIFFICILE',
+            desc:'Exploite une faille SQL injection pour extraire le flag de la base de données.',
+            code:`Page de login:\n  Username: admin\n  Password: ' OR '1'='1\n\nRésultat:\n  Login successful!\n  Bienvenue admin\n\nRequête SQL:\n  SELECT * FROM users WHERE username='' OR '1'='1' AND password='' OR '1'='1'\n\nTable "secrets":\n  | id | name        | value                    |\n  |----|-------------|--------------------------|\n  | 1  | api_key     | sk_live_abc123           |\n  | 2  | db_password | Sup3rS3cr3t!             |\n  | 3  | flag        | FLAG{sql_1nj3ct10n_w0n} |`,
+            hint:'La requête montre directement le contenu de la table "secrets" ligne 3.',
+            flag:'FLAG{sql_1nj3ct10n_w0n}',
+            points:300
+        },
+        {
+            id:7,num:'CHALLENGE 07',title:'Le Chiffrement Caesar',diff:'hard',diffLabel:'DIFFICILE',
+            desc:'Ce message a été chiffré avec un décalage de César. Trouve le décalage et déchiffre le flag.',
+            code:`Message chiffré (décalage inconnu):\n\nSDGW{eht_f0ll0w_t3h_wh1t3råbbit}\n\nLe message original est en anglais.\nLe décalage est un nombre entre 1 et 25.`,
+            hint:'Le décalage est 12. Décale chaque lettre de 12 positions vers la gauche (S→G, D→R, etc.). Le vrai message parle de suivre un lapin blanc.',
+            flag:'FLAG{the_f0ll0w_t3h_wh1t3rabbit}',
+            points:350
+        },
+        {
+            id:8,num:'CHALLENGE 08',title:'Le Master Challenge',diff:'expert',diffLabel:'EXPERT',
+            desc:'Combinaison de toutes les techniques. Résous chaque indice pour trouver le flag final.',
+            code:`ÉTAPE 1: Déchiffre ce Base64:\n  VGhpcyBpcyBub3QgdGhlIGZsYWc=\n\nÉTAPE 2: Le résultat contient un hash MD5 caché.\n  Trouve le hash dans le texte.\n\nÉTAPE 3: Le hash correspond à:\n  MD5("sentinel") = 08f8e0260c64418510ce66b7863944f6\n\nÉTAPE 4: Utilise le résultat comme clé XOR:\n  La lettre 'S' (ASCII 83) XOR 25 = ?\n  83 XOR 25 = 74 → 'J'\n\nÉTAPE 5: Le flag est FLAG{J0k3r_w1ns_4g41n}`,
+            hint:'Suis les étapes une par une. Le Base64 décode "This is not the flag". Le hash MD5 de "sentinel" est donn. XOR 83 et 25 = 74 = J. Le flag final est dans l\'étape 5.',
+            flag:'FLAG{J0k3r_w1ns_4g41n}',
+            points:500
+        }
+    ];
+
+    // Render challenges
+    function renderChallenges(){
+        document.getElementById('challenges').innerHTML=challenges.map(ch=>`
+            <div class="challenge ${solved.has(ch.id)?'solved':''}" onclick="openChallenge(${ch.id})">
+                <div class="ch-num">${ch.num}</div>
+                <div class="ch-title">${ch.title}</div>
+                <div class="ch-desc">${ch.desc}</div>
+                <span class="ch-diff ${ch.diff}">${ch.diffLabel}</span>
+            </div>
+        `).join('');
+    }
+    renderChallenges();
+
+    function openChallenge(id){
+        currentChallenge=challenges.find(c=>c.id===id);
+        if(!currentChallenge)return;
+        hintUsed=false;
+        document.getElementById('modal-title').textContent=currentChallenge.title;
+        document.getElementById('modal-desc').textContent=currentChallenge.desc;
+        document.getElementById('modal-code').textContent=currentChallenge.code;
+        document.getElementById('flag-input').value='';
+        document.getElementById('result-msg').className='result-msg';document.getElementById('result-msg').textContent='';
+        document.getElementById('hint-text').style.display='none';
+        document.getElementById('hint-btn').style.display=solved.has(id)?'none':'block';
+        document.getElementById('modal').classList.add('open');
+        setTimeout(()=>document.getElementById('flag-input').focus(),100);
+    }
+
+    function closeModal(){document.getElementById('modal').classList.remove('open');currentChallenge=null}
+
+    function showHint(){
+        if(!currentChallenge)return;
+        hintUsed=true;
+        document.getElementById('hint-text').textContent='💡 '+currentChallenge.hint;
+        document.getElementById('hint-text').style.display='block';
+        document.getElementById('hint-btn').style.display='none';
+    }
+
+    function submitFlag(){
+        if(!currentChallenge)return;
+        const input=document.getElementById('flag-input').value.trim();
+        const msg=document.getElementById('result-msg');
+        if(input.toLowerCase()===currentChallenge.flag.toLowerCase()){
+            if(!solved.has(currentChallenge.id)){
+                solved.add(currentChallenge.id);
+                const pts=hintUsed?Math.floor(currentChallenge.points*0.5):currentChallenge.points;
+                score+=pts;
+                updateScore();
+                renderChallenges();
+                if(solved.size===challenges.length)showVictory();
+            }
+            msg.className='result-msg correct';
+            msg.innerHTML=`&#10003; FLAG CORRECT! +${hintUsed?Math.floor(currentChallenge.points*0.5):currentChallenge.points} points`;
+            setTimeout(closeModal,1500);
+        }else{
+            msg.className='result-msg wrong';
+            msg.innerHTML='&#10007; Flag incorrect. Réessaie.';
+        }
+    }
+
+    function updateScore(){
+        document.getElementById('flags-count').textContent=`${solved.size}/8`;
+        document.getElementById('score-val').textContent=score;
+    }
+
+    function showVictory(){
+        document.getElementById('victory-stats').innerHTML=`
+            Score final: <span style="color:#00ff88;font-weight:700">${score} points</span><br>
+            Temps: ${document.getElementById('timer').textContent}<br>
+            Flags trouvés: ${solved.size}/8
+        `;
+        document.getElementById('victory').classList.add('show');
+    }
+
+    // Keyboard
+    document.getElementById('flag-input').addEventListener('keydown',e=>{if(e.key==='Enter')submitFlag()});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+    </script>
+</body>
+</html>
