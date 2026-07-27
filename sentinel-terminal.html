@@ -59,7 +59,7 @@
         #sidebar h3{color:#00ff88;margin-bottom:8px;font-size:0.9em}
         #sidebar .mission{padding:5px 0;border-bottom:1px solid #111}
         #sidebar .mission.done{opacity:0.4;text-decoration:line-through}
-        #sidebar .mission .mname{color:#00ff88}.sidebar .mission .mdesc{color:#00ff8844;font-size:0.9em}
+        #sidebar .mission .mname{color:#00ff88}#sidebar .mission .mdesc{color:#00ff8844;font-size:0.9em}
 
         #event-log{position:fixed;bottom:42px;left:0;right:0;height:28px;background:rgba(10,10,10,0.9);border-top:1px solid #1a1a1a;display:flex;align-items:center;padding:0 12px;font-size:0.65em;color:#00ff8844;gap:15px;z-index:50;overflow:hidden}
         #event-log .ev-item{white-space:nowrap;animation:fadeSlide 0.3s ease}
@@ -114,6 +114,7 @@
 
     <script>
     // Matrix background
+    try{
     const mc=document.getElementById('matrix-bg'),mctx=mc.getContext('2d');
     function resizeM(){mc.width=innerWidth;mc.height=innerHeight}
     resizeM();addEventListener('resize',resizeM);
@@ -122,6 +123,7 @@
     function drawMatrix(){mctx.fillStyle='rgba(10,10,10,0.06)';mctx.fillRect(0,0,mc.width,mc.height);mctx.fillStyle='#00ff88';mctx.font='14px JetBrains Mono, monospace';
     for(let i=0;i<mArr.length;i++){const t=mchars[Math.floor(Math.random()*mchars.length)];mctx.fillText(t,i*14,mArr[i]*14);if(mArr[i]*14>mc.height&&Math.random()>0.975)mArr[i]=0;mArr[i]++}}
     setInterval(drawMatrix,60);
+    }catch(e){}
 
     // XP System
     let xp=0,level=1,xpNeeded=100;
