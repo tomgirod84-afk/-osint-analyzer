@@ -39,7 +39,7 @@
         <p>Cyberpunk Futuristic Racer</p>
         <button class="start-btn" onclick="startGame()">GO</button>
         <div class="controls-info">
-            <span>← →</span> ou <span>Q D</span> — Tourner<br>
+            <span>Q D</span> ou <span>← →</span> — Tourner<br>
             <span>ESPACE</span> — Boost<br>
             <span>Swipe</span> sur mobile
         </div>
@@ -361,8 +361,8 @@
 
         // Input
         let moveDir=0;
-        if(keys['ArrowLeft']||keys['KeyQ']||touchLeft)moveDir=-1;
-        if(keys['ArrowRight']||keys['KeyD']||touchRight)moveDir=1;
+        if(keys['KeyA']||keys['KeyQ']||keys['ArrowLeft']||touchLeft)moveDir=-1;
+        if(keys['KeyD']||keys['ArrowRight']||touchRight)moveDir=1;
 
         if((keys['Space']||touchBoost)&&boostFuel>0){
             boosting=true;
