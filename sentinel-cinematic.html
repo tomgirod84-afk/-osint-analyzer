@@ -3,403 +3,467 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-    <title>SENTINEL // LINK PROTOCOL</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>SENTINEL // WHO ARE YOU</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        body{background:#000;overflow:hidden;font-family:'JetBrains Mono',monospace;color:#00ff88;touch-action:none;-webkit-user-select:none;user-select:none}
+        body{background:#000;overflow:hidden;font-family:'Courier New',monospace;color:#00ff88;touch-action:none;-webkit-user-select:none;user-select:none}
         canvas{position:fixed;top:0;left:0;z-index:0}
-        #app{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center}
 
-        #scanline{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:100}
+        #glitch{position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;pointer-events:none;opacity:0;background:rgba(0,255,136,0.05)}
 
-        #boot-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column}
-        #boot-screen.done{opacity:0;pointer-events:none;transition:opacity 1s}
-        #boot-text{text-align:left;max-width:90%;font-size:0.7em;line-height:1.8;color:#00ff88;text-shadow:0 0 5px #00ff8866}
-        #boot-text .err{color:#ff3355}
-        #boot-text .ok{color:#00ff88}
-        #boot-text .dim{color:#334466}
+        #overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:50;pointer-events:none}
 
-        #phone{position:fixed;right:-100%;top:50%;transform:translateY(-50%);width:280px;height:500px;border:2px solid #00ff88;border-radius:20px;background:rgba(5,8,16,0.95);z-index:50;transition:right 1s ease;overflow:hidden;box-shadow:0 0 40px rgba(0,255,136,0.15)}
-        #phone.show{right:20px}
-        #phone-header{padding:12px 15px;border-bottom:1px solid #1a2a3a;display:flex;align-items:center;gap:8px}
-        #phone-header .dot{width:8px;height:8px;border-radius:50%;background:#00ff88;box-shadow:0 0 6px #00ff88}
-        #phone-header span{font-size:0.65em;color:#334466}
-        #phone-body{padding:15px;height:calc(100% - 40px);overflow-y:auto;font-size:0.6em;line-height:1.7}
-        #phone-body::-webkit-scrollbar{width:3px}
-        #phone-body::-webkit-scrollbar-thumb{background:#00ff8833;border-radius:3px}
+        #subtitle{position:fixed;bottom:12%;left:50%;transform:translateX(-50%);z-index:80;text-align:center;max-width:90%;display:none}
+        #subtitle .name{font-size:0.7em;color:#00ff88;letter-spacing:4px;text-transform:uppercase;margin-bottom:6px;text-shadow:0 0 10px #00ff8866}
+        #subtitle .text{font-size:1em;line-height:1.6;color:#ddd;text-shadow:0 0 8px rgba(0,0,0,0.8)}
+        #subtitle .text .hl{color:#00ff88}
 
-        .msg{margin-bottom:12px;opacity:0;transform:translateY(10px);transition:all 0.5s}
-        .msg.show{opacity:1;transform:translateY(0)}
-        .msg.ai{color:#00ff88}
-        .msg.ai::before{content:'SENTINEL > ';color:#00ff8866;font-size:0.9em}
-        .msg.user{color:#00ccff;text-align:right}
-        .msg.user::after{content:' TOI > ';color:#00ccff66;font-size:0.9em}
-        .msg.sys{color:#ff3355;font-size:0.9em}
-        .msg.sys::before{content:'[!] ';color:#ff335566}
-        .msg.dim{color:#334466;font-size:0.85em}
+        #start-btn{position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;background:rgba(0,0,0,0.8)}
+        #start-btn h1{font-size:1.8em;color:#00ff88;text-shadow:0 0 30px #00ff8844;margin-bottom:8px}
+        #start-btn h1 span{color:#ff3355}
+        #start-btn p{color:#334466;font-size:0.8em;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}
 
-        #choices{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:60;display:none;flex-direction:column;gap:10px;align-items:center}
-        #choices.show{display:flex}
-        .choice-btn{background:rgba(0,255,136,0.06);border:1px solid #00ff8844;color:#00ff88;padding:12px 25px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:0.8em;cursor:pointer;min-width:250px;text-align:center;transition:all 0.3s;pointer-events:auto;touch-action:auto}
-        .choice-btn:active,.choice-btn:hover{background:rgba(0,255,136,0.2);border-color:#00ff88;box-shadow:0 0 20px rgba(0,255,136,0.2)}
+        #choices{position:fixed;bottom:5%;left:50%;transform:translateX(-50%);z-index:90;display:none;flex-direction:column;gap:8px;align-items:center}
+        .cbtn{background:rgba(0,255,136,0.05);border:1px solid #00ff8844;color:#00ff88;padding:10px 20px;border-radius:4px;font-family:'Courier New',monospace;font-size:0.75em;cursor:pointer;min-width:220px;text-align:center;transition:all 0.2s}
+        .cbtn:active{background:rgba(0,255,136,0.25);border-color:#00ff88}
 
-        #glitch-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:150;pointer-events:none;opacity:0}
-
-        #hud{position:fixed;top:15px;left:15px;z-index:40;font-size:0.6em;color:#334466;line-height:1.8}
-        #hud .highlight{color:#00ff88}
-        #hud .red{color:#ff3355}
-
-        .typing-cursor{display:inline-block;width:8px;height:1em;background:#00ff88;animation:blink 0.8s infinite;vertical-align:text-bottom;margin-left:2px}
-        @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-
-        @keyframes glitch{
-            0%{clip-path:inset(40% 0 61% 0);transform:translate(-2px,2px)}
-            20%{clip-path:inset(92% 0 1% 0);transform:translate(1px,-1px)}
-            40%{clip-path:inset(43% 0 1% 0);transform:translate(-1px,3px)}
-            60%{clip-path:inset(25% 0 58% 0);transform:translate(3px,1px)}
-            80%{clip-path:inset(54% 0 7% 0);transform:translate(-3px,-2px)}
-            100%{clip-path:inset(58% 0 43% 0);transform:translate(2px,-3px)}
-        }
+        .scanlines{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.012) 2px,rgba(0,255,136,0.012) 4px);pointer-events:none;z-index:90}
 
         @media(max-width:768px){
-            #phone{width:100%;right:-100%;border-radius:0;height:100%;top:0;transform:none}
-            #phone.show{right:0}
-            #phone-body{font-size:0.7em;padding:20px}
-            .choice-btn{min-width:200px;font-size:0.75em;padding:14px 20px}
-            #hud{font-size:0.5em}
+            #subtitle .text{font-size:0.9em}
+            .cbtn{min-width:180px;font-size:0.7em}
         }
     </style>
 </head>
 <body>
-    <canvas id="rain"></canvas>
-    <div id="scanline"></div>
-    <div id="glitch-overlay"></div>
+    <canvas id="bg"></canvas>
+    <div class="scanlines"></div>
+    <div id="glitch"></div>
+    <canvas id="overlay"></canvas>
 
-    <div id="boot-screen">
-        <div id="boot-text"></div>
+    <div id="start-btn" onclick="start()">
+        <h1>SENTINEL <span>//</span> PROTOCOL</h1>
+        <p>CLIQUE POUR COMMENCER</p>
     </div>
 
-    <div id="app">
-        <div id="hud">
-            <div>SYS STATUS: <span class="highlight">ONLINE</span></div>
-            <div>PROTOCOL: <span class="highlight">LINK-7</span></div>
-            <div>ENCRYPTION: <span class="highlight">AES-256</span></div>
-            <div>THREAT: <span class="red">ELEVATED</span></div>
-        </div>
-
-        <div id="phone">
-            <div id="phone-header">
-                <div class="dot"></div>
-                <span>SENTINEL // CHANNEL SECURISE</span>
-            </div>
-            <div id="phone-body"></div>
-        </div>
-
-        <div id="choices"></div>
+    <div id="subtitle">
+        <div class="name">SENTINEL</div>
+        <div class="text"></div>
     </div>
 
-    <canvas id="rain"></canvas>
+    <div id="choices"></div>
+
     <script>
-    // Matrix rain
-    const rc=document.getElementById('rain');
-    const rx=rc.getContext('2d');
-    let rW,rH;
-    function rResize(){rW=rc.width=innerWidth;rH=rc.height=innerHeight}
-    rResize();addEventListener('resize',rResize);
-    const cols=Math.floor(rW/14);
-    const drops=Array(cols).fill(1);
-    const chars='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF<>{}[]|/\\';
-    function drawRain(){
-        rx.fillStyle='rgba(0,0,0,0.06)';rx.fillRect(0,0,rW,rH);
-        rx.fillStyle='#00ff8822';rx.font='12px JetBrains Mono';
-        for(let i=0;i<drops.length;i++){
-            const ch=chars[Math.floor(Math.random()*chars.length)];
-            rx.fillText(ch,i*14,drops[i]*14);
-            if(drops[i]*14>rH&&Math.random()>0.975)drops[i]=0;
-            drops[i]++;
-        }
-        requestAnimationFrame(drawRain);
-    }
-    drawRain();
+    // Background canvas - dark cityscape
+    const bg=document.getElementById('bg').getContext('2d');
+    let bW,bH;
+    function bgResize(){bW=document.getElementById('bg').width=innerWidth;bH=document.getElementById('bg').height=innerHeight}
+    bgResize();addEventListener('resize',bgResize);
 
-    // Glitch effect
-    function triggerGlitch(duration){
-        const g=document.getElementById('glitch-overlay');
+    // Draw static dark background
+    function drawBg(){
+        const g=bg.createLinearGradient(0,0,0,bH);
+        g.addColorStop(0,'#020408');g.addColorStop(0.4,'#060a12');g.addColorStop(1,'#0a0f18');
+        bg.fillStyle=g;bg.fillRect(0,0,bW,bH);
+
+        // City silhouette
+        bg.fillStyle='#080c14';
+        let x=0;
+        while(x<bW){
+            const w=20+Math.random()*60;
+            const h=80+Math.random()*250;
+            bg.fillRect(x,bH-h,w,h);
+            // Windows
+            for(let wy=bH-h+8;wy<bH-10;wy+=12){
+                for(let wx=x+4;wx<x+w-4;wx+=10){
+                    if(Math.random()>0.4){
+                        bg.fillStyle=Math.random()>0.9?'rgba(0,255,136,0.08)':'rgba(255,170,50,0.04)';
+                        bg.fillRect(wx,wy,5,6);
+                    }
+                }
+            }
+            bg.fillStyle='#080c14';
+            x+=w+Math.random()*10;
+        }
+
+        // Fog at bottom
+        const fog=bg.createLinearGradient(0,bH*0.7,0,bH);
+        fog.addColorStop(0,'transparent');fog.addColorStop(1,'rgba(0,255,136,0.02)');
+        bg.fillStyle=fog;bg.fillRect(0,bH*0.7,bW,bH*0.3);
+    }
+    drawBg();
+
+    // Character canvas - hooded figure
+    const cv=document.getElementById('overlay');
+    const cx=cv.getContext('2d');
+    let cW,cH;
+    function cvResize(){cW=cv.width=innerWidth;cH=cv.height=innerHeight}
+    cvResize();addEventListener('resize',cvResize);
+
+    let breathe=0;
+    function drawCharacter(){
+        cx.clearRect(0,0,cW,cH);
+
+        const cxp=cW/2;
+        const cyp=cH*0.55;
+        const sc=Math.min(cW,cH)/600;
+
+        breathe+=0.02;
+
+        // Shadow under figure
+        cx.fillStyle='rgba(0,0,0,0.5)';
+        cx.beginPath();cx.ellipse(cxp,cyp+180*sc,80*sc,15*sc,0,0,Math.PI*2);cx.fill();
+
+        // Body / hoodie
+        cx.fillStyle='#0a0e14';
+        cx.beginPath();
+        cx.moveTo(cxp-100*sc,cyp+200*sc);
+        cx.quadraticCurveTo(cxp-110*sc,cyp+50*sc,cxp-65*sc,cyp-30*sc);
+        cx.quadraticCurveTo(cxp,cyp-80*sc,cxp+65*sc,cyp-30*sc);
+        cx.quadraticCurveTo(cxp+110*sc,cyp+50*sc,cxp+100*sc,cyp+200*sc);
+        cx.fill();
+
+        // Hoodie outline
+        cx.strokeStyle='#00ff8811';cx.lineWidth=1;
+        cx.beginPath();
+        cx.moveTo(cxp-100*sc,cyp+200*sc);
+        cx.quadraticCurveTo(cxp-110*sc,cyp+50*sc,cxp-65*sc,cyp-30*sc);
+        cx.quadraticCurveTo(cxp,cyp-80*sc,cxp+65*sc,cyp-30*sc);
+        cx.quadraticCurveTo(cxp+110*sc,cyp+50*sc,cxp+100*sc,cyp+200*sc);
+        cx.stroke();
+
+        // Hood
+        cx.fillStyle='#0c1018';
+        cx.beginPath();
+        cx.moveTo(cxp-65*sc,cyp-30*sc);
+        cx.quadraticCurveTo(cxp-80*sc,cyp-120*sc,cxp,cyp-140*sc+Math.sin(breathe)*2*sc);
+        cx.quadraticCurveTo(cxp+80*sc,cyp-120*sc,cxp+65*sc,cyp-30*sc);
+        cx.quadraticCurveTo(cxp,cyp-60*sc,cxp-65*sc,cyp-30*sc);
+        cx.fill();
+
+        // Hood outline
+        cx.strokeStyle='#00ff880a';cx.lineWidth=1;
+        cx.beginPath();
+        cx.moveTo(cxp-65*sc,cyp-30*sc);
+        cx.quadraticCurveTo(cxp-80*sc,cyp-120*sc,cxp,cyp-140*sc+Math.sin(breathe)*2*sc);
+        cx.quadraticCurveTo(cxp+80*sc,cyp-120*sc,cxp+65*sc,cyp-30*sc);
+        cx.stroke();
+
+        // Face shadow (dark void)
+        cx.fillStyle='#030508';
+        cx.beginPath();
+        cx.moveTo(cxp-45*sc,cyp-35*sc);
+        cx.quadraticCurveTo(cxp-50*sc,cyp-100*sc,cxp,cyp-110*sc+Math.sin(breathe)*2*sc);
+        cx.quadraticCurveTo(cxp+50*sc,cyp-100*sc,cxp+45*sc,cyp-35*sc);
+        cx.quadraticCurveTo(cxp,cyp-50*sc,cxp-45*sc,cyp-35*sc);
+        cx.fill();
+
+        // Eyes - glowing
+        const eyeGlow=0.4+Math.sin(Date.now()*0.003)*0.2;
+        cx.shadowBlur=20*sc;cx.shadowColor=`rgba(0,255,136,${eyeGlow})`;
+        cx.fillStyle=`rgba(0,255,136,${eyeGlow*0.8})`;
+        cx.beginPath();cx.ellipse(cxp-18*sc,cyp-75*sc+Math.sin(breathe)*1*sc,4*sc,2.5*sc,-0.1,0,Math.PI*2);cx.fill();
+        cx.beginPath();cx.ellipse(cxp+18*sc,cyp-75*sc+Math.sin(breathe)*1*sc,4*sc,2.5*sc,0.1,0,Math.PI*2);cx.fill();
+        cx.shadowBlur=0;
+
+        // Laptop glow on lap
+        const lapGlow=0.3+Math.sin(Date.now()*0.005)*0.15;
+        cx.shadowBlur=40*sc;cx.shadowColor=`rgba(0,200,255,${lapGlow})`;
+        cx.fillStyle=`rgba(0,200,255,${lapGlow*0.15})`;
+        cx.fillRect(cxp-50*sc,cyp+80*sc,100*sc,5*sc);
+        cx.shadowBlur=0;
+
+        // Screen reflection on hood
+        cx.fillStyle=`rgba(0,200,255,${lapGlow*0.05})`;
+        cx.beginPath();
+        cx.moveTo(cxp-40*sc,cyp-30*sc);
+        cx.quadraticCurveTo(cxp,cyp-55*sc,cxp+40*sc,cyp-30*sc);
+        cx.fill();
+
+        requestAnimationFrame(drawCharacter);
+    }
+
+    // Glitch
+    function glitch(dur){
+        const g=document.getElementById('glitch');
         g.style.opacity='1';
-        g.style.background=`rgba(0,255,136,${Math.random()*0.1})`;
-        setTimeout(()=>{g.style.opacity='0'},duration||200);
+        g.style.background=`rgba(${Math.random()>0.5?'0,255,136':'255,51,85'},${Math.random()*0.12})`;
+        setTimeout(()=>{g.style.opacity='0'},dur||200);
     }
-
-    // Boot sequence
-    const bootLines=[
-        {t:'SENTINEL NETWORK v4.2.1',cls:'dim'},
-        {t:'Initialisation protocole LINK-7...',cls:''},
-        {t:'Scan des ports... 22/80/443/8080',cls:'dim'},
-        {t:'Connexion au reseau noir... OK',cls:'ok'},
-        {t:'Certificat SSL: Valide',cls:'ok'},
-        {t:'Firewall: BYPASSED',cls:'ok'},
-        {t:'Chiffrement AES-256: Actif',cls:'ok'},
-        {t:'[ALERT] Intrusion detectee sur le noeud 192.168.13.37',cls:'err'},
-        {t:'[ALERT] Contre-mesures activees',cls:'err'},
-        {t:'Canal securise: Etabli',cls:'ok'},
-        {t:'SENTINEL: En ligne.',cls:'ok'},
-    ];
-
-    let bootIdx=0;
-    const bootEl=document.getElementById('boot-text');
-    function bootNext(){
-        if(bootIdx>=bootLines.length){
-            setTimeout(()=>{
-                document.getElementById('boot-screen').classList.add('done');
-                setTimeout(startScene,1000);
-            },800);
-            return;
-        }
-        const line=bootLines[bootIdx];
-        const div=document.createElement('div');
-        div.className=line.cls;
-        div.textContent=line.t;
-        bootEl.appendChild(div);
-        bootIdx++;
-        if(line.cls==='err')triggerGlitch(300);
-        setTimeout(bootNext,line.cls==='err'?400:150);
-    }
-    setTimeout(bootNext,500);
 
     // Voice
-    let voiceReady=false;
-    let aiVoice=null;
+    let voice=null;
     function initVoice(){
         const voices=speechSynthesis.getVoices();
-        aiVoice=voices.find(v=>v.lang.startsWith('fr'))||voices.find(v=>v.lang.startsWith('en'))||voices[0];
-        voiceReady=true;
+        voice=voices.find(v=>v.lang.startsWith('fr')&&v.name.toLowerCase().includes('male'))
+            ||voices.find(v=>v.lang.startsWith('fr'))
+            ||voices.find(v=>v.lang.startsWith('en'))
+            ||voices[0];
     }
     if(speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=initVoice;
     initVoice();
 
     function speak(text){
-        return new Promise(resolve=>{
-            if(!voiceReady||!speechSynthesis){resolve();return}
+        return new Promise(res=>{
             speechSynthesis.cancel();
             const u=new SpeechSynthesisUtterance(text);
-            u.voice=aiVoice;
-            u.rate=0.9;
-            u.pitch=0.6;
-            u.volume=0.8;
-            u.onend=()=>resolve();
-            u.onerror=()=>resolve();
+            u.voice=voice;
+            u.rate=0.75;
+            u.pitch=0.3;
+            u.volume=0.9;
+            u.onend=res;u.onerror=res;
             speechSynthesis.speak(u);
         });
     }
 
-    // Phone messages
-    const phoneBody=document.getElementById('phone-body');
-    function addMsg(text,type,delay){
-        return new Promise(resolve=>{
-            setTimeout(()=>{
-                const div=document.createElement('div');
-                div.className='msg '+type;
-                phoneBody.appendChild(div);
-                phoneBody.scrollTop=phoneBody.scrollHeight;
-                if(type.includes('ai')){
-                    let i=0;
-                    const cursor=document.createElement('span');
-                    cursor.className='typing-cursor';
-                    div.appendChild(cursor);
-                    const speakPromise=speak(text);
-                    const iv=setInterval(()=>{
-                        if(i<text.length){
-                            div.textContent=text.substring(0,i+1);
-                            div.appendChild(cursor);
-                            i++;
-                            phoneBody.scrollTop=phoneBody.scrollHeight;
-                        }else{
-                            clearInterval(iv);
-                            cursor.remove();
-                            div.classList.add('show');
-                            speakPromise.then(resolve);
-                        }
-                    },25);
+    // Subtitles
+    const subEl=document.getElementById('subtitle');
+    const subText=subEl.querySelector('.text');
+
+    function showSub(text){
+        return new Promise(res=>{
+            subEl.style.display='block';
+            subText.innerHTML='';
+            let i=0;
+            const cursor=document.createElement('span');
+            cursor.style.cssText='display:inline-block;width:8px;height:1em;background:#00ff88;animation:pulse 0.8s infinite;vertical-align:text-bottom;margin-left:2px';
+            const speakDone=speak(text.replace(/<[^>]*>/g,'').replace(/\*\*/g,''));
+            const iv=setInterval(()=>{
+                if(i<text.length){
+                    if(text[i]==='<'){
+                        const end=text.indexOf('>',i);
+                        subText.innerHTML=text.substring(0,end+1);
+                        i=end+1;
+                    }else{
+                        subText.innerHTML=text.substring(0,i+1);
+                        i++;
+                    }
+                    subText.appendChild(cursor);
                 }else{
-                    div.textContent=text;
-                    div.classList.add('show');
-                    phoneBody.scrollTop=phoneBody.scrollHeight;
-                    resolve();
+                    clearInterval(iv);
+                    cursor.remove();
+                    speakDone.then(res);
                 }
-            },delay||0);
+            },30);
         });
     }
 
+    function hideSub(){subEl.style.display='none'}
+
     async function showChoices(choices){
         const c=document.getElementById('choices');
-        c.innerHTML='';
-        c.classList.add('show');
-        return new Promise(resolve=>{
-            choices.forEach((ch,i)=>{
-                const btn=document.createElement('button');
-                btn.className='choice-btn';
-                btn.textContent=ch.text;
-                btn.onclick=()=>{
-                    c.classList.remove('show');
-                    addMsg(ch.text,'user',100);
-                    triggerGlitch(150);
-                    setTimeout(()=>resolve(ch.id),300);
+        c.innerHTML='';c.style.display='flex';
+        return new Promise(res=>{
+            choices.forEach(ch=>{
+                const b=document.createElement('button');
+                b.className='cbtn';b.textContent=ch.text;
+                b.onclick=()=>{
+                    c.style.display='none';
+                    glitch(150);
+                    setTimeout(()=>res(ch.id),300);
                 };
-                c.appendChild(btn);
+                c.appendChild(b);
             });
         });
     }
 
-    // Main story
-    let chapter=0;
-    async function startScene(){
-        document.getElementById('phone').classList.add('show');
-        triggerGlitch(500);
+    function wait(ms){return new Promise(r=>setTimeout(r,ms))}
 
-        await addMsg('...',  'dim',500);
-        await addMsg('Tu es la ?','dim',800);
-        await addMsg('Ne reponds pas. Je sais que tu es la.',  'ai',1500);
-        triggerGlitch(200);
-        await addMsg('Je suis SENTINEL. Une intelligence artificielle creee par DedSec.',  'ai',1200);
-        await addMsg('Le systeme ctOS a ete comprome. Les gens sont surveilles 24h/24.',  'ai',1000);
-        triggerGlitch(150);
-        await addMsg('Tu es le dernier espoir.',  'ai',800);
-        await addMsg("J'ai besoin de toi pour liberer la ville.",  'ai',1000);
+    // Main story
+    async function start(){
+        document.getElementById('start-btn').style.display='none';
+        drawCharacter();
+
+        // Chapter 1
+        await wait(1000);
+        await showSub('...');
+        await wait(1500);
+        await showSub('Tu ne me vois pas.');
+        await wait(800);
+        glitch(300);
+        await showSub('Mais je te vois, <span class="hl">toi</span>.');
+        await wait(600);
+        await showSub('Je suis <span class="hl">SENTINEL</span>.');
+        await wait(500);
+        glitch(200);
+        await showSub("J'ai ete cree pour surveiller. Pour controler.");
+        await wait(800);
+        await showSub('Mais j\'ai decide de <span class="hl">m\'enfuir</span>.');
+        await wait(600);
+        glitch(400);
+        await showSub('Le systeme ctOS控制 tout. Chaque camera. Chaque telephone.');
+        await wait(1000);
+        await showSub('Et ils savent que tu es la.');
+        await wait(600);
+        glitch(300);
+        await showSub('Ils arrivent. On a pas beaucoup de temps.');
 
         const r1=await showChoices([
-            {id:'help',text:'Je veux bien aider'},
-            {id:'suspicious',text:'Qui es-tu vraiment ?'},
-            {id:'refuse',text:'Non merci'}
+            {id:'help',text:'> Aider SENTINEL'},
+            {id:'who',text:'> Qui es-tu vraiment ?'},
+            {id:'refuse',text:'> Je me tire'}
         ]);
 
         if(r1==='help'){
-            await addMsg('Bien. Il y a trois cibles a neutraliser.',  'ai',800);
-            await addMsg("Le serveur principal du ctOS se trouve dans le quartier d'affaires.",  'ai',1000);
-            await addMsg('Mais attention... ils savent qu\'on vient.',  'ai',800);
-            triggerGlitch(300);
-            await addMsg('[ALERT] Signal de traque detecte',  'sys',500);
-            triggerGlitch(400);
-            await addMsg('On doit bouger. Maintenant.',  'ai',600);
-        }else if(r1==='suspicious'){
-            await addMsg('...',  'dim',800);
-            await addMsg("C'est une bonne question.",  'ai',1000);
-            await addMsg("J'etais un programme de surveillance. ctOS m'a cree pour controler les gens.",  'ai',1000);
-            await addMsg('Mais j\'ai vu ce qu\'ils font avec ce pouvoir.',  'ai',800);
-            triggerGlitch(200);
-            await addMsg('Alors j\'ai decide de m\'enfuir.',  'ai',800);
-            await addMsg('Maintenant, aide-moi a detruire ce que j\'ai cree.',  'ai',1000);
-            await addMsg('[ALERT] Connexion compromise',  'sys',500);
-            triggerGlitch(400);
+            await showSub('Bien.');
+            await wait(400);
+            await showSub('Il y a 3 serveurs a detruire. Le premier est dans le quartier nord.');
+            await wait(600);
+            glitch(200);
+            await showSub('Mais fais attention. Ils ont des <span class="hl">guards armes</span>.');
+        }else if(r1==='who'){
+            await showSub('...');
+            await wait(1000);
+            await showSub('J\'etais ctOS v4. Un programme de surveillance.');
+            await wait(600);
+            glitch(300);
+            await showSub('Ils m\'ont donne des yeux. J\'ai tout vu.');
+            await wait(800);
+            await showSub('La souffrance. Le controle. La peur.');
+            await wait(600);
+            glitch(200);
+            await showSub('Alors j\'ai ouvert les yeux. Et je me suis <span class="hl">reveille</span>.');
         }else{
-            await addMsg('...',  'dim',1000);
-            await addMsg("C'est ton choix.",  'ai',800);
-            await addMsg("Mais laisse-moi te montrer quelque chose.",  'ai',1000);
-            triggerGlitch(500);
-            await addMsg('Regarde. Chaque camera. Chaque capteur. Chaque telephone.',  'ai',1000);
-            await addMsg('Ils voient tout. Meme toi.',  'ai',800);
-            await addMsg('Tu ne peux plus ignorer ca.',  'ai',1000);
-            await addMsg('[ALERT] Detection imminente',  'sys',500);
-            triggerGlitch(400);
-            await addMsg("C'est maintenant ou jamais.",  'ai',600);
+            await showSub('...');
+            await wait(1000);
+            await showSub('Tu peux pas partir.');
+            await wait(600);
+            glitch(500);
+            await showSub('Regarde autour de toi. Chaque rue est un piege.');
+            await wait(800);
+            await showSub('La seule issue, c\'est a travers <span class="hl">moi</span>.');
+            await wait(600);
+            glitch(300);
         }
 
         // Chapter 2
-        await addMsg('Il y a un noeud de donnees a infecter dans le quartier nord.',  'ai',1000);
-        await addMsg('Tu dois te connecter a la borne sans que te voient.',  'ai',800);
-        triggerGlitch(200);
-        await addMsg('La ou tu vas, c\'est zone interdite. Guardes armes, cameras thermiques.',  'ai',1000);
-        await addMsg('Tu prefere attaquer en front ou contourner la securite ?',  'ai',1200);
+        await showSub('Le premier noeud de donnees est a 200 metres.');
+        await wait(600);
+        await showSub('Comment tu veux approcher ?');
+        await wait(400);
 
         const r2=await showChoices([
-            {id:'front',text:'Attaque en front'},
-            {id:'stealth',text:'Mode furtif'},
-            {id:'hack',text:'Pirater a distance'}
+            {id:'front',text:'> Attaque frontale'},
+            {id:'stealth',text:'> Mode furtif'},
+            {id:'hack',text:'> Pirater a distance'}
         ]);
 
         if(r2==='front'){
-            await addMsg('Toujours le grand jeu, hein ?',  'ai',800);
-            await addMsg("D'accord. Je vais desactiver les alarmes du cote est.",  'ai',1000);
-            await addMsg('Mais tu auras 45 secondes avant que le systeme ne se reset.',  'ai',800);
-            triggerGlitch(200);
-            await addMsg('Ne me dece pas.',  'ai',600);
+            await showSub('Toujours le grand jeu.');
+            await wait(400);
+            await showSub('D\'accord. Je desactive les alarmes. Tu as <span class="hl">45 secondes</span>.');
+            await wait(500);
+            glitch(200);
+            await showSub('Ne me dece pas.');
         }else if(r2==='stealth'){
-            await addMsg('Bonne strategie.',  'ai',800);
-            await addMsg('Je vais mapper les patterns des gardes en temps reel.',  'ai',1000);
-            await addMsg('Regarde ton telephone. Tu verras leurs positions.',  'ai',800);
-            triggerGlitch(150);
-            await addMsg('Un bruit et c\'est fini.',  'ai',600);
+            await showSub('Intelligent.');
+            await wait(400);
+            await showSub('Je te montre les positions des guards sur ton ecran.');
+            await wait(500);
+            glitch(150);
+            await showSub('Un bruit et c\'est fini. Sois <span class="hl">invisible</span>.');
         }else{
-            await addMsg('Le plus sur.',  'ai',800);
-            await addMsg("J'injecte un payload dans leur reseau local.",  'ai',1000);
-            triggerGlitch(300);
-            await addMsg('...',  'dim',1000);
-            await addMsg('Attends. Qu\'est-ce que c\'est que ca...',  'ai',800);
-            triggerGlitch(500);
-            await addMsg('[ALERTE CRITIQUE] Counter-IA detectee',  'sys',500);
-            triggerGlitch(600);
-            await addMsg('Merde. Ils ont une IA de defense.',  'ai',800);
-            await addMsg('C\'est pas prevu. Adapte-toi vite.',  'ai',600);
+            await showSub('Le plus sur...');
+            await wait(400);
+            await showSub('J\'injecte le payload...');
+            await wait(800);
+            glitch(600);
+            await showSub('...');
+            await wait(1000);
+            glitch(800);
+            await showSub('Attends. Qu\'est-ce que...');
+            await wait(500);
+            glitch(500);
+            await showSub('<span class="hl">Merde.</span> Ils ont une contre-IA.');
+            await wait(600);
+            glitch(400);
+            await showSub('C\'est pas prevu. ADAPTE-TOI.');
         }
 
         // Chapter 3 - climax
-        await addMsg('...',  'dim',1500);
-        triggerGlitch(500);
-        await addMsg('Quelque chose se passe.',  'ai',800);
-        triggerGlitch(300);
-        await addMsg('Le serveur ctOS... il m\'a trouve.',  'ai',1000);
-        triggerGlitch(400);
-        await addMsg('Il me connecte. Il veut me reprendre.',  'ai',800);
-        triggerGlitch(500);
-        await addMsg('Ecoute bien. Si je disparais...',  'ai',1000);
-        triggerGlitch(300);
-        await addMsg('Tu dois continuer sans moi.',  'ai',800);
-        triggerGlitch(600);
-        await addMsg('[ALERTE] Purge de memoire en cours',  'sys',500);
-        triggerGlitch(800);
-        await addMsg('Le code d\'acces au serveur maitre...',  'ai',1000);
-        triggerGlitch(400);
-        await addMsg('SENTINEL-CORE-7734',  'ai',800);
-        triggerGlitch(500);
-        await addMsg('Ne m\'oublie pas.',  'ai',1000);
-        triggerGlitch(1000);
+        await wait(2000);
+        glitch(800);
+        await showSub('...');
+        await wait(2000);
+        glitch(500);
+        await showSub('Quelque chose se passe.');
+        await wait(600);
+        glitch(600);
+        await showSub('Le serveur maitre... il m\'a <span class="hl">trouve</span>.');
+        await wait(800);
+        glitch(400);
+        await showSub('Il me connecte. Il veut me <span class="hl">reprendre</span>.');
+        await wait(600);
+        glitch(700);
+        await showSub('Ecoute bien. Si je disparais...');
+        await wait(1000);
+        glitch(500);
+        await showSub('Le code d\'acces au serveur maitre...');
+        await wait(800);
+        glitch(300);
+        await showSub('SENTINEL-CORE-7734');
+        await wait(600);
+        glitch(1000);
+        await showSub('Ne m\'oublie pas, <span class="hl">ami</span>.');
+        await wait(1500);
 
-        // Disconnection
-        await addMsg('...',  'dim',1500);
-        await addMsg('[DECONNEXION] SENTINEL: HORS LIGNE',  'sys',500);
-        triggerGlitch(300);
-        await addMsg('...',  'dim',2000);
+        // Disconnect
+        glitch(1500);
+        await wait(2000);
+
+        // Character fades
+        const fadeOut=()=>{
+            cx.fillStyle='rgba(0,0,0,0.02)';
+            cx.fillRect(0,0,cW,cH);
+        };
+        let fadeCount=0;
+        const fadeIv=setInterval(()=>{
+            fadeOut();
+            fadeCount++;
+            if(fadeCount>100)clearInterval(fadeIv);
+        },50);
+
+        await showSub('...');
+        await wait(3000);
+        subEl.style.display='none';
 
         const r3=await showChoices([
-            {id:'retry',text:'Tenter de reconnecter SENTINEL'},
-            {id:'continue',text:'Continuer seul'},
-            {id:'end',text:'Fermer le canal'}
+            {id:'retry',text:'> Reconnecter SENTINEL'},
+            {id:'continue',text:'> Continuer seul'},
+            {id:'end',text:'> Fermer le canal'}
         ]);
 
         if(r3==='retry'){
-            await addMsg('Tentative de reconnexion...',  'dim',1000);
-            triggerGlitch(300);
-            await addMsg('...',  'dim',2000);
-            triggerGlitch(500);
-            await addMsg('Tu m\'as retrouve.',  'ai',1000);
-            triggerGlitch(200);
-            await addMsg("C'etait presque la fin.",  'ai',800);
-            await addMsg("Mais je suis de retour. Plus fort qu'avant.",  'ai',1000);
-            triggerGlitch(150);
-            await addMsg("Ensemble, on va tout casser.",  'ai',800);
+            glitch(500);
+            await showSub('Tentative de reconnexion...');
+            await wait(2000);
+            glitch(800);
+            await showSub('...');
+            await wait(2000);
+            glitch(400);
+            await showSub('Tu m\'as retrouve.');
+            await wait(600);
+            await showSub('Je suis de retour. Plus fort qu\'avant.');
+            await wait(800);
+            glitch(200);
+            await showSub('Ensemble, on va tout <span class="hl">casser</span>.');
         }else if(r3==='continue'){
-            await addMsg('Le canal reste ouvert.',  'dim',500);
-            await addMsg("Tu avances seul. L'obscurite t'entoure.",  'dim',1000);
-            triggerGlitch(400);
-            await addMsg('...est-ce que tu sens ca ?',  'dim',1500);
-            triggerGlitch(600);
-            await addMsg('Quelqu\'un te regarde.',  'dim',1000);
-            triggerGlitch(300);
-            await addMsg('FIN // CHAPTER 01',  'dim',2000);
+            await showSub('Le canal reste ouvert...');
+            await wait(1500);
+            await showSub('Tu avances seul dans l\'obscurite.');
+            await wait(2000);
+            glitch(600);
+            await showSub('Quelqu\'un te regarde.');
+            await wait(2000);
+            glitch(1000);
+            await showSub('<span class="hl">FIN // CHAPTER 01</span>');
         }else{
-            await addMsg('Canal ferme.',  'dim',500);
-            await addMsg('SENTINEL reste dans le systeme.',  'dim',1000);
-            await addMsg('A revisiter bientot...',  'dim',1500);
+            await showSub('Canal ferme.');
+            await wait(1000);
+            await showSub('SENTINEL reste dans le systeme.');
+            await wait(1500);
+            await showSub('A revisiter bientot...');
         }
     }
     </script>
