@@ -30,6 +30,22 @@
         .weapon-slot.active{border-color:#00ff88;color:#00ff88;box-shadow:0 0 8px #00ff8833}
         .weapon-slot .wname{color:inherit;font-weight:700}
         .weapon-slot .wammo{font-size:0.85em;opacity:0.6}
+
+        #mobile-controls{display:none;position:fixed;z-index:50;pointer-events:none}
+        #joystick{left:20px;bottom:20px;width:120px;height:120px;border-radius:50%;background:rgba(0,255,136,0.08);border:2px solid rgba(0,255,136,0.2)}
+        #joystick-knob{position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(0,255,136,0.3);border:2px solid #00ff88;top:50%;left:50%;transform:translate(-50%,-50%);transition:none;pointer-events:none}
+        #btn-fire{right:20px;bottom:30px;width:80px;height:80px;border-radius:50%;background:rgba(255,51,85,0.15);border:2px solid rgba(255,51,85,0.4);display:flex;align-items:center;justify-content:center;color:#ff3355;font-size:0.8em;font-weight:700;font-family:'JetBrains Mono',monospace}
+        #btn-fire:active{background:rgba(255,51,85,0.35)}
+        #btn-reload{right:115px;bottom:80px;width:50px;height:50px;border-radius:50%;background:rgba(255,170,0,0.1);border:2px solid rgba(255,170,0,0.3);display:flex;align-items:center;justify-content:center;color:#ffaa00;font-size:0.6em;font-weight:700;font-family:'JetBrains Mono',monospace}
+        #btn-reload:active{background:rgba(255,170,0,0.3)}
+        #btn-weapon{right:115px;bottom:145px;width:50px;height:50px;border-radius:50%;background:rgba(0,200,255,0.1);border:2px solid rgba(0,200,255,0.3);display:flex;align-items:center;justify-content:center;color:#00ccff;font-size:0.6em;font-weight:700;font-family:'JetBrains Mono',monospace}
+        #btn-weapon:active{background:rgba(0,200,255,0.3)}
+        .mobile-el{pointer-events:auto}
+
+        @media(max-width:768px),(hover:none){
+            #mobile-controls{display:block}
+            .controls{display:none}
+        }
     </style>
 </head>
 <body>
@@ -60,6 +76,13 @@
         <div class="score" id="final-score"></div>
         <p id="final-wave"></p>
         <button class="start-btn" onclick="location.reload()">REJOUER</button>
+    </div>
+
+    <div id="mobile-controls" style="position:fixed;top:0;left:0;width:100%;height:100%">
+        <div id="joystick" class="mobile-el"><div id="joystick-knob"></div></div>
+        <div id="btn-fire" class="mobile-el">FIRE</div>
+        <div id="btn-reload" class="mobile-el">R</div>
+        <div id="btn-weapon" class="mobile-el">W</div>
     </div>
 
     <canvas id="c"></canvas>
@@ -552,6 +575,75 @@
     addEventListener('mousedown',e=>{mouse.down=true});
     addEventListener('mouseup',e=>{mouse.down=false});
     addEventListener('contextmenu',e=>e.preventDefault());
+
+    // Mobile touch controls
+    const joystick=document.getElementById('joystick');
+    const knob=document.getElementById('joystick-knob');
+    const btnFire=document.getElementById('btn-fire');
+    const btnReload=document.getElementById('btn-reload');
+    const btnWeapon=document.getElementById('btn-weapon');
+    let joyTouch=null;
+    const joyCenter={x:60,y:60};
+
+    function handleJoyMove(cx,cy){
+        const dx=cx-joyCenter.x,dy=cy-joyCenter.y;
+        const dist=Math.hypot(dx,dy);
+        const maxDist=45;
+        const clampedDist=Math.min(dist,maxDist);
+        const angle=Math.atan2(dy,dx);
+        const kx=Math.cos(angle)*clampedDist;
+        const ky=Math.sin(angle)*clampedDist;
+        knob.style.transform=`translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
+        keys['KeyQ']=dx<-12;keys['KeyD']=dx>12;
+        keys['KeyZ']=dy<-12;keys['KeyS']=dy>12;
+    }
+
+    function resetJoy(){
+        knob.style.transform='translate(-50%,-50%)';
+        keys['KeyQ']=false;keys['KeyD']=false;keys['KeyZ']=false;keys['KeyS']=false;
+    }
+
+    joystick.addEventListener('touchstart',e=>{
+        e.preventDefault();
+        joyTouch=e.changedTouches[0].identifier;
+        const r=joystick.getBoundingClientRect();
+        handleJoyMove(e.changedTouches[0].clientX-r.left,e.changedTouches[0].clientY-r.top);
+    },{passive:false});
+
+    joystick.addEventListener('touchmove',e=>{
+        e.preventDefault();
+        for(const t of e.changedTouches){
+            if(t.identifier===joyTouch){
+                const r=joystick.getBoundingClientRect();
+                handleJoyMove(t.clientX-r.left,t.clientY-r.top);
+            }
+        }
+    },{passive:false});
+
+    joystick.addEventListener('touchend',e=>{
+        for(const t of e.changedTouches){
+            if(t.identifier===joyTouch){joyTouch=null;resetJoy()}
+        }
+    });
+
+    // Fire button - auto aim at nearest enemy
+    let fireInterval=null;
+    btnFire.addEventListener('touchstart',e=>{
+        e.preventDefault();
+        fireInterval=setInterval(()=>{
+            if(enemies.length>0){
+                let nearest=enemies[0],minD=dist(player,enemies[0]);
+                for(const en of enemies){const d=dist(player,en);if(d<minD){minD=d;nearest=en}}
+                mouse.x=(nearest.x-camera.x);
+                mouse.y=(nearest.y-camera.y);
+                mouse.down=true;
+            }
+        },50);
+    },{passive:false});
+    btnFire.addEventListener('touchend',e=>{e.preventDefault();clearInterval(fireInterval);mouse.down=false},{passive:false});
+
+    btnReload.addEventListener('touchstart',e=>{e.preventDefault();weapons[1].bullets=weapons[1].maxBullets;weapons[2].bullets=weapons[2].maxBullets;updateWeaponBar()},{passive:false});
+    btnWeapon.addEventListener('touchstart',e=>{e.preventDefault();currentWeapon=(currentWeapon+1)%3;updateWeaponBar()},{passive:false});
     </script>
 </body>
 </html>
