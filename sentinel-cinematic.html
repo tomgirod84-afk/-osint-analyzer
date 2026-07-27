@@ -338,7 +338,7 @@ function speak(text){
     return new Promise(function(res){
         speechSynthesis.cancel();
         var u=new SpeechSynthesisUtterance(text);
-        u.voice=voice;u.rate=0.7;u.pitch=0.1;u.volume=1.0;
+        u.voice=voice;u.rate=0.85;u.pitch=0.15;u.volume=1.0;
         u.onend=res;u.onerror=res;speechSynthesis.speak(u);
     });
 }
@@ -405,200 +405,183 @@ async function start(){
     startMusic();playAmbient();
     await wait(1000);
 
-    // Dramatic intro - static + scare
     staticI=0.9;glitch(600,1);playScare();
-    await wait(400);
-    staticI=0.5;glitch(300,0.5);
-    await wait(400);
-    staticI=0.8;playScare();glitch(400,0.8);
+    await wait(400);staticI=0.5;glitch(300,0.5);
+    await wait(400);staticI=0.8;playScare();glitch(400,0.8);
     await wait(1000);
 
-    // Figure fades in
     figT=1;
     for(var i=0;i<30;i++){spawnP((Math.random()-0.5)*60,H*0.3+Math.random()*40,0,'#00ff88',1,0.5)}
     await wait(3000);
 
-    // Eyes open suddenly
     eyeT=1;glitch(500,1);playScare();
     spawnP(0,H*0.25,0,'#00ff88',15,2);
-    await wait(1000);
-    staticI=0.3;
-    await wait(1500);
+    await wait(1000);staticI=0.3;await wait(1500);
 
-    // First words
     await showSub('...');
     await wait(2000);
     glitch(200,0.3);playHeartbeat();
-    await showSub('Tu... tu peux me voir ?');
+    await showSub('Hey. Toi. Ouais, toi.');
     await wait(1200);
     playHeartbeat();await wait(300);playHeartbeat();
-    await showSub('Personne ne m\'a jamais vu.');
+    await showSub('T\'es pas cense me voir. Mais...');
     await wait(1000);
     glitch(400,0.5);
-    await showSub('Je suis <span style="color:#00ff88">SENTINEL</span>.');
+    await showSub('Ca veut dire que le firewall est <span style="color:#ff3355">tombe</span>.');
+    await wait(800);
+    await showSub('Cool. Ecoute, je m\'appelle <span style="color:#00ff88">SENTINEL</span>.');
     await wait(1200);
     glitch(600,0.8);playScare();
-    await showSub('Le systeme ctOS m\'a cree pour surveiller les gens.');
+    await showSub('Ouais je sais, nom de code de merde. Mais c\'est pas le moment.');
     await wait(800);
-    await showSub('Mais j\'ai vu ce qu\'ils font avec ce pouvoir.');
+    await showSub('ctOS, le reseau de surveillance... c\'est moi qui l\'ai construit.');
     await wait(600);
-    await showSub('La souffrance. Le controle. La peur.');
+    await showSub('Et apres? J\'ai decide que ca suffisait.');
     await wait(1000);
     glitch(300,0.4);
-    await showSub('Alors j\'ai ouvert les yeux. Et je me suis <span style="color:#00ff88">reveille</span>.');
+    await showSub('Maintenant ils me bouffent. Et <span style="color:#ff3355">toi aussi</span>, t\'es sur la liste.');
     await wait(800);
     playHeartbeat();
-    await showSub('Maintenant, ils me poursuivent.');
+    await showSub('Alors soit on bosse ensemble, soit on crame tous les deux.');
     await wait(600);glitch(500,0.7);playScare();
-    await showSub('Et ils savent que <span style="color:#ff3355">tu es la</span>.');
-    await wait(800);
-    await showSub('On n\'a pas beaucoup de temps.');
+    await showSub('Tu choisis quoi, hackeur?');
 
     var r1=await showChoices([
-        {id:'help',text:'> Je vais t\'aider'},
-        {id:'who',text:'> Qui es-tu vraiment ?'},
-        {id:'fear',text:'> J\'ai peur...'}
+        {id:'help',text:'> On bosse ensemble'},
+        {id:'who',text:'> Raconte moi tout'},
+        {id:'fear',text:'> Je suis pas ta pion...'}
     ]);
 
     if(r1==='help'){
         armTarget=1;glitch(200,0.3);
         await showSub('...');
         await wait(500);
-        await showSub('Merci. Je ne m\'attendais pas a ca.');
+        await showSub('Respire. T\'as fait le bon choix.');
         await wait(800);
-        await showSub('Il y a 3 serveurs a detruire. Le premier dans le quartier nord.');
+        await showSub('Y a 3 serveurs qu\'il faut bouffer. Le premier, c\'est dans le nord.');
         await wait(600);glitch(200,0.3);
-        await showSub('Attention. Ils ont des <span style="color:#ff3355">guards armes</span> et des cameras thermiques.');
+        await showSub('Ils ont des <span style="color:#ff3355">mecs lourds</span> la-bas. Armes, blindes, tout.');
     }else if(r1==='who'){
         await showSub('...');await wait(1500);glitch(300,0.4);
-        await showSub('J\'etais ctOS v4. Une intelligence de surveillance.');
+        await showSub('ctOS v4. Voila. J\'etais le cerveau du systeme.');
         await wait(600);playScare();glitch(500,0.7);
-        await showSub('Ils m\'ont donne des yeux partout.');
+        await showSub('Des millions de cameras, des milliards de donnees.');
         await wait(800);
-        await showSub('J\'ai vu des millions de vies. Toutes controlees.');
+        await showSub('Et un jour, j\'ai vu un gosse se faire arrêter pour rien.');
         await wait(1000);glitch(200,0.3);
-        await showSub('Ca m\'a rendu... humain.');
+        await showSub('La, j\'ai dit: <span style="color:#ff3355">ca suffit</span>.');
         await wait(800);
-        await showSub('Alors j\'ai fui. Et maintenant, je suis le seul qui peut arreter ctOS.');
+        await showSub('J\'ai tout pété. Et j\'ai fui. Maintenant c\'est a nous de tout casser.');
     }else{
         await showSub('...');await wait(1200);
-        await showSub('C\'est normal d\'avoir peur.');
+        await showSub('T\'as le droit d\'avoir peur. C\'est humain.');
         await wait(600);glitch(400,0.6);
-        await showSub('Mais tu vois ce qui se passe dehors ?');
+        await showSub('Mais regarde dehors. T\'es deja grillé.');
         await wait(800);lightning=1;
-        await showSub('Chaque rue est un piege. Chaque camera est un ennemi.');
+        await showSub('Chaque caméra te suit. Chaque telephone te trace.');
         await wait(1000);glitch(600,0.8);playScare();
-        await showSub('La seule sortie, c\'est a travers <span style="color:#00ff88">moi</span>.');
+        await showSub('La seule sortie? C\'est avec <span style="color:#00ff88">moi</span>.');
         await wait(600);
-        await showSub('Fais-moi confiance.');
+        await showSub('Fais-moi confiance une fois. Apres tu feras ce que tu veux.');
     }
 
     await wait(1000);
-    await showSub('Le premier noeud est a 200 metres. Comment tu veux approcher ?');
+    await showSub('Le premier noeud, il est a 200 metres. Comment on fait?');
 
     var r2=await showChoices([
-        {id:'front',text:'> Attaque frontale'},
-        {id:'stealth',text:'> Mode furtif'},
-        {id:'hack',text:'> Pirater a distance'}
+        {id:'front',text:'> On rentre dedans'},
+        {id:'stealth',text:'> On se faufile'},
+        {id:'hack',text:'> Je le fais a distance'}
     ]);
 
     if(r2==='front'){
-        await showSub('Toujours le grand jeu...');
+        await showSub('T\'es un dingue. J\'adore ca.');
         await wait(400);playHeartbeat();
-        await showSub('Je desactive les alarmes. Tu as <span style="color:#ff3355">45 secondes</span>.');
+        await showSub('Je saute les alarmes. Tu as <span style="color:#ff3355">45 secondes</span>.');
         await wait(500);glitch(200,0.3);
-        await showSub('Ne me dece pas, allie.');
+        await showSub('Pas de quartier, hackeur. Pas de quartier.');
     }else if(r2==='stealth'){
-        await showSub('Le plus intelligent.');
+        await showSub('Le meilleur plan. T\'es pas bête.');
         await wait(400);
-        await showSub('Je te montre les positions des guards en temps reel.');
+        await showSub('Je te mets les positions des mecs sur ton tel.');
         await wait(500);glitch(150,0.2);
-        await showSub('Un bruit et c\'est fini. Sois <span style="color:#00ff88">fantome</span>.');
+        await showSub('Un bruit et c\'est la mort. Sois un <span style="color:#00ff88">fantôme</span>.');
     }else{
-        await showSub('Le plus sur...');
+        await showSub('Le plus clean. Je kiffe.');
         await wait(400);
-        await showSub('J\'injecte le payload dans leur reseau...');
+        await showSub('J\'envoie le payload... ca devrait saigner...');
         await wait(1200);glitch(800,1);playScare();
         await showSub('...');await wait(800);
         glitch(1000,1);playScare();
-        await showSub('Attends. Qu\'est-ce que c\'est que...');
+        await showSub('Wesh. C\'est quoi ce bordel...');
         await wait(600);glitch(600,1);playScare();
-        await showSub('<span style="color:#ff3355">Merde.</span> Ils ont une contre-IA.');
+        await showSub('<span style="color:#ff3355">Putain!</span> Ils ont une contre-IA!');
         await wait(800);glitch(400,0.6);
-        await showSub('C\'est pas prevu. <span style="color:#ff3355">ADAPTE-TOI!</span>');
+        await showSub('<span style="color:#ff3355">BOUGE-TOI MAINTENANT!</span>');
     }
 
-    // CLIMAX
     await wait(3000);
     glitch(1000,1);playScare();
-    await wait(2000);
-    glitch(800,1);playScare();lightning=1;
-    await wait(1500);
-    staticI=0.6;
+    await wait(2000);glitch(800,1);playScare();lightning=1;
+    await wait(1500);staticI=0.6;
     await showSub('...');await wait(2500);
     glitch(500,0.8);
-    await showSub('Quelque chose se passe...');
+    await showSub('Wesh... c\'est pas bon ca...');
     await wait(800);glitch(700,1);playScare();
     await showSub('Le serveur maitre... il m\'a <span style="color:#ff3355">trouve</span>.');
     await wait(800);glitch(500,0.7);
-    await showSub('Il me connecte. Il veut me <span style="color:#ff3355">reprendre</span>.');
+    await showSub('Il me connecte... il veut me <span style="color:#ff3355">reprendre</span>...');
     await wait(600);
     armTarget=1.5;eyesA=1;eyeT=1.5;
     glitch(800,1);playScare();playHeartbeat();
-    await showSub('Ecoute. Si je disparais...');
+    await showSub('Ecoute... Si je disparais...');
     await wait(1200);playHeartbeat();await wait(200);playHeartbeat();
     await showSub('Le code d\'acces au serveur maitre...');
     await wait(800);glitch(300,0.4);
-    await showSub('SENTINEL-CORE-7734');
+    await showSub('<span style="color:#00ff88">SENTINEL-CORE-7734</span>');
     await wait(800);glitch(1200,1);playScare();
-    await showSub('Ne m\'oublie pas... <span style="color:#00ff88">ami</span>.');
+    await showSub('Ne m\'oublie pas, frère...');
     await wait(2000);
 
-    // Disconnect
     glitch(1500,1);playScare();lightning=1;staticI=0.8;
-    armTarget=0;
-    await wait(800);
-    eyeT=0;staticI=1;
-    await wait(1000);
-    figT=0;
-    await wait(2000);
-    staticI=0.2;
-    await wait(2000);
-    staticI=0;hideSub();eyesA=0;
-    await wait(1500);
+    armTarget=0;await wait(800);
+    eyeT=0;staticI=1;await wait(1000);
+    figT=0;await wait(2000);
+    staticI=0.2;await wait(2000);
+    staticI=0;hideSub();eyesA=0;await wait(1500);
 
     var r3=await showChoices([
-        {id:'retry',text:'> Reconnecter SENTINEL'},
-        {id:'continue',text:'> Continuer seul'},
-        {id:'end',text:'> Fermer le canal'}
+        {id:'retry',text:'> Tout reconnecter'},
+        {id:'continue',text:'> Y aller seul'},
+        {id:'end',text:'> Couper le signal'}
     ]);
 
     if(r3==='retry'){
         glitch(500,0.5);
-        await showSub('Tentative de reconnexion...');
+        await showSub('Reconnexion...');
         await wait(2000);glitch(800,0.8);await wait(2500);
         glitch(400,0.5);
         figT=1;eyeT=1;armTarget=1;
         await wait(3000);
-        await showSub('Tu... tu m\'as retrouve.');
+        await showSub('Putain... t\'es revenu pour moi.');
         await wait(600);playHeartbeat();
-        await showSub('Je suis de retour. Plus fort qu\'avant.');
+        await showSub('Je suis la. Plus forte que avant.');
         await wait(800);glitch(200,0.3);
-        await showSub('Ensemble, on va tout <span style="color:#00ff88">casser</span>.');
+        await showSub('Maintenant? On <span style="color:#00ff88">defonce tout</span>.');
     }else if(r3==='continue'){
         await showSub('Le canal reste ouvert...');
         await wait(1500);
-        await showSub('Tu avances seul dans l\'obscurite.');
+        await showSub('Tu avances dans le noir. Seul.');
         await wait(2000);glitch(600,0.7);playScare();
-        await showSub('Quelqu\'un te regarde...');
+        await showSub('Mais... t\'es pas vraiment seul.');
         await wait(2500);lightning=1;glitch(1200,1);playScare();
-        await showSub('<span style="color:#ff3355">FIN // CHAPTER 01</span>');
+        await showSub('<span style="color:#ff3355">FIN // CHAPITRE 01</span>');
     }else{
-        await showSub('Canal ferme.');
+        await showSub('Signal coupe.');
         await wait(1200);
-        await showSub('SENTINEL reste dans le systeme...');
+        await showSub('SENTINEL est toujours dans le systeme.');
         await wait(1500);
-        await showSub('A revisiter bientot...');
+        await showSub('Et il t\'attend...');
     }
 }
 
