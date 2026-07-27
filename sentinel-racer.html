@@ -12,6 +12,10 @@
         #ui{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:8px 12px;pointer-events:none;z-index:10}
         .ui-box{background:rgba(0,0,0,0.6);border:1px solid #1a2a3a;border-radius:4px;padding:3px 8px;font-size:0.65em;color:#00ff88}
         .ui-box .val{color:#fff;font-weight:700}
+        @media(max-width:768px),(hover:none){
+            #ui{padding:10px 15px}
+            .ui-box{font-size:0.8em;padding:5px 12px;border-radius:6px}
+        }
         #start-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,#060810 0%,#0a1530 50%,#152040 100%);z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center}
         #start-screen h1{color:#00ff88;font-size:2em;text-shadow:0 0 20px #00ff8844;margin-bottom:5px}
         #start-screen h1 span{color:#ff3355}
@@ -25,12 +29,17 @@
         #game-over h1{color:#ff3355;font-size:2em;text-shadow:0 0 20px #ff335566}
         #game-over .score-display{color:#00ff88;font-size:1.8em;margin:10px 0;font-weight:900}
         #game-over p{color:#556688;font-size:0.85em}
-        .mobile-btns{position:fixed;bottom:20px;left:0;right:0;display:none;justify-content:space-between;padding:0 20px;z-index:50;pointer-events:none}
-        .m-btn{width:70px;height:70px;border-radius:50%;border:2px solid rgba(0,255,136,0.2);background:rgba(0,255,136,0.06);display:flex;align-items:center;justify-content:center;font-size:1.5em;pointer-events:auto;touch-action:none}
-        .m-btn:active{background:rgba(0,255,136,0.25)}
-        .m-btn.danger{border-color:rgba(255,51,85,0.2);background:rgba(255,51,85,0.06)}
-        .m-btn.danger:active{background:rgba(255,51,85,0.25)}
-        @media(max-width:768px),(hover:none){.mobile-btns{display:flex}.controls-info{display:none}}
+        .mobile-btns{display:none}
+        #mobile-controls{display:none;position:fixed;bottom:0;left:0;right:0;height:45%;z-index:50;pointer-events:none}
+        .mobile-zone-left,.mobile-zone-right{position:absolute;top:0;bottom:0;width:35%;display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none}
+        .mobile-zone-left{left:0}
+        .mobile-zone-right{right:0}
+        .mobile-zone-center{position:absolute;top:0;bottom:0;left:35%;right:35%;display:flex;align-items:flex-end;justify-content:center;padding-bottom:30px;pointer-events:auto;touch-action:none}
+        .mobile-zone-inner{width:110px;height:110px;border-radius:50%;border:3px solid rgba(0,255,136,0.4);background:rgba(0,255,136,0.08);display:flex;align-items:center;justify-content:center;font-size:2.5em;color:rgba(0,255,136,0.7);text-shadow:0 0 10px #00ff88;transition:background 0.1s}
+        .mobile-zone-inner:active{background:rgba(0,255,136,0.35);border-color:#00ff88;box-shadow:0 0 30px rgba(0,255,136,0.4)}
+        .mobile-boost{width:80px;height:80px;border-radius:50%;border:3px solid rgba(255,51,85,0.4);background:rgba(255,51,85,0.08);display:flex;align-items:center;justify-content:center;font-size:2em;color:rgba(255,51,85,0.7);text-shadow:0 0 10px #ff3355;transition:background 0.1s}
+        .mobile-boost:active{background:rgba(255,51,85,0.35);border-color:#ff3355;box-shadow:0 0 30px rgba(255,51,85,0.4)}
+        @media(max-width:768px),(hover:none){#mobile-controls{display:flex}.controls-info{display:none}}
     </style>
 </head>
 <body>
@@ -48,10 +57,16 @@
         <div class="ui-box">VITESSE: <span class="val" id="speed">0</span> km/h</div>
         <div class="ui-box">BOOST: <span class="val" id="boost">100</span>%</div>
     </div>
-    <div class="mobile-btns">
-        <div class="m-btn" id="m-left">◀</div>
-        <div class="m-btn danger" id="m-boost">⚡</div>
-        <div class="m-btn" id="m-right">▶</div>
+    <div id="mobile-controls">
+        <div class="mobile-zone-left" id="m-left">
+            <div class="mobile-zone-inner">◀</div>
+        </div>
+        <div class="mobile-zone-center">
+            <div class="mobile-boost" id="m-boost">⚡</div>
+        </div>
+        <div class="mobile-zone-right" id="m-right">
+            <div class="mobile-zone-inner">▶</div>
+        </div>
     </div>
     <div id="game-over">
         <h1>CRASH</h1>
@@ -385,7 +400,7 @@
             ctx.fillText(`+${combo*50}`,W/2,H*0.3+25);ctx.textAlign='left';ctx.globalAlpha=1;
         }
 
-        const barW=120,barH=6,barX=W/2-barW/2,barY=H*0.88;
+        const barW=120,barH=6,barX=W/2-barW/2,barY=H*0.72;
         ctx.fillStyle='#111';ctx.fillRect(barX,barY,barW,barH);
         ctx.fillStyle=boosting?'#ff3355':'#00ff88';ctx.fillRect(barX,barY,barW*(boostFuel/100),barH);
         ctx.strokeStyle='#1a2a3a';ctx.strokeRect(barX,barY,barW,barH);
@@ -424,6 +439,9 @@
         touchLeft=dx<-20;touchRight=dx>20;
     },{passive:true});
     canvas.addEventListener('touchend',()=>{touchLeft=false;touchRight=false});
+
+    // Disable scroll/zoom on mobile
+    document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 
     draw();
     </script>
