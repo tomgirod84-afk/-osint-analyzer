@@ -31,20 +31,23 @@
         .weapon-slot .wname{color:inherit;font-weight:700}
         .weapon-slot .wammo{font-size:0.85em;opacity:0.6}
 
-        #mobile-controls{display:none;position:fixed;z-index:50;pointer-events:none}
-        #joystick{left:20px;bottom:20px;width:120px;height:120px;border-radius:50%;background:rgba(0,255,136,0.08);border:2px solid rgba(0,255,136,0.2)}
-        #joystick-knob{position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(0,255,136,0.3);border:2px solid #00ff88;top:50%;left:50%;transform:translate(-50%,-50%);transition:none;pointer-events:none}
-        #btn-fire{right:20px;bottom:30px;width:80px;height:80px;border-radius:50%;background:rgba(255,51,85,0.15);border:2px solid rgba(255,51,85,0.4);display:flex;align-items:center;justify-content:center;color:#ff3355;font-size:0.8em;font-weight:700;font-family:'JetBrains Mono',monospace}
-        #btn-fire:active{background:rgba(255,51,85,0.35)}
-        #btn-reload{right:115px;bottom:80px;width:50px;height:50px;border-radius:50%;background:rgba(255,170,0,0.1);border:2px solid rgba(255,170,0,0.3);display:flex;align-items:center;justify-content:center;color:#ffaa00;font-size:0.6em;font-weight:700;font-family:'JetBrains Mono',monospace}
+        #mobile-controls{display:none;position:fixed;z-index:50;left:0;bottom:0;width:100%;height:50%;pointer-events:none}
+        #joystick{position:absolute;left:20px;bottom:20px;width:140px;height:140px;border-radius:50%;background:rgba(0,255,136,0.06);border:2px solid rgba(0,255,136,0.15);pointer-events:auto}
+        #joystick-knob{position:absolute;width:50px;height:50px;border-radius:50%;background:rgba(0,255,136,0.25);border:2px solid rgba(0,255,136,0.5);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+        #btn-fire{position:absolute;right:20px;bottom:25px;width:90px;height:90px;border-radius:50%;background:rgba(255,51,85,0.12);border:3px solid rgba(255,51,85,0.35);display:flex;align-items:center;justify-content:center;color:#ff3355;font-size:0.85em;font-weight:700;font-family:'JetBrains Mono',monospace;pointer-events:auto}
+        #btn-fire:active{background:rgba(255,51,85,0.4);border-color:#ff3355}
+        #btn-reload{position:absolute;right:130px;bottom:60px;width:55px;height:55px;border-radius:50%;background:rgba(255,170,0,0.08);border:2px solid rgba(255,170,0,0.25);display:flex;align-items:center;justify-content:center;color:#ffaa00;font-size:0.7em;font-weight:700;font-family:'JetBrains Mono',monospace;pointer-events:auto}
         #btn-reload:active{background:rgba(255,170,0,0.3)}
-        #btn-weapon{right:115px;bottom:145px;width:50px;height:50px;border-radius:50%;background:rgba(0,200,255,0.1);border:2px solid rgba(0,200,255,0.3);display:flex;align-items:center;justify-content:center;color:#00ccff;font-size:0.6em;font-weight:700;font-family:'JetBrains Mono',monospace}
+        #btn-weapon{position:absolute;right:130px;bottom:130px;width:55px;height:55px;border-radius:50%;background:rgba(0,200,255,0.08);border:2px solid rgba(0,200,255,0.25);display:flex;align-items:center;justify-content:center;color:#00ccff;font-size:0.7em;font-weight:700;font-family:'JetBrains Mono',monospace;pointer-events:auto}
         #btn-weapon:active{background:rgba(0,200,255,0.3)}
-        .mobile-el{pointer-events:auto}
+        .mobile-el{touch-action:none;-webkit-user-select:none;user-select:none}
 
         @media(max-width:768px),(hover:none){
             #mobile-controls{display:block}
             .controls{display:none}
+            #ui{font-size:0.6em;padding:5px 10px}
+            .weapon-bar{bottom:55%!important}
+            .weapon-slot{min-width:45px!important;padding:3px 6px!important;font-size:0.6em!important}
         }
     </style>
 </head>
@@ -576,6 +579,10 @@
     addEventListener('mouseup',e=>{mouse.down=false});
     addEventListener('contextmenu',e=>e.preventDefault());
 
+    // Prevent zoom/scroll on mobile
+    document.addEventListener('touchstart',e=>{if(e.target.closest('#mobile-controls')||e.target===canvas)e.preventDefault()},{passive:false});
+    document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+
     // Mobile touch controls
     const joystick=document.getElementById('joystick');
     const knob=document.getElementById('joystick-knob');
@@ -583,22 +590,23 @@
     const btnReload=document.getElementById('btn-reload');
     const btnWeapon=document.getElementById('btn-weapon');
     let joyTouch=null;
-    const joyCenter={x:60,y:60};
+    const joyCenter={x:70,y:70};
+    const joyMaxDist=50;
 
     function handleJoyMove(cx,cy){
         const dx=cx-joyCenter.x,dy=cy-joyCenter.y;
-        const dist=Math.hypot(dx,dy);
-        const maxDist=45;
-        const clampedDist=Math.min(dist,maxDist);
+        const d=Math.hypot(dx,dy);
+        const clamped=Math.min(d,joyMaxDist);
         const angle=Math.atan2(dy,dx);
-        const kx=Math.cos(angle)*clampedDist;
-        const ky=Math.sin(angle)*clampedDist;
-        knob.style.transform=`translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
-        keys['KeyQ']=dx<-12;keys['KeyD']=dx>12;
-        keys['KeyZ']=dy<-12;keys['KeyS']=dy>12;
+        knob.style.left=(70+Math.cos(angle)*clamped)+'px';
+        knob.style.top=(70+Math.sin(angle)*clamped)+'px';
+        knob.style.transform='translate(-50%,-50%)';
+        keys['KeyQ']=dx<-15;keys['KeyD']=dx>15;
+        keys['KeyZ']=dy<-15;keys['KeyS']=dy>15;
     }
 
     function resetJoy(){
+        knob.style.left='50%';knob.style.top='50%';
         knob.style.transform='translate(-50%,-50%)';
         keys['KeyQ']=false;keys['KeyD']=false;keys['KeyZ']=false;keys['KeyS']=false;
     }
@@ -620,27 +628,31 @@
         }
     },{passive:false});
 
-    joystick.addEventListener('touchend',e=>{
+    function handleJoyEnd(e){
         for(const t of e.changedTouches){
             if(t.identifier===joyTouch){joyTouch=null;resetJoy()}
         }
-    });
+    }
+    joystick.addEventListener('touchend',handleJoyEnd);
+    joystick.addEventListener('touchcancel',handleJoyEnd);
 
-    // Fire button - auto aim at nearest enemy
+    // Fire button - auto-aim at nearest enemy, set mouse in screen coords
     let fireInterval=null;
+    function doAutoFire(){
+        if(enemies.length===0)return;
+        let nearest=enemies[0],minD=dist(player,enemies[0]);
+        for(const en of enemies){const d=dist(player,en);if(d<minD){minD=d;nearest=en}}
+        mouse.x=nearest.x-camera.x;
+        mouse.y=nearest.y-camera.y;
+        mouse.down=true;
+    }
+
     btnFire.addEventListener('touchstart',e=>{
-        e.preventDefault();
-        fireInterval=setInterval(()=>{
-            if(enemies.length>0){
-                let nearest=enemies[0],minD=dist(player,enemies[0]);
-                for(const en of enemies){const d=dist(player,en);if(d<minD){minD=d;nearest=en}}
-                mouse.x=(nearest.x-camera.x);
-                mouse.y=(nearest.y-camera.y);
-                mouse.down=true;
-            }
-        },50);
+        e.preventDefault();doAutoFire();
+        fireInterval=setInterval(doAutoFire,50);
     },{passive:false});
     btnFire.addEventListener('touchend',e=>{e.preventDefault();clearInterval(fireInterval);mouse.down=false},{passive:false});
+    btnFire.addEventListener('touchcancel',e=>{clearInterval(fireInterval);mouse.down=false});
 
     btnReload.addEventListener('touchstart',e=>{e.preventDefault();weapons[1].bullets=weapons[1].maxBullets;weapons[2].bullets=weapons[2].maxBullets;updateWeaponBar()},{passive:false});
     btnWeapon.addEventListener('touchstart',e=>{e.preventDefault();currentWeapon=(currentWeapon+1)%3;updateWeaponBar()},{passive:false});
