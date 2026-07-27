@@ -254,6 +254,29 @@ fC.addEventListener('touchstart',function(e){
 // Rain
 var rain=[];for(var i=0;i<120;i++)rain.push({x:Math.random()*2000,y:Math.random()*1200,l:4+Math.random()*8,v:6+Math.random()*12,a:0.02+Math.random()*0.04});
 
+// Pedestrians
+var peds=[];
+function genPeds(){
+    peds=[];
+    for(var i=0;i<10;i++){
+        peds.push({
+            x:Math.random()*W*1.5-W*0.25,
+            y:H*0.58+Math.random()*H*0.06,
+            spd:0.2+Math.random()*0.6,
+            dir:Math.random()>0.5?1:-1,
+            h:8+Math.random()*5,
+            w:2+Math.random()*1.5,
+            sway:Math.random()*Math.PI*2,
+            layer:Math.random()>0.5?0:1
+        });
+    }
+}
+genPeds();
+addEventListener('resize',function(){genCity();genTargets();genConns();genPeds()});
+
+// Fish-eye distortion buffer
+var fisheyeBuf=null;
+
 // Grain
 var grainBuf=null;
 function drawGrain(){
@@ -339,7 +362,87 @@ function drawCity(){
             mx.fillStyle='rgba(255,20,20,0.4)';mx.fillRect(c.x+tl-1,c.y-c.h,2,2);
         }
     }
+
+    // Pedestrians
+    for(var i=0;i<peds.length;i++){
+        var p=peds[i];p.x+=p.spd*p.dir;p.sway+=0.08;
+        if(p.dir>0&&p.x>W*1.2)p.x=-30;
+        if(p.dir<0&&p.x<-30)p.x=W*1.2;
+        var swayX=Math.sin(p.sway)*0.8;
+        // Body
+        mx.fillStyle='rgba(12,13,18,0.85)';
+        mx.fillRect(p.x+p.swayX-p.w/2,p.y-p.h,p.w,p.h);
+        // Head
+        mx.beginPath();mx.arc(p.x+p.swayX,p.y-p.h-2,2,0,Math.PI*2);mx.fill();
+        // Legs animation
+        var legOff=Math.sin(p.sway*2)*1.5;
+        mx.fillRect(p.x+p.swayX-0.8,p.y,1.5,3+legOff);
+        mx.fillRect(p.x+p.swayX+0.3,p.y,1.5,3-legOff);
+    }
+
+    // ctOS grid on ground
+    mx.strokeStyle='rgba(0,200,150,0.025)';mx.lineWidth=0.5;
+    var gridSpacing=40;
+    for(var gx=0;gx<W+100;gx+=gridSpacing){
+        mx.beginPath();mx.moveTo(gx,H*0.6);mx.lineTo(gx,H);mx.stroke();
+    }
+    for(var gy=H*0.6;gy<H;gy+=gridSpacing*0.6){
+        mx.beginPath();mx.moveTo(0,gy);mx.lineTo(W,gy);mx.stroke();
+    }
 }
+
+// Ambient city sounds
+var audioCtx=null;
+function initAudio(){
+    if(audioCtx)return;
+    try{
+        audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+        // City rumble (low frequency noise)
+        var bufSz=audioCtx.sampleRate*4;
+        var buf=audioCtx.createBuffer(1,bufSz,audioCtx.sampleRate);
+        var data=buf.getChannelData(0);
+        var val=0;
+        for(var i=0;i<bufSz;i++){
+            val+=((Math.random()*2-1)*0.02);
+            val*=0.998;
+            data[i]=val;
+        }
+        var src=audioCtx.createBufferSource();src.buffer=buf;src.loop=true;
+        var gain=audioCtx.createGain();gain.gain.value=0.06;
+        var filter=audioCtx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=200;
+        src.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);src.start();
+
+        // Distant siren (sine sweep)
+        var osc=audioCtx.createOscillator();osc.type='sine';osc.frequency.value=0;
+        var sGain=audioCtx.createGain();sGain.gain.value=0;
+        var lfo=audioCtx.createOscillator();lfo.type='sine';lfo.frequency.value=0.1;
+        var lfoG=audioCtx.createGain();lfoG.gain.value=400;
+        lfo.connect(lfoG);lfoG.connect(osc.frequency);
+        var sLfo2=audioCtx.createOscillator();sLfo2.type='sine';sLfo2.frequency.value=0.05;
+        var sLfo2G=audioCtx.createGain();sLfo2G.gain.value=0.008;
+        sLfo2.connect(sLfo2G);sLfo2G.connect(sGain.gain);
+        osc.connect(sGain);sGain.connect(audioCtx.destination);
+        osc.start();lfo.start();sLfo2.start();
+
+        // Wind gusts
+        function gust(){
+            if(!audioCtx)return;
+            var gBuf=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate);
+            var gData=gBuf.getChannelData(0);
+            for(var i=0;i<gData.length;i++){
+                gData[i]=(Math.random()*2-1)*Math.sin(Math.PI*i/gData.length)*0.015;
+            }
+            var gSrc=audioCtx.createBufferSource();gSrc.buffer=gBuf;
+            var gFilt=audioCtx.createBiquadFilter();gFilt.type='bandpass';gFilt.frequency.value=800+Math.random()*600;gFilt.Q.value=0.5;
+            var gGain=audioCtx.createGain();gGain.gain.value=0.3;
+            gSrc.connect(gFilt);gFilt.connect(gGain);gGain.connect(audioCtx.destination);gSrc.start();
+            setTimeout(gust,3000+Math.random()*8000);
+        }
+        gust();
+    }catch(e){}
+}
+document.addEventListener('click',initAudio);
+document.addEventListener('touchstart',initAudio);
 
 // Main render
 var staticI=0,glitchAmt=0,glitchTmr=0;
@@ -431,6 +534,30 @@ function render(){
     // Scan lines (very subtle)
     fx.fillStyle='rgba(0,0,0,0.03)';
     for(var y=0;y<H;y+=3)fx.fillRect(0,y,W,1);
+
+    // Fish-eye lens distortion
+    if(!fisheyeBuf||fisheyeBuf.width!==W){
+        fisheyeBuf=document.createElement('canvas');fisheyeBuf.width=W;fisheyeBuf.height=H;
+    }
+    var feCtx=fisheyeBuf.getContext('2d');
+    feCtx.clearRect(0,0,W,H);
+    var strength=0.15;
+    var step=4;
+    for(var y2=0;y2<H;y2+=step){
+        for(var x2=0;x2<W;x2+=step){
+            var nx=(x2-W/2)/(W/2);
+            var ny=(y2-H/2)/(H/2);
+            var r2=nx*nx+ny*ny;
+            var distort=1+strength*r2;
+            var sx2=W/2+(x2-W/2)*distort;
+            var sy2=H/2+(y2-H/2)*distort;
+            if(sx2>=0&&sx2<W&&sy2>=0&&sy2<H){
+                feCtx.drawImage(fC,sx2,sy2,1,1,x2,y2,step,step);
+            }
+        }
+    }
+    mx.clearRect(0,0,W,H);
+    mx.drawImage(fisheyeBuf,0,0);
 
     requestAnimationFrame(render);
 }
