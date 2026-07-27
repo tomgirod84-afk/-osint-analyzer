@@ -150,41 +150,54 @@ function sfxGlitch(){if(!ac)return;var o=ac.createOscillator(),g=ac.createGain()
 function sfxDialup(){if(!ac)return;for(var i=0;i<5;i++){setTimeout(function(){var o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=800+Math.random()*1200;g.gain.setValueAtTime(0.06,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.08);o.connect(g);g.connect(mg);o.start();o.stop(ac.currentTime+0.1)},i*60)}}
 
 // ===== VOICE ENGINE =====
-var voice=null,voiceReady=false;
-function initVoice(){
+var voice=null;
+
+function findVoice(){
     var v=speechSynthesis.getVoices();
-    if(!v.length)return;
-    voice=v.find(function(x){return x.name.indexOf('Google')>=0&&x.lang.startsWith('fr')})
+    console.log('Available voices:',v.length,v.map(function(x){return x.name+' ('+x.lang+')'}));
+    if(!v.length)return null;
+    return v.find(function(x){return x.name.indexOf('Google')>=0&&x.lang.indexOf('fr')>=0})
         ||v.find(function(x){return x.name.indexOf('Google')>=0})
         ||v.find(function(x){return x.name.indexOf('Thomas')>=0})
-        ||v.find(function(x){return x.lang.startsWith('fr')&&(x.name.indexOf('Male')>=0||x.name.indexOf('Homme')>=0||x.name.indexOf('Paul')>=0)})
-        ||v.find(function(x){return x.lang.startsWith('fr')})
+        ||v.find(function(x){return x.lang.indexOf('fr')>=0&&(x.name.indexOf('Male')>=0||x.name.indexOf('Homme')>=0||x.name.indexOf('Paul')>=0)})
+        ||v.find(function(x){return x.lang.indexOf('fr')>=0})
         ||v.find(function(x){return x.name.indexOf('Daniel')>=0})
         ||v.find(function(x){return x.name.indexOf('James')>=0})
-        ||v.find(function(x){return x.lang.startsWith('en')})
+        ||v.find(function(x){return x.lang.indexOf('en')>=0})
         ||v[0];
-    voiceReady=!!voice;
-    console.log('Voice found:',voice?voice.name:'NONE');
 }
-speechSynthesis.onvoiceschanged=initVoice;
-initVoice();
-// Retry every 500ms until voice is found
-var voiceRetry=setInterval(function(){
-    if(voiceReady){clearInterval(voiceRetry);return}
-    initVoice();
-},500);
+
+// Load voices on events
+speechSynthesis.onvoiceschanged=function(){voice=findVoice();console.log('onvoiceschanged voice:',voice?voice.name:'none')};
+voice=findVoice();
+
+function unlockVoice(){
+    // Force voice load on user gesture
+    voice=findVoice();
+    speechSynthesis.cancel();
+    // Try a silent utterance to unlock
+    try{
+        var u=new SpeechSynthesisUtterance(' ');
+        u.volume=0;u.rate=1;u.pitch=1;
+        if(voice)u.voice=voice;
+        speechSynthesis.speak(u);
+    }catch(e){}
+    // Re-try finding voice after a short delay
+    setTimeout(function(){voice=findVoice()},300);
+    setTimeout(function(){voice=findVoice()},1000);
+}
 
 function speak(text){
     return new Promise(function(res){
-        // Force retry voice if not found
-        if(!voice)initVoice();
+        // Always try to find voice first
+        if(!voice)voice=findVoice();
         if(!voice){res();return}
         speechSynthesis.cancel();
         var u=new SpeechSynthesisUtterance(text);
         u.voice=voice;u.rate=0.88;u.pitch=0.82;u.volume=1.0;
         u.onend=function(){res()};
         u.onerror=function(){res()};
-        speechSynthesis.speak(u);
+        try{speechSynthesis.speak(u)}catch(e){res()}
     });
 }
 
@@ -457,6 +470,7 @@ function showChoices(choices){
 async function start(){
     document.getElementById('title').style.display='none';
     initAudio();
+    unlockVoice();
 
     // WD2 boot sequence
     sfxDialup();await wait(300);
