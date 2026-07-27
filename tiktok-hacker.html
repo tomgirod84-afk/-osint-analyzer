@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>TikTok Hacker</title>
+<title>Sentinel Compil</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Courier New',monospace}
@@ -13,23 +13,21 @@ canvas{display:block;width:100%;height:100%;object-fit:cover}
   width:90%;text-align:center;color:#fff;font-size:clamp(13px,4vw,20px);
   text-shadow:0 0 12px rgba(0,255,180,1),0 0 25px rgba(0,255,180,0.5),2px 2px 6px rgba(0,0,0,0.95);
   line-height:1.5;padding:10px 14px;
-  background:rgba(0,0,0,0.6);border-radius:10px;display:none;font-weight:bold}
+  background:rgba(0,0,0,0.6);border-radius:10px;display:none;font-weight:bold;
+  opacity:0;transition:opacity 0.4s}
+#progress{position:absolute;bottom:0;left:0;height:3px;background:rgba(0,220,180,0.6);transition:width 0.1s linear;z-index:5}
 #hud-top{position:absolute;top:12px;left:12px;color:rgba(0,220,180,0.5);font-size:10px;letter-spacing:1px}
 #record{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px;
   color:rgba(255,40,40,0.8);font-size:10px;letter-spacing:1px}
 #record .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,40,40,0.8);animation:blink 1s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-#skip{position:absolute;bottom:4%;right:12px;pointer-events:all;
-  color:rgba(255,255,255,0.4);font-size:11px;padding:8px 14px;
-  border:1px solid rgba(255,255,255,0.15);border-radius:20px;background:rgba(0,0,0,0.3);cursor:pointer}
 #startScreen{position:absolute;top:0;left:0;width:100%;height:100%;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:rgba(0,0,0,0.85);z-index:10;pointer-events:all;cursor:pointer}
-#startScreen .icon{font-size:60px;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(0,220,180,0.6))}
-#startScreen .txt{color:rgba(0,220,180,0.8);font-size:14px;letter-spacing:2px}
+  background:rgba(0,0,0,0.9);z-index:10;pointer-events:all;cursor:pointer}
+#startScreen .icon{font-size:60px;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(0,220,180,0.6));animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.1);opacity:0.8}}
+#startScreen .txt{color:rgba(0,220,180,0.8);font-size:16px;letter-spacing:3px}
 #startScreen .sub{color:rgba(255,255,255,0.3);font-size:10px;margin-top:8px}
-#loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  color:rgba(0,220,180,0.5);font-size:12px;letter-spacing:1px;display:none}
 </style>
 </head>
 <body>
@@ -38,8 +36,7 @@ canvas{display:block;width:100%;height:100%;object-fit:cover}
   <div id="hud-top">SENTINEL // COMPIL<br><span id="hudTime"></span></div>
   <div id="record"><div class="dot"></div>LIVE</div>
   <div id="subtitle"></div>
-  <div id="skip" onclick="nextLine()">SKIP >></div>
-  <div id="loading">CHARGEMENT DES IMAGES...</div>
+  <div id="progress"></div>
   <div id="startScreen" onclick="start()">
     <div class="icon">&#9654;</div>
     <div class="txt">SENTINEL // COMPIL</div>
@@ -70,66 +67,152 @@ var lines=[
   {id:"tk14",t:"Cybersécurité c'est pas un métier. C'est un état d'esprit."},
   {id:"tk15",t:"Tout ce qui est connecté peut être compromis. Tout."}
 ];
-var lineIdx=0,speaking=false;
+var lineIdx=0,speaking=false,sceneStartTime=0;
 
-// Real photos from Unsplash (free, no API key needed)
-var photos=[
-  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&q=80",   // matrix code
-  "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&q=80",   // security camera
-  "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&q=80", // phone tracking
-  "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=800&q=80",   // wifi router
-  "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&q=80",   // door opening
-  "https://images.unsplash.com/photo-1593784991095-a205069470b6?w=800&q=80", // smart tv
-  "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&q=80",   // code screen
-  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&q=80", // dark web
-  "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=800&q=80",   // sim card
-  "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?w=800&q=80", // social engineering
-  "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80",   // server room
-  "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&q=80",   // password lock
-  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80",   // hacker
-  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80", // laptop code
-  "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=800&q=80"    // iot devices
+// Photos
+var photosURLs=[
+  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=900&q=80",
+  "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=900&q=80",
+  "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=900&q=80",
+  "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=900&q=80",
+  "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=900&q=80",
+  "https://images.unsplash.com/photo-1593784991095-a205069470b6?w=900&q=80",
+  "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=900&q=80",
+  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=900&q=80",
+  "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=900&q=80",
+  "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?w=900&q=80",
+  "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=900&q=80",
+  "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=900&q=80",
+  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=900&q=80",
+  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=900&q=80",
+  "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=900&q=80"
 ];
-var photosLoaded=[];
-var allLoaded=false;
+var photos=[];
+var photosReady=false;
 
 function loadPhotos(){
   var loaded=0;
-  var loading=document.getElementById('loading');
-  loading.style.display='block';
-  photos.forEach(function(url,i){
-    var img=new Image();
-    img.crossOrigin='anonymous';
-    img.onload=function(){photosLoaded[i]=img;loaded++;if(loaded===photos.length){allLoaded=true;loading.style.display='none';document.querySelector('#startScreen .sub').textContent='tap to start'}};
-    img.onerror=function(){loaded++;console.warn('Failed: '+url);if(loaded===photos.length){allLoaded=true;loading.style.display='none';document.querySelector('#startScreen .sub').textContent='tap to start'}};
+  photosURLs.forEach(function(url,i){
+    var img=new Image();img.crossOrigin='anonymous';
+    img.onload=function(){photos[i]=img;loaded++;if(loaded===photosURLs.length)photosReady=true};
+    img.onerror=function(){loaded++;if(loaded===photosURLs.length)photosReady=true};
     img.src=url;
   });
 }
+loadPhotos();
 
-// Audio
-var ac=null,audioBuffers={},loadingDone=false;
-function initAudio(){if(!ac)try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}
+// === MUSIC ENGINE ===
+var ac=null,musicStarted=false;
+function initMusic(){
+  if(!ac)try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}
+  if(!ac||musicStarted)return;musicStarted=true;
 
-function loadAllVoices(){
+  // Master gain
+  var master=ac.createGain();master.gain.value=0.3;master.connect(ac.destination);
+
+  // Reverb
+  var reverb=ac.createConvolver();
+  var rLen=ac.sampleRate*2;var rBuf=ac.createBuffer(2,rLen,ac.sampleRate);
+  for(var ch=0;ch<2;ch++){var d=rBuf.getChannelData(ch);for(var i=0;i<rLen;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/rLen,3)}
+  reverb.buffer=rBuf;
+  var revGain=ac.createGain();revGain.gain.value=0.25;
+
+  // Pad (dark ambient drone)
+  var pad1=ac.createOscillator();pad1.type='sawtooth';pad1.frequency.value=55;
+  var pad2=ac.createOscillator();pad2.type='sine';pad2.frequency.value=82.5;
+  var pad3=ac.createOscillator();pad3.type='triangle';pad3.frequency.value=110;
+  var padGain=ac.createGain();padGain.gain.value=0.08;
+  var padFilt=ac.createBiquadFilter();padFilt.type='lowpass';padFilt.frequency.value=300;padFilt.Q.value=2;
+  pad1.connect(padFilt);pad2.connect(padFilt);pad3.connect(padFilt);padFilt.connect(padGain);padGain.connect(master);
+
+  // LFO on pad
+  var lfo=ac.createOscillator();lfo.type='sine';lfo.frequency.value=0.1;
+  var lfoG=ac.createGain();lfoG.gain.value=15;
+  lfo.connect(lfoG);lfoG.connect(pad1.frequency);
+
+  // Bass pulse
+  var bass=ac.createOscillator();bass.type='sine';bass.frequency.value=40;
+  var bassGain=ac.createGain();bassGain.gain.value=0;
+  bass.connect(bassGain);bassGain.connect(master);
+  // Bass rhythm
+  var bassInterval=60/128*4; // 128 BPM, every 4 beats
+  function pulseBass(){
+    if(!ac)return;
+    var now=ac.currentTime;
+    bassGain.gain.cancelScheduledValues(now);
+    bassGain.gain.setValueAtTime(0.15,now);
+    bassGain.gain.exponentialRampToValueAtTime(0.001,now+bassInterval*0.8);
+    bass.frequency.setValueAtTime(40+Math.random()*20,now);
+    setTimeout(pulseBass,bassInterval*1000);
+  }
+
+  // Hi-hat (noise)
+  var hatLen=0.05;
+  function playHat(){
+    if(!ac)return;
+    var buf=ac.createBuffer(1,ac.sampleRate*hatLen,ac.sampleRate);
+    var data=buf.getChannelData(0);
+    for(var i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,8);
+    var src=ac.createBufferSource();src.buffer=buf;
+    var hFilt=ac.createBiquadFilter();hFilt.type='highpass';hFilt.frequency.value=8000;
+    var hGain=ac.createGain();hGain.gain.value=0.06;
+    src.connect(hFilt);hFilt.connect(hGain);hGain.connect(master);hGain.connect(reverb);
+    src.start();
+  }
+  // Hi-hat pattern (8th notes at 128 BPM)
+  var hatInterval=60/128/2*1000;
+  var hatCount=0;
+  function hatLoop(){
+    hatCount++;
+    if(hatCount%2===0)playHat(); // accent on quarter notes
+    else{if(Math.random()>0.3)playHat()} // ghost notes
+    setTimeout(hatLoop,hatInterval);
+  }
+
+  // Kick drum
+  function playKick(){
+    if(!ac)return;
+    var now=ac.currentTime;
+    var osc=ac.createOscillator();osc.type='sine';
+    osc.frequency.setValueAtTime(150,now);osc.frequency.exponentialRampToValueAtTime(30,now+0.15);
+    var g=ac.createGain();g.gain.setValueAtTime(0.25,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.3);
+    osc.connect(g);g.connect(master);g.connect(reverb);
+    osc.start(now);osc.stop(now+0.3);
+  }
+  var kickInterval=60/128*1000;
+  function kickLoop(){playKick();setTimeout(kickLoop,kickInterval)}
+
+  // Pad reverb
+  padGain.connect(reverb);reverb.connect(revGain);revGain.connect(master);
+
+  // Start everything
+  var now=ac.currentTime;
+  pad1.start(now);pad2.start(now);pad3.start(now);lfo.start(now);bass.start(now);
+  setTimeout(function(){pulseBass();kickLoop();hatLoop()},500);
+}
+
+// === AUDIO VOICE ===
+var audioBuffers={voiceReady:false};
+function loadVoices(){
   var loaded=0;
   lines.forEach(function(l){
     fetch('tiktok_voices/'+l.id+'.mp3')
       .then(function(r){return r.arrayBuffer()})
       .then(function(b){return ac.decodeAudioData(b)})
-      .then(function(d){audioBuffers[l.id]=d;loaded++;if(loaded===lines.length){loadingDone=true}})
+      .then(function(d){audioBuffers[l.id]=d;loaded++;if(loaded===lines.length)audioBuffers.voiceReady=true})
       .catch(function(){loaded++});
   });
 }
 
-function playBuffer(id,cb){
+function playVoice(id,cb){
   if(!audioBuffers[id])return;
   var src=ac.createBufferSource();src.buffer=audioBuffers[id];src.playbackRate.value=1.05;
-  var comp=ac.createDynamicsCompressor();comp.threshold.value=-20;comp.knee.value=10;comp.ratio.value=4;
-  var rev=ac.createConvolver();var rL=ac.sampleRate*1.2;var rB=ac.createBuffer(2,rL,ac.sampleRate);
-  for(var ch=0;ch<2;ch++){var d=rB.getChannelData(ch);for(var i=0;i<rL;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/rL,2.5)}
+  var comp=ac.createDynamicsCompressor();comp.threshold.value=-18;comp.ratio.value=3;
+  var rev=ac.createConvolver();var rL=ac.sampleRate*0.8;var rB=ac.createBuffer(1,rL,ac.sampleRate);
+  var d=rB.getChannelData(0);for(var i=0;i<rL;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/rL,2);
   rev.buffer=rB;
-  var dry=ac.createGain();dry.gain.value=0.85;var wet=ac.createGain();wet.gain.value=0.18;
-  var out=ac.createGain();out.gain.value=1.1;
+  var dry=ac.createGain();dry.gain.value=0.8;var wet=ac.createGain();wet.gain.value=0.15;
+  var out=ac.createGain();out.gain.value=1.2;
   src.connect(comp);comp.connect(dry);dry.connect(out);comp.connect(rev);rev.connect(wet);wet.connect(out);out.connect(ac.destination);
   src.onended=cb||function(){};src.start();
 }
@@ -137,267 +220,114 @@ function playBuffer(id,cb){
 function speak(text,id){
   if(!ac)return;speaking=true;
   var sub=document.getElementById('subtitle');
-  sub.textContent=text;sub.style.display='block';sub.style.opacity='0';
-  setTimeout(function(){sub.style.opacity='1';sub.style.transition='opacity 0.3s'},50);
-  playBuffer(id,function(){
+  sub.textContent=text;sub.style.display='block';
+  setTimeout(function(){sub.style.opacity='1'},30);
+  playVoice(id,function(){
     setTimeout(function(){speaking=false;sub.style.opacity='0';
-      setTimeout(function(){sub.style.display='none';lineIdx++;if(lineIdx>=lines.length)lineIdx=0;playLine()},400)},300);
+      setTimeout(function(){sub.style.display='none';nextScene()},500)},400);
   });
 }
 
-function nextLine(){if(!speaking)return;speaking=false;document.getElementById('subtitle').style.display='none';lineIdx++;if(lineIdx>=lines.length)lineIdx=0;playLine()}
+function nextScene(){
+  lineIdx++;if(lineIdx>=lines.length)lineIdx=0;
+  sceneStartTime=Date.now();
+  playLine();
+}
+function nextLine(){if(!speaking)return;speaking=false;document.getElementById('subtitle').style.display='none';nextScene()}
 function playLine(){speak(lines[lineIdx].t,lines[lineIdx].id)}
 
 function start(){
   document.getElementById('startScreen').style.display='none';
-  initAudio();
-  if(!allLoaded){
-    document.getElementById('loading').style.display='block';
-    var wl=setInterval(function(){
-      if(allLoaded){clearInterval(wl);document.getElementById('loading').style.display='none';
-        if(!loadingDone){loadAllVoices();var wv=setInterval(function(){if(loadingDone){clearInterval(wv);lineIdx=0;playLine()}},300)}
-        else{lineIdx=0;playLine()}
-      }
-    },300);
-  }else{
-    if(!loadingDone){loadAllVoices();var wv2=setInterval(function(){if(loadingDone){clearInterval(wv2);lineIdx=0;playLine()}},300)}
-    else{lineIdx=0;playLine()}
-  }
+  initMusic();
+  if(!audioBuffers.voiceReady){
+    loadVoices();
+    var w=setInterval(function(){if(audioBuffers.voiceReady){clearInterval(w);lineIdx=0;sceneStartTime=Date.now();playLine()}},300);
+  }else{lineIdx=0;sceneStartTime=Date.now();playLine()}
 }
 
-// Start loading photos immediately
-loadPhotos();
+// === RENDER ===
+var glitchAmt=0,glitchTimer=0;
 
-// Draw photo as background, centered/cropped to fill
-function drawPhoto(img){
-  if(!img)return false;
+function drawPhotoSmooth(img,t){
+  if(!img)return;
+  // Ken Burns: slow zoom in
+  var elapsed=(t-sceneStartTime)*0.0001;
+  var scale=1+elapsed*0.15;
   var iw=img.width,ih=img.height;
-  var scale=Math.max(W/iw,H/ih);
   var sw=W/scale,sh=H/scale;
   var sx=(iw-sw)/2,sy=(ih-sh)/2;
-  cx.drawImage(img,sx,sy,sw,sh,0,0,W,H);
-  return true;
-}
-
-// Overlay effects on each scene
-function drawOverlay(t,sceneIdx){
-  // Dark tint
-  cx.fillStyle='rgba(0,0,0,0.45)';cx.fillRect(0,0,W,H);
-
-  // Scene-specific overlays
-  switch(sceneIdx){
-    case 0: // passwords
-      cx.fillStyle='rgba(255,40,40,0.7)';cx.font='bold clamp(40px,12vw,80px) Courier New';
-      cx.fillText('93%',W*0.1,H*0.3);
-      cx.fillStyle='rgba(255,255,255,0.3)';cx.font='clamp(12px,3vw,18px) Courier New';
-      cx.fillText('DES MOTS DE PASSE CRACKÉS',W*0.1,H*0.38);
-      cx.fillText('EN MOINS DE 6 HEURES',W*0.1,H*0.44);
-      // Progress bar
-      var prog=Math.min(0.93,(t%8000)/8000);
-      cx.fillStyle='rgba(255,255,255,0.1)';cx.fillRect(W*0.1,H*0.52,W*0.8,20);
-      cx.fillStyle='rgba(0,220,180,0.6)';cx.fillRect(W*0.1,H*0.52,W*0.8*prog,20);
-      cx.fillStyle='#fff';cx.font='12px Courier New';cx.fillText(Math.round(prog*100)+'%',W*0.1+W*0.8*prog-25,H*0.52+15);
-      break;
-
-    case 1: // camera
-      cx.strokeStyle='rgba(0,220,180,0.4)';cx.lineWidth=2;
-      cx.strokeRect(W*0.05,H*0.05,W*0.9,H*0.85);
-      cx.fillStyle='rgba(0,220,180,0.4)';cx.font='10px Courier New';
-      cx.fillText('CAM-0472 // SURVEILLANCE',W*0.08,H*0.09);
-      var now=new Date();cx.fillText(('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+':'+('0'+now.getSeconds()).slice(-2),W*0.08,H*0.12);
-      cx.fillStyle='rgba(255,40,40,0.7)';cx.fillText('● REC',W*0.8,H*0.09);
-      // Crosshair
-      cx.strokeStyle='rgba(0,220,180,0.2)';cx.lineWidth=0.5;
-      cx.beginPath();cx.moveTo(W/2-20,H/2);cx.lineTo(W/2+20,H/2);cx.moveTo(W/2,H/2-20);cx.lineTo(W/2,H/2+20);cx.stroke();
-      cx.beginPath();cx.arc(W/2,H/2,15,0,Math.PI*2);cx.stroke();
-      cx.fillStyle='rgba(0,220,180,0.3)';cx.font='10px Courier New';
-      cx.fillText("PORT D'ENTRÉE DÉTECTÉE",W*0.15,H*0.88);
-      break;
-
-    case 2: // phone tracking
-      var pulse=8+Math.sin(t*0.005)*4;
-      cx.fillStyle='rgba(255,40,40,0.2)';cx.beginPath();cx.arc(W/2,H*0.4,pulse+20,0,Math.PI*2);cx.fill();
-      cx.fillStyle='rgba(255,40,40,0.7)';cx.beginPath();cx.arc(W/2,H*0.4,10,0,Math.PI*2);cx.fill();
-      cx.fillStyle='#fff';cx.beginPath();cx.arc(W/2,H*0.4,3,0,Math.PI*2);cx.fill();
-      cx.fillStyle='rgba(255,255,255,0.5)';cx.font='12px Courier New';
-      cx.fillText('LOCALISÉ EN TEMPS RÉEL',W*0.2,H*0.55);
-      var secs=~~((t/1000)%30);
-      cx.fillStyle='rgba(255,40,40,0.5)';cx.fillText('Tracké il y a '+secs+'s',W*0.25,H*0.6);
-      break;
-
-    case 3: // wifi
-      cx.fillStyle='rgba(0,100,200,0.1)';cx.beginPath();cx.ellipse(W/2,H*0.5,W*0.4,H*0.2,0,0,Math.PI*2);cx.fill();
-      for(var i=0;i<4;i++){
-        var dy=H*0.25+((t*0.04+i*40)%H*0.3);
-        cx.fillStyle='rgba(0,220,180,0.4)';cx.fillRect(W*0.2+i*W*0.18,dy,2,8);
-      }
-      cx.fillStyle='rgba(255,255,255,0.4)';cx.font='11px Courier New';
-      cx.fillText('TOUT LE MONDE VOIT TES DONNÉES',W*0.1,H*0.85);
-      break;
-
-    case 4: // door
-      var knockX=W*0.5;var knockY=H*0.4;
-      var knockOff=Math.sin((t%1500)/1500*Math.PI*6)*4;
-      cx.fillStyle='rgba(255,255,255,0.15)';
-      cx.beginPath();cx.arc(knockX+knockOff,knockY,15,0,Math.PI*2);cx.fill();
-      for(var f=0;f<4;f++)cx.fillRect(knockX+knockOff+f*6-10,knockY-16,5,12);
-      cx.strokeStyle='rgba(255,255,255,0.1)';cx.lineWidth=1;
-      for(var r=0;r<3;r++){cx.beginPath();cx.arc(knockX+knockOff,knockY,22+r*10,0,Math.PI*2);cx.stroke()}
-      cx.fillStyle='rgba(0,220,180,0.5)';cx.font='12px Courier New';
-      cx.fillText("IL TE DEMANDE D'OUVRIR",W*0.15,H*0.85);
-      break;
-
-    case 5: // tv
-      for(var i=0;i<6;i++){
-        var wy=H*0.6+i*10;
-        cx.strokeStyle='rgba(255,40,40,'+(0.25-i*0.03)+')';cx.lineWidth=1;
-        cx.beginPath();cx.moveTo(W*0.2,wy);cx.lineTo(W*0.8,wy);cx.stroke();
-      }
-      cx.fillStyle='rgba(255,40,40,0.5)';cx.font='11px Courier New';
-      cx.fillText('MIC: TOUJOURS ACTIF',W*0.25,H*0.75);
-      cx.fillStyle='rgba(255,40,40,0.4)';cx.font='16px Arial';
-      cx.fillText('🔴',W*0.48,H*0.82);
-      break;
-
-    case 6: // same password
-      cx.fillStyle='rgba(255,40,40,0.6)';cx.font='bold clamp(25px,7vw,50px) Courier New';
-      cx.fillText('98%',W*0.1,H*0.2);
-      cx.fillStyle='rgba(255,255,255,0.25)';cx.font='11px Courier New';
-      cx.fillText('MÊME MOT DE PASSE PARTOUT',W*0.1,H*0.28);
-      var sites=['Gmail','Facebook','Instagram','Twitter','Netflix','Amazon'];
-      for(var i=0;i<sites.length;i++){
-        cx.fillStyle='rgba(255,255,255,0.15)';cx.fillRect(W*0.08,H*0.34+i*H*0.07,W*0.84,H*0.055);
-        cx.fillStyle='rgba(0,220,180,0.4)';cx.font='10px Courier New';cx.fillText(sites[i],W*0.1,H*0.34+i*H*0.07+H*0.035);
-        cx.fillStyle='rgba(255,40,40,0.4)';cx.fillText('password123',W*0.55,H*0.34+i*H*0.07+H*0.035);
-      }
-      break;
-
-    case 7: // dark web
-      cx.fillStyle='rgba(200,50,50,0.4)';cx.font='12px Courier New';
-      cx.fillText('.onion // DARK WEB',W*0.1,H*0.1);
-      var items=['Exploit: $250K','CC Dumps: $800','Ransomware: $199/mois','DDoS: $50/jour'];
-      for(var i=0;i<items.length;i++){
-        cx.fillStyle='rgba(255,255,255,0.08)';cx.fillRect(W*0.08,H*0.15+i*H*0.1,W*0.84,H*0.08);
-        cx.fillStyle='rgba(200,50,50,0.5)';cx.font='10px Courier New';cx.fillText(items[i],W*0.1,H*0.15+i*H*0.1+H*0.05);
-      }
-      cx.fillStyle='rgba(0,220,180,0.3)';cx.font='10px Courier New';
-      cx.fillText("C'EST LE MÊME, SANS FILTRE",W*0.15,H*0.9);
-      break;
-
-    case 8: // sim swap
-      cx.fillStyle='rgba(255,40,40,0.5)';cx.font='bold 14px Courier New';
-      cx.fillText('SIM SWAP',W*0.3,H*0.1);
-      cx.fillStyle='rgba(255,255,255,0.15)';cx.font='10px Courier New';
-      cx.fillText('[1] Social engineering',W*0.1,H*0.2);
-      cx.fillText('[2] Identité volée',W*0.1,H*0.25);
-      cx.fillText('[3] Nouvelle SIM activée',W*0.1,H*0.3);
-      cx.fillText('[4] 2FA bypassé',W*0.1,H*0.35);
-      cx.fillText('[5] Instagram récupéré',W*0.1,H*0.4);
-      cx.fillStyle='rgba(255,40,40,0.4)';cx.fillText('EN 12 MINUTES',W*0.3,H*0.5);
-      break;
-
-    case 9: // phishing psy
-      cx.fillStyle='rgba(0,220,180,0.3)';cx.font='12px Courier New';
-      cx.fillText('PSYCHOLOGIE DU PHISHING',W*0.1,H*0.1);
-      var tricks=['URGENCE','PEUR','CURIOSITÉ','AIDE','AUTORITÉ'];
-      for(var i=0;i<tricks.length;i++){
-        var active=Math.sin(t*0.002+i*1.2)>0.3;
-        cx.fillStyle=active?'rgba(255,40,40,0.6)':'rgba(255,255,255,0.15)';
-        cx.font=(active?'bold ':'')+' 11px Courier New';
-        cx.fillText(tricks[i],W*0.1,H*0.2+i*H*0.1);
-        if(active){
-          cx.strokeStyle='rgba(255,40,40,0.3)';cx.lineWidth=1;
-          cx.beginPath();cx.moveTo(W*0.1+60,H*0.2+i*H*0.1-3);cx.lineTo(W*0.5,H*0.5);cx.stroke();
-        }
-      }
-      break;
-
-    case 10: // IP
-      cx.fillStyle='rgba(0,220,180,0.5)';cx.font='11px Courier New';
-      cx.fillText('IP: 86.214.xxx.xxx',W*0.1,H*0.15);
-      cx.fillText('ISP: Orange France',W*0.1,H*0.2);
-      cx.fillText('Paris, France',W*0.1,H*0.25);
-      cx.fillText('48.8566° N, 2.3522° E',W*0.1,H*0.3);
-      cx.fillStyle='rgba(255,40,40,0.4)';cx.font='12px Courier New';
-      cx.fillText('ADRESSE POSTALE SUR INTERNET',W*0.1,H*0.85);
-      break;
-
-    case 11: // passkey
-      cx.fillStyle='rgba(255,255,255,0.1)';cx.font='10px Courier New';
-      cx.fillText('MOTS DE PASSE: MORTS',W*0.1,H*0.15);
-      cx.fillStyle='rgba(0,220,180,0.5)';cx.font='12px Courier New';
-      cx.fillText('PASSE AU PASSKEY',W*0.1,H*0.25);
-      cx.fillText('→ Biométrie',W*0.1,H*0.35);
-      cx.fillText('→ Jamais sur serveur',W*0.1,H*0.4);
-      cx.fillText('→ Impossible à cracker',W*0.1,H*0.45);
-      break;
-
-    case 12: // hacker vision
-      cx.strokeStyle='rgba(255,40,40,0.4)';cx.lineWidth=1.5;
-      cx.strokeRect(W*0.15,H*0.15,W*0.3,H*0.25);
-      cx.strokeRect(W*0.55,H*0.15,W*0.3,H*0.25);
-      cx.strokeRect(W*0.35,H*0.5,W*0.3,H*0.25);
-      cx.fillStyle='rgba(255,40,40,0.5)';cx.font='9px Courier New';
-      cx.fillText('FAILLE: SQL INJECTION',W*0.17,H*0.19);
-      cx.fillText('PORT: 22/SSH OUVERTE',W*0.57,H*0.19);
-      cx.fillText('MDP: admin/admin',W*0.37,H*0.54);
-      var scanY=(t*0.05)%H;
-      cx.strokeStyle='rgba(0,220,180,0.15)';cx.lineWidth=0.5;
-      cx.beginPath();cx.moveTo(0,scanY);cx.lineTo(W,scanY);cx.stroke();
-      break;
-
-    case 13: // mindset
-      cx.fillStyle='rgba(0,220,180,0.4)';cx.font='12px Courier New';
-      var thoughts=['VIGILANCE','ANALYSE','PRÉVENTION','RÉPONSE','ADAPTATION'];
-      var active=~~(t*0.002)%thoughts.length;
-      cx.fillText(thoughts[active],W*0.3,H*0.45);
-      cx.fillStyle='rgba(0,220,180,0.2)';cx.font='10px Courier New';
-      cx.fillText('ÉTAT D\'ESPRIT',W*0.35,H*0.55);
-      break;
-
-    case 14: // everything connected
-      cx.fillStyle='rgba(255,40,40,0.4)';cx.font='12px Courier New';
-      cx.fillText('TOUT COMPROMIS',W*0.25,H*0.1);
-      var devs=['📱','💻','🖥️','📺','🚗','📷','⌚','🔊'];
-      for(var i=0;i<devs.length;i++){
-        var dx=W*0.1+Math.random()*W*0.8;
-        var dy=H*0.2+Math.random()*H*0.5;
-        cx.font='18px Arial';cx.fillText(devs[i],dx,dy);
-        cx.fillStyle='rgba(255,40,40,0.4)';cx.font='7px Courier New';cx.fillText('✗',dx+5,dy+15);
-      }
-      break;
-  }
-
-  // Vignette
-  var vig=cx.createRadialGradient(W/2,H/2,W*0.15,W/2,H/2,W*0.65);
-  vig.addColorStop(0,'transparent');vig.addColorStop(1,'rgba(0,0,0,0.5)');
-  cx.fillStyle=vig;cx.fillRect(0,0,W,H);
-
-  // Scan lines
-  cx.fillStyle='rgba(0,0,0,0.03)';
-  for(var y=0;y<H;y+=3)cx.fillRect(0,y,W,1);
+  cx.drawImage(img,Math.max(0,sx),Math.max(0,sy),sw,sh,0,0,W,H);
 }
 
 function render(){
   var t=Date.now();
   cx.clearRect(0,0,W,H);
 
-  // Draw photo background
-  var img=photosLoaded[lineIdx];
+  // Photo background with Ken Burns
+  var img=photos[lineIdx];
   if(img){
-    drawPhoto(img);
+    drawPhotoSmooth(img,t);
   }else{
     cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
   }
 
-  // Draw overlay
-  drawOverlay(t,lineIdx);
+  // Dark overlay
+  cx.fillStyle='rgba(0,0,0,0.4)';cx.fillRect(0,0,W,H);
 
+  // Animated scan line
+  var scanY=(t*0.08)%H;
+  cx.fillStyle='rgba(0,220,180,0.03)';
+  cx.fillRect(0,scanY-2,W,4);
+
+  // Particles
+  cx.fillStyle='rgba(0,220,180,0.15)';cx.font='8px Courier New';
+  for(var i=0;i<20;i++){
+    var px=(Math.sin(t*0.0003+i*1.7)*0.5+0.5)*W;
+    var py=(Math.cos(t*0.0002+i*2.3)*0.5+0.5)*H;
+    var ch=String.fromCharCode(0x30+~~(Math.random()*74));
+    cx.fillText(ch,px,py);
+  }
+
+  // Glitch effect (on scene change)
+  if(glitchTimer>0){
+    glitchTimer-=16;glitchAmt*=0.9;
+    for(var i=0;i<3;i++){
+      var gy=Math.random()*H;
+      cx.fillStyle='rgba(0,220,180,'+(glitchAmt*0.15)+')';cx.fillRect(0,gy,W,2+Math.random()*4);
+    }
+  }
+
+  // Vignette
+  var vig=cx.createRadialGradient(W/2,H/2,W*0.15,W/2,H/2,W*0.65);
+  vig.addColorStop(0,'transparent');vig.addColorStop(1,'rgba(0,0,0,0.55)');
+  cx.fillStyle=vig;cx.fillRect(0,0,W,H);
+
+  // Scan lines
+  cx.fillStyle='rgba(0,0,0,0.025)';
+  for(var y=0;y<H;y+=3)cx.fillRect(0,y,W,1);
+
+  // Progress bar
+  var lineDur=4500;
+  var elapsed=t-sceneStartTime;
+  var prog=Math.min(1,elapsed/lineDur);
+  document.getElementById('progress').style.width=(prog*100)+'%';
+
+  // HUD
   var now=new Date();
   document.getElementById('hudTime').textContent=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+':'+('0'+now.getSeconds()).slice(-2);
+
   requestAnimationFrame(render);
 }
 render();
+
+// Auto next line based on duration (fallback if voice ends early)
+setInterval(function(){
+  if(speaking&&Date.now()-sceneStartTime>6000){
+    speaking=false;
+    document.getElementById('subtitle').style.display='none';
+    nextScene();
+  }
+},500);
 </script>
 </body>
 </html>
