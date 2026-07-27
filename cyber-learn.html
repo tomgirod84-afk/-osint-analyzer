@@ -103,20 +103,6 @@
 
         #matrix-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.08}
 
-        #intro-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity 0.6s,visibility 0.6s}
-        #intro-screen.hidden{opacity:0;visibility:hidden;pointer-events:none}
-        #intro-screen .intro-text{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:2em;font-weight:700;letter-spacing:4px;overflow:hidden;white-space:nowrap;border-right:3px solid var(--accent);animation:typing 2s steps(20) forwards,blink 0.7s step-end infinite}
-        #intro-screen .intro-sub{color:var(--text3);font-size:0.85em;margin-top:15px;font-family:'JetBrains Mono',monospace;opacity:0;animation:fadeIn 0.5s 2.2s forwards}
-        @keyframes typing{from{width:0}to{width:100%}}
-        @keyframes blink{50%{border-color:transparent}}
-        @keyframes fadeIn{to{opacity:1}}
-        @keyframes introPulse{0%,100%{box-shadow:0 0 20px rgba(0,200,255,0.1)}50%{box-shadow:0 0 60px rgba(0,200,255,0.2)}}
-        #intro-screen .intro-ring{width:100px;height:100px;border:2px solid var(--accent);border-radius:50%;animation:introPulse 2s infinite;margin-bottom:30px;position:relative}
-        #intro-screen .intro-ring::before{content:'';position:absolute;top:50%;left:50%;width:10px;height:10px;background:var(--accent);border-radius:50%;transform:translate(-50%,-50%);animation:pulse 1.5s infinite}
-        #intro-screen .intro-loading{width:200px;height:2px;background:var(--bg3);border-radius:2px;margin-top:20px;overflow:hidden}
-        #intro-screen .intro-loading-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;animation:loadBar 2.5s ease forwards;border-radius:2px}
-        @keyframes loadBar{0%{width:0%}100%{width:100%}}
-
         .typing-text{display:inline}
         .typing-cursor{display:inline-block;width:2px;height:1.1em;background:var(--accent);margin-left:2px;animation:blink 0.7s step-end infinite;vertical-align:text-bottom}
 
@@ -132,7 +118,6 @@
     </style>
 </head>
 <body>
-    <div id="intro-screen"><div class="intro-ring"></div><div class="intro-text">CYBERLEARN</div><div class="intro-sub">Systeme de securite initialisé</div><div class="intro-loading"><div class="intro-loading-bar"></div></div></div>
     <canvas id="matrix-canvas"></canvas>
     <div id="particles"></div>
     <div id="progress-bar"></div>
@@ -657,8 +642,6 @@
     }
 
     // Intro screen
-    setTimeout(()=>{const intro=document.getElementById('intro-screen');intro.style.opacity='0';intro.style.pointerEvents='none';setTimeout(()=>{intro.remove()},600)},3200);
-
     // Matrix rain
     const mc=document.getElementById('matrix-canvas');
     const mctx=mc.getContext('2d');
@@ -702,8 +685,6 @@
     function sfxClick(){playTone(800,0.08,'sine',0.06);setTimeout(()=>playTone(1200,0.06,'sine',0.04),30)}
     function sfxHover(){playTone(600,0.05,'sine',0.03)}
     function sfxNav(){playTone(500,0.1,'sine',0.05);setTimeout(()=>playTone(700,0.08,'sine',0.04),50)}
-    function sfxIntro(){playTone(200,0.5,'sine',0.06);setTimeout(()=>playTone(400,0.3,'sine',0.05),200);setTimeout(()=>playTone(600,0.4,'sine',0.06),400);setTimeout(()=>playTone(800,0.3,'sine',0.04),600)}
-    setTimeout(sfxIntro,500);
     document.querySelectorAll('.nav-links a').forEach(a=>a.addEventListener('click',sfxNav));
     document.querySelectorAll('.card').forEach(c=>{c.addEventListener('click',sfxClick);c.addEventListener('mouseenter',sfxHover)});
     document.querySelectorAll('.tool-item').forEach(t=>{t.addEventListener('click',sfxClick);t.addEventListener('mouseenter',sfxHover)});
