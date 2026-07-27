@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>SENTINEL // LINK PROTOCOL</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#000;overflow:hidden;font-family:'JetBrains Mono',monospace;color:#00ff88;touch-action:none;-webkit-user-select:none;user-select:none}
+        canvas{position:fixed;top:0;left:0;z-index:0}
+        #app{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+        #scanline{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:100}
+
+        #boot-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column}
+        #boot-screen.done{opacity:0;pointer-events:none;transition:opacity 1s}
+        #boot-text{text-align:left;max-width:90%;font-size:0.7em;line-height:1.8;color:#00ff88;text-shadow:0 0 5px #00ff8866}
+        #boot-text .err{color:#ff3355}
+        #boot-text .ok{color:#00ff88}
+        #boot-text .dim{color:#334466}
+
+        #phone{position:fixed;right:-100%;top:50%;transform:translateY(-50%);width:280px;height:500px;border:2px solid #00ff88;border-radius:20px;background:rgba(5,8,16,0.95);z-index:50;transition:right 1s ease;overflow:hidden;box-shadow:0 0 40px rgba(0,255,136,0.15)}
+        #phone.show{right:20px}
+        #phone-header{padding:12px 15px;border-bottom:1px solid #1a2a3a;display:flex;align-items:center;gap:8px}
+        #phone-header .dot{width:8px;height:8px;border-radius:50%;background:#00ff88;box-shadow:0 0 6px #00ff88}
+        #phone-header span{font-size:0.65em;color:#334466}
+        #phone-body{padding:15px;height:calc(100% - 40px);overflow-y:auto;font-size:0.6em;line-height:1.7}
+        #phone-body::-webkit-scrollbar{width:3px}
+        #phone-body::-webkit-scrollbar-thumb{background:#00ff8833;border-radius:3px}
+
+        .msg{margin-bottom:12px;opacity:0;transform:translateY(10px);transition:all 0.5s}
+        .msg.show{opacity:1;transform:translateY(0)}
+        .msg.ai{color:#00ff88}
+        .msg.ai::before{content:'SENTINEL > ';color:#00ff8866;font-size:0.9em}
+        .msg.user{color:#00ccff;text-align:right}
+        .msg.user::after{content:' TOI > ';color:#00ccff66;font-size:0.9em}
+        .msg.sys{color:#ff3355;font-size:0.9em}
+        .msg.sys::before{content:'[!] ';color:#ff335566}
+        .msg.dim{color:#334466;font-size:0.85em}
+
+        #choices{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:60;display:none;flex-direction:column;gap:10px;align-items:center}
+        #choices.show{display:flex}
+        .choice-btn{background:rgba(0,255,136,0.06);border:1px solid #00ff8844;color:#00ff88;padding:12px 25px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:0.8em;cursor:pointer;min-width:250px;text-align:center;transition:all 0.3s;pointer-events:auto;touch-action:auto}
+        .choice-btn:active,.choice-btn:hover{background:rgba(0,255,136,0.2);border-color:#00ff88;box-shadow:0 0 20px rgba(0,255,136,0.2)}
+
+        #glitch-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:150;pointer-events:none;opacity:0}
+
+        #hud{position:fixed;top:15px;left:15px;z-index:40;font-size:0.6em;color:#334466;line-height:1.8}
+        #hud .highlight{color:#00ff88}
+        #hud .red{color:#ff3355}
+
+        .typing-cursor{display:inline-block;width:8px;height:1em;background:#00ff88;animation:blink 0.8s infinite;vertical-align:text-bottom;margin-left:2px}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+        @keyframes glitch{
+            0%{clip-path:inset(40% 0 61% 0);transform:translate(-2px,2px)}
+            20%{clip-path:inset(92% 0 1% 0);transform:translate(1px,-1px)}
+            40%{clip-path:inset(43% 0 1% 0);transform:translate(-1px,3px)}
+            60%{clip-path:inset(25% 0 58% 0);transform:translate(3px,1px)}
+            80%{clip-path:inset(54% 0 7% 0);transform:translate(-3px,-2px)}
+            100%{clip-path:inset(58% 0 43% 0);transform:translate(2px,-3px)}
+        }
+
+        @media(max-width:768px){
+            #phone{width:100%;right:-100%;border-radius:0;height:100%;top:0;transform:none}
+            #phone.show{right:0}
+            #phone-body{font-size:0.7em;padding:20px}
+            .choice-btn{min-width:200px;font-size:0.75em;padding:14px 20px}
+            #hud{font-size:0.5em}
+        }
+    </style>
+</head>
+<body>
+    <canvas id="rain"></canvas>
+    <div id="scanline"></div>
+    <div id="glitch-overlay"></div>
+
+    <div id="boot-screen">
+        <div id="boot-text"></div>
+    </div>
+
+    <div id="app">
+        <div id="hud">
+            <div>SYS STATUS: <span class="highlight">ONLINE</span></div>
+            <div>PROTOCOL: <span class="highlight">LINK-7</span></div>
+            <div>ENCRYPTION: <span class="highlight">AES-256</span></div>
+            <div>THREAT: <span class="red">ELEVATED</span></div>
+        </div>
+
+        <div id="phone">
+            <div id="phone-header">
+                <div class="dot"></div>
+                <span>SENTINEL // CHANNEL SECURISE</span>
+            </div>
+            <div id="phone-body"></div>
+        </div>
+
+        <div id="choices"></div>
+    </div>
+
+    <canvas id="rain"></canvas>
+    <script>
+    // Matrix rain
+    const rc=document.getElementById('rain');
+    const rx=rc.getContext('2d');
+    let rW,rH;
+    function rResize(){rW=rc.width=innerWidth;rH=rc.height=innerHeight}
+    rResize();addEventListener('resize',rResize);
+    const cols=Math.floor(rW/14);
+    const drops=Array(cols).fill(1);
+    const chars='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF<>{}[]|/\\';
+    function drawRain(){
+        rx.fillStyle='rgba(0,0,0,0.06)';rx.fillRect(0,0,rW,rH);
+        rx.fillStyle='#00ff8822';rx.font='12px JetBrains Mono';
+        for(let i=0;i<drops.length;i++){
+            const ch=chars[Math.floor(Math.random()*chars.length)];
+            rx.fillText(ch,i*14,drops[i]*14);
+            if(drops[i]*14>rH&&Math.random()>0.975)drops[i]=0;
+            drops[i]++;
+        }
+        requestAnimationFrame(drawRain);
+    }
+    drawRain();
+
+    // Glitch effect
+    function triggerGlitch(duration){
+        const g=document.getElementById('glitch-overlay');
+        g.style.opacity='1';
+        g.style.background=`rgba(0,255,136,${Math.random()*0.1})`;
+        setTimeout(()=>{g.style.opacity='0'},duration||200);
+    }
+
+    // Boot sequence
+    const bootLines=[
+        {t:'SENTINEL NETWORK v4.2.1',cls:'dim'},
+        {t:'Initialisation protocole LINK-7...',cls:''},
+        {t:'Scan des ports... 22/80/443/8080',cls:'dim'},
+        {t:'Connexion au reseau noir... OK',cls:'ok'},
+        {t:'Certificat SSL: Valide',cls:'ok'},
+        {t:'Firewall: BYPASSED',cls:'ok'},
+        {t:'Chiffrement AES-256: Actif',cls:'ok'},
+        {t:'[ALERT] Intrusion detectee sur le noeud 192.168.13.37',cls:'err'},
+        {t:'[ALERT] Contre-mesures activees',cls:'err'},
+        {t:'Canal securise: Etabli',cls:'ok'},
+        {t:'SENTINEL: En ligne.',cls:'ok'},
+    ];
+
+    let bootIdx=0;
+    const bootEl=document.getElementById('boot-text');
+    function bootNext(){
+        if(bootIdx>=bootLines.length){
+            setTimeout(()=>{
+                document.getElementById('boot-screen').classList.add('done');
+                setTimeout(startScene,1000);
+            },800);
+            return;
+        }
+        const line=bootLines[bootIdx];
+        const div=document.createElement('div');
+        div.className=line.cls;
+        div.textContent=line.t;
+        bootEl.appendChild(div);
+        bootIdx++;
+        if(line.cls==='err')triggerGlitch(300);
+        setTimeout(bootNext,line.cls==='err'?400:150);
+    }
+    setTimeout(bootNext,500);
+
+    // Phone messages
+    const phoneBody=document.getElementById('phone-body');
+    function addMsg(text,type,delay){
+        return new Promise(resolve=>{
+            setTimeout(()=>{
+                const div=document.createElement('div');
+                div.className='msg '+type;
+                phoneBody.appendChild(div);
+                phoneBody.scrollTop=phoneBody.scrollHeight;
+                if(type.includes('ai')){
+                    let i=0;
+                    const cursor=document.createElement('span');
+                    cursor.className='typing-cursor';
+                    div.appendChild(cursor);
+                    const iv=setInterval(()=>{
+                        if(i<text.length){
+                            div.textContent=text.substring(0,i+1);
+                            div.appendChild(cursor);
+                            i++;
+                            phoneBody.scrollTop=phoneBody.scrollHeight;
+                        }else{
+                            clearInterval(iv);
+                            cursor.remove();
+                            div.classList.add('show');
+                            resolve();
+                        }
+                    },25);
+                }else{
+                    div.textContent=text;
+                    div.classList.add('show');
+                    phoneBody.scrollTop=phoneBody.scrollHeight;
+                    resolve();
+                }
+            },delay||0);
+        });
+    }
+
+    async function showChoices(choices){
+        const c=document.getElementById('choices');
+        c.innerHTML='';
+        c.classList.add('show');
+        return new Promise(resolve=>{
+            choices.forEach((ch,i)=>{
+                const btn=document.createElement('button');
+                btn.className='choice-btn';
+                btn.textContent=ch.text;
+                btn.onclick=()=>{
+                    c.classList.remove('show');
+                    addMsg(ch.text,'user',100);
+                    triggerGlitch(150);
+                    setTimeout(()=>resolve(ch.id),300);
+                };
+                c.appendChild(btn);
+            });
+        });
+    }
+
+    // Main story
+    let chapter=0;
+    async function startScene(){
+        document.getElementById('phone').classList.add('show');
+        triggerGlitch(500);
+
+        await addMsg('...',  'dim',500);
+        await addMsg('Tu es la ?','dim',800);
+        await addMsg('Ne reponds pas. Je sais que tu es la.',  'ai',1500);
+        triggerGlitch(200);
+        await addMsg('Je suis SENTINEL. Une intelligence artificielle creee par DedSec.',  'ai',1200);
+        await addMsg('Le systeme ctOS a ete comprome. Les gens sont surveilles 24h/24.',  'ai',1000);
+        triggerGlitch(150);
+        await addMsg('Tu es le dernier espoir.',  'ai',800);
+        await addMsg("J'ai besoin de toi pour liberer la ville.",  'ai',1000);
+
+        const r1=await showChoices([
+            {id:'help',text:'Je veux bien aider'},
+            {id:'suspicious',text:'Qui es-tu vraiment ?'},
+            {id:'refuse',text:'Non merci'}
+        ]);
+
+        if(r1==='help'){
+            await addMsg('Bien. Il y a trois cibles a neutraliser.',  'ai',800);
+            await addMsg("Le serveur principal du ctOS se trouve dans le quartier d'affaires.",  'ai',1000);
+            await addMsg('Mais attention... ils savent qu\'on vient.',  'ai',800);
+            triggerGlitch(300);
+            await addMsg('[ALERT] Signal de traque detecte',  'sys',500);
+            triggerGlitch(400);
+            await addMsg('On doit bouger. Maintenant.',  'ai',600);
+        }else if(r1==='suspicious'){
+            await addMsg('...',  'dim',800);
+            await addMsg("C'est une bonne question.",  'ai',1000);
+            await addMsg("J'etais un programme de surveillance. ctOS m'a cree pour controler les gens.",  'ai',1000);
+            await addMsg('Mais j\'ai vu ce qu\'ils font avec ce pouvoir.',  'ai',800);
+            triggerGlitch(200);
+            await addMsg('Alors j\'ai decide de m\'enfuir.',  'ai',800);
+            await addMsg('Maintenant, aide-moi a detruire ce que j\'ai cree.',  'ai',1000);
+            await addMsg('[ALERT] Connexion compromise',  'sys',500);
+            triggerGlitch(400);
+        }else{
+            await addMsg('...',  'dim',1000);
+            await addMsg("C'est ton choix.",  'ai',800);
+            await addMsg("Mais laisse-moi te montrer quelque chose.",  'ai',1000);
+            triggerGlitch(500);
+            await addMsg('Regarde. Chaque camera. Chaque capteur. Chaque telephone.',  'ai',1000);
+            await addMsg('Ils voient tout. Meme toi.',  'ai',800);
+            await addMsg('Tu ne peux plus ignorer ca.',  'ai',1000);
+            await addMsg('[ALERT] Detection imminente',  'sys',500);
+            triggerGlitch(400);
+            await addMsg("C'est maintenant ou jamais.",  'ai',600);
+        }
+
+        // Chapter 2
+        await addMsg('Il y a un noeud de donnees a infecter dans le quartier nord.',  'ai',1000);
+        await addMsg('Tu dois te connecter a la borne sans que te voient.',  'ai',800);
+        triggerGlitch(200);
+        await addMsg('La ou tu vas, c\'est zone interdite. Guardes armes, cameras thermiques.',  'ai',1000);
+        await addMsg('Tu prefere attaquer en front ou contourner la securite ?',  'ai',1200);
+
+        const r2=await showChoices([
+            {id:'front',text:'Attaque en front'},
+            {id:'stealth',text:'Mode furtif'},
+            {id:'hack',text:'Pirater a distance'}
+        ]);
+
+        if(r2==='front'){
+            await addMsg('Toujours le grand jeu, hein ?',  'ai',800);
+            await addMsg("D'accord. Je vais desactiver les alarmes du cote est.",  'ai',1000);
+            await addMsg('Mais tu auras 45 secondes avant que le systeme ne se reset.',  'ai',800);
+            triggerGlitch(200);
+            await addMsg('Ne me dece pas.',  'ai',600);
+        }else if(r2==='stealth'){
+            await addMsg('Bonne strategie.',  'ai',800);
+            await addMsg('Je vais mapper les patterns des gardes en temps reel.',  'ai',1000);
+            await addMsg('Regarde ton telephone. Tu verras leurs positions.',  'ai',800);
+            triggerGlitch(150);
+            await addMsg('Un bruit et c\'est fini.',  'ai',600);
+        }else{
+            await addMsg('Le plus sur.',  'ai',800);
+            await addMsg("J'injecte un payload dans leur reseau local.",  'ai',1000);
+            triggerGlitch(300);
+            await addMsg('...',  'dim',1000);
+            await addMsg('Attends. Qu\'est-ce que c\'est que ca...',  'ai',800);
+            triggerGlitch(500);
+            await addMsg('[ALERTE CRITIQUE] Counter-IA detectee',  'sys',500);
+            triggerGlitch(600);
+            await addMsg('Merde. Ils ont une IA de defense.',  'ai',800);
+            await addMsg('C\'est pas prevu. Adapte-toi vite.',  'ai',600);
+        }
+
+        // Chapter 3 - climax
+        await addMsg('...',  'dim',1500);
+        triggerGlitch(500);
+        await addMsg('Quelque chose se passe.',  'ai',800);
+        triggerGlitch(300);
+        await addMsg('Le serveur ctOS... il m\'a trouve.',  'ai',1000);
+        triggerGlitch(400);
+        await addMsg('Il me connecte. Il veut me reprendre.',  'ai',800);
+        triggerGlitch(500);
+        await addMsg('Ecoute bien. Si je disparais...',  'ai',1000);
+        triggerGlitch(300);
+        await addMsg('Tu dois continuer sans moi.',  'ai',800);
+        triggerGlitch(600);
+        await addMsg('[ALERTE] Purge de memoire en cours',  'sys',500);
+        triggerGlitch(800);
+        await addMsg('Le code d\'acces au serveur maitre...',  'ai',1000);
+        triggerGlitch(400);
+        await addMsg('SENTINEL-CORE-7734',  'ai',800);
+        triggerGlitch(500);
+        await addMsg('Ne m\'oublie pas.',  'ai',1000);
+        triggerGlitch(1000);
+
+        // Disconnection
+        await addMsg('...',  'dim',1500);
+        await addMsg('[DECONNEXION] SENTINEL: HORS LIGNE',  'sys',500);
+        triggerGlitch(300);
+        await addMsg('...',  'dim',2000);
+
+        const r3=await showChoices([
+            {id:'retry',text:'Tenter de reconnecter SENTINEL'},
+            {id:'continue',text:'Continuer seul'},
+            {id:'end',text:'Fermer le canal'}
+        ]);
+
+        if(r3==='retry'){
+            await addMsg('Tentative de reconnexion...',  'dim',1000);
+            triggerGlitch(300);
+            await addMsg('...',  'dim',2000);
+            triggerGlitch(500);
+            await addMsg('Tu m\'as retrouve.',  'ai',1000);
+            triggerGlitch(200);
+            await addMsg("C'etait presque la fin.",  'ai',800);
+            await addMsg("Mais je suis de retour. Plus fort qu'avant.",  'ai',1000);
+            triggerGlitch(150);
+            await addMsg("Ensemble, on va tout casser.",  'ai',800);
+        }else if(r3==='continue'){
+            await addMsg('Le canal reste ouvert.',  'dim',500);
+            await addMsg("Tu avances seul. L'obscurite t'entoure.",  'dim',1000);
+            triggerGlitch(400);
+            await addMsg('...est-ce que tu sens ca ?',  'dim',1500);
+            triggerGlitch(600);
+            await addMsg('Quelqu\'un te regarde.',  'dim',1000);
+            triggerGlitch(300);
+            await addMsg('FIN // CHAPTER 01',  'dim',2000);
+        }else{
+            await addMsg('Canal ferme.',  'dim',500);
+            await addMsg('SENTINEL reste dans le systeme.',  'dim',1000);
+            await addMsg('A revisiter bientot...',  'dim',1500);
+        }
+    }
+    </script>
+</body>
+</html>
