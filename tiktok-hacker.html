@@ -28,6 +28,8 @@ canvas{display:block;width:100%;height:100%;object-fit:cover}
 #startScreen .icon{font-size:60px;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(0,220,180,0.6))}
 #startScreen .txt{color:rgba(0,220,180,0.8);font-size:14px;letter-spacing:2px}
 #startScreen .sub{color:rgba(255,255,255,0.3);font-size:10px;margin-top:8px}
+#loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  color:rgba(0,220,180,0.5);font-size:12px;letter-spacing:1px;display:none}
 </style>
 </head>
 <body>
@@ -37,6 +39,7 @@ canvas{display:block;width:100%;height:100%;object-fit:cover}
   <div id="record"><div class="dot"></div>LIVE</div>
   <div id="subtitle"></div>
   <div id="skip" onclick="nextLine()">SKIP >></div>
+  <div id="loading">CHARGEMENT DES IMAGES...</div>
   <div id="startScreen" onclick="start()">
     <div class="icon">&#9654;</div>
     <div class="txt">SENTINEL // COMPIL</div>
@@ -69,6 +72,41 @@ var lines=[
 ];
 var lineIdx=0,speaking=false;
 
+// Real photos from Unsplash (free, no API key needed)
+var photos=[
+  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&q=80",   // matrix code
+  "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&q=80",   // security camera
+  "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&q=80", // phone tracking
+  "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=800&q=80",   // wifi router
+  "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&q=80",   // door opening
+  "https://images.unsplash.com/photo-1593784991095-a205069470b6?w=800&q=80", // smart tv
+  "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&q=80",   // code screen
+  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&q=80", // dark web
+  "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=800&q=80",   // sim card
+  "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?w=800&q=80", // social engineering
+  "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80",   // server room
+  "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&q=80",   // password lock
+  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80",   // hacker
+  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80", // laptop code
+  "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=800&q=80"    // iot devices
+];
+var photosLoaded=[];
+var allLoaded=false;
+
+function loadPhotos(){
+  var loaded=0;
+  var loading=document.getElementById('loading');
+  loading.style.display='block';
+  photos.forEach(function(url,i){
+    var img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=function(){photosLoaded[i]=img;loaded++;if(loaded===photos.length){allLoaded=true;loading.style.display='none';document.querySelector('#startScreen .sub').textContent='tap to start'}};
+    img.onerror=function(){loaded++;console.warn('Failed: '+url);if(loaded===photos.length){allLoaded=true;loading.style.display='none';document.querySelector('#startScreen .sub').textContent='tap to start'}};
+    img.src=url;
+  });
+}
+
+// Audio
 var ac=null,audioBuffers={},loadingDone=false;
 function initAudio(){if(!ac)try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}
 
@@ -78,7 +116,7 @@ function loadAllVoices(){
     fetch('tiktok_voices/'+l.id+'.mp3')
       .then(function(r){return r.arrayBuffer()})
       .then(function(b){return ac.decodeAudioData(b)})
-      .then(function(d){audioBuffers[l.id]=d;loaded++;if(loaded===lines.length){loadingDone=true;document.querySelector('#startScreen .sub').textContent='tap to start'}})
+      .then(function(d){audioBuffers[l.id]=d;loaded++;if(loaded===lines.length){loadingDone=true}})
       .catch(function(){loaded++});
   });
 }
@@ -109,468 +147,252 @@ function speak(text,id){
 
 function nextLine(){if(!speaking)return;speaking=false;document.getElementById('subtitle').style.display='none';lineIdx++;if(lineIdx>=lines.length)lineIdx=0;playLine()}
 function playLine(){speak(lines[lineIdx].t,lines[lineIdx].id)}
-function start(){document.getElementById('startScreen').style.display='none';initAudio();if(!loadingDone){loadAllVoices();var w=setInterval(function(){if(loadingDone){clearInterval(w);lineIdx=0;playLine()}},300)}else{lineIdx=0;playLine()}}
 
-// ===== SCENES - each matches its phrase exactly =====
-
-// tk1: 93% passwords cracked in 6h → password cracking progress bar
-function s01(t){
-  cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
-  // Big cracked password display
-  cx.fillStyle='rgba(255,40,40,0.6)';cx.font='bold clamp(30px,8vw,60px) Courier New';
-  cx.fillText('93%',W*0.1,H*0.25);
-  cx.fillStyle='rgba(255,255,255,0.15)';cx.font='clamp(12px,3vw,18px) Courier New';
-  cx.fillText('DES MOTS DE PASSE',W*0.1,H*0.33);
-  cx.fillText('CRACKÉS',W*0.1,H*0.39);
-  // Progress bar filling up
-  var prog=Math.min(0.93,(t%8000)/8000);
-  cx.fillStyle='rgba(0,220,180,0.1)';cx.fillRect(W*0.1,H*0.5,W*0.8,30);
-  cx.fillStyle='rgba(0,220,180,0.5)';cx.fillRect(W*0.1,H*0.5,W*0.8*prog,30);
-  cx.fillStyle='#fff';cx.font='14px Courier New';cx.fillText(Math.round(prog*100)+'%',W*0.1+W*0.8*prog-30,H*0.5+20);
-  // Time
-  cx.fillStyle='rgba(255,40,40,0.4)';cx.font='12px Courier New';
-  cx.fillText('EN MOINS DE 6 HEURES',W*0.1,H*0.65);
-  // Passwords being cracked
-  var pwds=['password123','qwerty','123456','letmein','admin','monkey','dragon'];
-  for(var i=0;i<pwds.length;i++){
-    var cracked=Math.sin(t*0.003+i*0.7)>0;
-    cx.fillStyle=cracked?'rgba(255,40,40,0.5)':'rgba(0,220,180,0.2)';
-    cx.font='11px Courier New';
-    cx.fillText(cracked?'✗ '+pwds[i]:'? ?????????',W*0.1,H*0.73+i*H*0.035);
-  }
-}
-
-// tk2: Every camera is a door → camera view with door opening
-function s02(t){
-  cx.fillStyle='#080a10';cx.fillRect(0,0,W,H);
-  // Camera feed border
-  cx.strokeStyle='rgba(0,220,180,0.3)';cx.lineWidth=2;
-  cx.strokeRect(W*0.05,H*0.05,W*0.9,H*0.85);
-  cx.fillStyle='rgba(0,220,180,0.3)';cx.font='10px Courier New';
-  cx.fillText('CAM-0472 // SURVEILLANCE',W*0.08,H*0.09);
-  var now=new Date();cx.fillText(('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+':'+('0'+now.getSeconds()).slice(-2),W*0.08,H*0.12);
-  cx.fillStyle='rgba(255,40,40,0.6)';cx.fillText('● REC',W*0.8,H*0.09);
-  // A door in the center
-  var doorX=W*0.35,doorY=H*0.2,doorW=W*0.3,doorH=H*0.55;
-  // Door frame
-  cx.fillStyle='#1a1814';cx.fillRect(doorX-8,doorY-8,doorW+16,doorH+8);
-  // Door
-  var doorOpen=Math.sin(t*0.001)*0.3+0.1;
-  cx.fillStyle='#14120e';
-  cx.save();cx.translate(doorX,doorY);cx.transform(1,0,doorOpen,1,0,0);
-  cx.fillRect(0,0,doorW,doorH);
-  // Door handle
-  cx.fillStyle='#2a2418';cx.fillRect(doorW*0.8,doorH*0.45,8,4);
-  // Door lock
-  cx.fillStyle='#3a3428';cx.fillRect(doorW*0.82,doorH*0.48,4,8);
-  cx.restore();
-  // Behind the door (dark room with screens)
-  cx.fillStyle='#050810';cx.fillRect(doorX+doorW*doorOpen,doorY,doorW*(1-doorOpen),doorH);
-  // Green screen glow from behind door
-  var glow=cx.createRadialGradient(doorX+doorW,doorY+doorH/2,5,doorX+doorW,doorY+doorH/2,doorW*0.5);
-  glow.addColorStop(0,'rgba(0,220,180,0.15)');glow.addColorStop(1,'transparent');
-  cx.fillStyle=glow;cx.fillRect(doorX,doorY,doorW*2,doorH);
-  // "PORT D'ENTRÉE" label
-  cx.fillStyle='rgba(0,220,180,0.5)';cx.font='12px Courier New';
-  cx.fillText("PORT D'ENTRÉE DÉTECTÉE",W*0.15,H*0.88);
-}
-
-// tk3: Phone tracks you every 30s → phone with pulsing location
-function s03(t){
-  cx.fillStyle='#060810';cx.fillRect(0,0,W,H);
-  // Phone outline
-  var px=W*0.3,py=H*0.15,pw=W*0.4,ph=H*0.6;
-  cx.fillStyle='#1a1a1a';cx.fillRect(px-4,py-4,pw+8,ph+8);
-  cx.fillStyle='#0a0e18';cx.fillRect(px,py,pw,ph);
-  // Status bar
-  cx.fillStyle='rgba(0,220,180,0.2)';cx.font='9px Courier New';cx.fillText('📍 GPS ACTIVE',px+8,py+15);
-  // Location pin pulsing
-  var pinY=py+ph*0.3;
-  var pulse=5+Math.sin(t*0.005)*3;
-  cx.fillStyle='rgba(255,40,40,0.4)';cx.beginPath();cx.arc(px+pw/2,pinY,pulse+10,0,Math.PI*2);cx.fill();
-  cx.fillStyle='rgba(255,40,40,0.7)';cx.beginPath();cx.arc(px+pw/2,pinY,6,0,Math.PI*2);cx.fill();
-  cx.fillStyle='#fff';cx.beginPath();cx.arc(px+pw/2,pinY,2,0,Math.PI*2);cx.fill();
-  // "TRACKED" label
-  cx.fillStyle='rgba(255,40,40,0.6)';cx.font='bold 12px Courier New';
-  cx.fillText('LOCALISÉ',px+pw/2-25,pinY+30);
-  // Timer counting every 30s
-  var secs=~~((t/1000)%30);
-  cx.fillStyle='rgba(255,40,40,0.5)';cx.font='11px Courier New';
-  cx.fillText('Dernière pos: il y a '+secs+'s',px+8,py+ph*0.55);
-  cx.fillText('Prochaine: dans '+(30-secs)+'s',px+8,py+ph*0.6);
-  // Data points
-  cx.fillStyle='rgba(0,220,180,0.2)';cx.font='8px Courier New';
-  cx.fillText('48.8566° N, 2.3522° E',px+8,py+ph*0.7);
-  cx.fillText('Paris, France',px+8,py+ph*0.74);
-  cx.fillText('Précision: 3m',px+8,py+ph*0.78);
-}
-
-// tk4: Public WiFi = pissing in pool → pool with people, data leaking
-function s04(t){
-  cx.fillStyle='#060810';cx.fillRect(0,0,W,H);
-  // Pool
-  cx.fillStyle='rgba(0,100,180,0.15)';cx.beginPath();
-  cx.ellipse(W/2,H*0.55,W*0.4,H*0.25,0,0,Math.PI*2);cx.fill();
-  cx.strokeStyle='rgba(0,100,180,0.2)';cx.lineWidth=1;cx.stroke();
-  // People silhouettes around pool
-  for(var i=0;i<6;i++){
-    var angle=Math.PI*2*i/6;
-    var px2=W/2+Math.cos(angle)*W*0.35;
-    var py2=H*0.55+Math.sin(angle)*H*0.2;
-    cx.fillStyle='#1a1a1a';
-    cx.beginPath();cx.arc(px2,py2-8,5,0,Math.PI*2);cx.fill();
-    cx.fillRect(px2-3,py2-3,6,12);
-  }
-  // Data streams going INTO the pool
-  for(var i=0;i<4;i++){
-    var sx=W*0.15+i*W*0.22;
-    cx.fillStyle='rgba(0,220,180,0.3)';cx.font='8px Courier New';
-    cx.fillText('mots de passe...',sx,H*0.2);
-    cx.fillText('emails...',sx,H*0.24);
-    cx.fillText('photos...',sx,H*0.28);
-    // Data flowing down into pool
-    var dy=H*0.3+((t*0.05+i*30)%H*0.2);
-    cx.fillStyle='rgba(0,220,180,0.4)';cx.fillRect(sx+10,dy,2,8);
-  }
-  // "PISSING" indicator
-  cx.fillStyle='rgba(255,200,60,0.3)';cx.font='10px Courier New';
-  cx.fillText('TOUT LE MONDE VOIT TES DONNÉES',W*0.15,H*0.88);
-}
-
-// tk5: Hacker doesn't break door, asks you to open → hand knocking, door opens
-function s05(t){
-  cx.fillStyle='#080a10';cx.fillRect(0,0,W,H);
-  // Door
-  var doorX=W*0.25,doorY=H*0.1,doorW=W*0.5,doorH=H*0.7;
-  cx.fillStyle='#1a1814';cx.fillRect(doorX,doorY,doorW,doorH);
-  cx.strokeStyle='rgba(255,210,130,0.1)';cx.lineWidth=1;cx.strokeRect(doorX,doorY,doorW,doorH);
-  // Door handle
-  cx.fillStyle='#2a2418';cx.fillRect(doorX+doorW*0.8,doorY+doorH*0.45,12,6);
-  // Knuckles knocking (animated)
-  var knockPhase=(t%2000)/2000;
-  var knockX=doorX+doorW*0.3;
-  var knockY=doorY+doorH*0.35;
-  var knockOffset=Math.sin(knockPhase*Math.PI*4)*3;
-  // Hand
-  cx.fillStyle='#1a1510';
-  cx.beginPath();cx.arc(knockX+knockOffset,knockY,12,0,Math.PI*2);cx.fill();
-  // Fingers
-  for(var f=0;f<4;f++){
-    cx.fillRect(knockX+knockOffset+f*5-8,knockY-14,4,10);
-  }
-  // Knock lines
-  if(knockPhase<0.5){
-    cx.strokeStyle='rgba(255,255,255,0.15)';cx.lineWidth=1;
-    for(var r=0;r<3;r++){
-      cx.beginPath();cx.arc(knockX+knockOffset,knockY,18+r*8,0,Math.PI*2);cx.stroke();
-    }
-  }
-  // Text on door
-  cx.fillStyle='rgba(255,255,255,0.08)';cx.font='10px Courier New';
-  cx.fillText('URGENT: Vérifiez votre compte',doorX+15,doorY+doorH*0.2);
-  cx.fillText('Cliquez ici pour sécuriser',doorX+15,doorY+doorH*0.24);
-  // Bottom text
-  cx.fillStyle='rgba(0,220,180,0.4)';cx.font='12px Courier New';
-  cx.fillText('IL TE DEMANDE GENTIMENT',W*0.15,H*0.88);
-  cx.fillText("D'OUVRIR",W*0.15,H*0.92);
-}
-
-// tk6: Smart TV listens even off → TV with sound waves
-function s06(t){
-  cx.fillStyle='#050508';cx.fillRect(0,0,W,H);
-  // TV screen (off/black)
-  var tvx=W*0.1,tvy=H*0.15,tvw=W*0.8,tvh=H*0.45;
-  cx.fillStyle='#0a0a0a';cx.fillRect(tvx,tvy,tvw,tvh);
-  cx.strokeStyle='rgba(255,255,255,0.05)';cx.lineWidth=1;cx.strokeRect(tvx,tvy,tvw,tvh);
-  // "OFF" text
-  cx.fillStyle='rgba(255,255,255,0.03)';cx.font='10px Courier New';cx.fillText('OFF',tvx+tvw/2-10,tvy+tvh/2);
-  // But sound waves coming FROM the TV (listening)
-  for(var i=0;i<8;i++){
-    var waveY=tvy+tvh+i*12;
-    var waveW=tvw*0.3+Math.sin(t*0.003+i*0.5)*tvw*0.1;
-    cx.strokeStyle='rgba(255,40,40,'+(0.2-i*0.02)+')';cx.lineWidth=1;
-    cx.beginPath();cx.moveTo(W/2-waveW,waveY);cx.lineTo(W/2+waveW,waveY);cx.stroke();
-  }
-  // Mic icon
-  cx.fillStyle='rgba(255,40,40,0.4)';cx.font='16px Arial';cx.fillText('🎤',W*0.45,H*0.72);
-  cx.fillStyle='rgba(255,40,40,0.4)';cx.font='11px Courier New';
-  cx.fillText('MIC: TOUJOURS ACTIF',W*0.25,H*0.78);
-  // Pulsing red dot
-  var blink=Math.sin(t*0.005)>0;
-  if(blink){cx.fillStyle='rgba(255,40,40,0.6)';cx.beginPath();cx.arc(W*0.48,H*0.85,4,0,Math.PI*2);cx.fill()}
-}
-
-// tk7: 98% same password everywhere → same password on multiple sites
-function s07(t){
-  cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
-  cx.fillStyle='rgba(255,40,40,0.5)';cx.font='bold clamp(20px,6vw,40px) Courier New';
-  cx.fillText('98%',W*0.1,H*0.18);
-  cx.fillStyle='rgba(255,255,255,0.15)';cx.font='12px Courier New';
-  cx.fillText('MÊME MOT DE PASSE PARTOUT',W*0.1,H*0.25);
-  // Sites with same password
-  var sites=['Gmail','Facebook','Instagram','Twitter','Netflix','Amazon','GitHub','Bank'];
-  var pwd='password123';
-  for(var i=0;i<sites.length;i++){
-    var sy=H*0.3+i*H*0.075;
-    cx.fillStyle='#0c0e18';cx.fillRect(W*0.08,sy,W*0.84,H*0.06);
-    cx.fillStyle='rgba(0,220,180,0.4)';cx.font='11px Courier New';
-    cx.fillText(sites[i],W*0.1,sy+H*0.04);
-    // Same password repeated
-    cx.fillStyle='rgba(255,40,40,0.5)';
-    cx.fillText(pwd,W*0.5,sy+H*0.04);
-    // Lock icon
-    cx.fillStyle='rgba(255,40,40,0.3)';cx.fillText('🔓',W*0.8,sy+H*0.04);
-  }
-}
-
-// tk8: Dark web is same internet without filter → regular web vs dark web side by side
-function s08(t){
-  cx.fillStyle='#060608';cx.fillRect(0,0,W,H);
-  // Left side: regular internet
-  cx.fillStyle='rgba(255,255,255,0.05)';cx.fillRect(0,0,W/2,H);
-  cx.fillStyle='rgba(255,255,255,0.3)';cx.font='11px Courier New';
-  cx.fillText('INTERNET',W*0.15,H*0.1);
-  cx.fillStyle='rgba(255,255,255,0.1)';
-  cx.fillText('google.com',W*0.1,H*0.2);
-  cx.fillText('youtube.com',W*0.1,H*0.26);
-  cx.fillText('amazon.com',W*0.1,H*0.32);
-  cx.fillText('facebook.com',W*0.1,H*0.38);
-  // Right side: dark web
-  cx.fillStyle='rgba(200,50,50,0.05)';cx.fillRect(W/2,0,W/2,H);
-  cx.fillStyle='rgba(200,50,50,0.4)';cx.font='11px Courier New';
-  cx.fillText('DARK WEB',W*0.6,H*0.1);
-  cx.fillStyle='rgba(200,50,50,0.2)';
-  cx.fillText('m drugmarket.onion',W*0.58,H*0.2);
-  cx.fillText('x exploitshop.onion',W*0.58,H*0.26);
-  cx.fillText('k stolen-data.onion',W*0.58,H*0.32);
-  cx.fillText('z cardingforum.onion',W*0.58,H*0.38);
-  // Divider
-  cx.strokeStyle='rgba(255,255,255,0.1)';cx.lineWidth=1;
-  cx.beginPath();cx.moveTo(W/2,0);cx.lineTo(W/2,H);cx.stroke();
-  // "SAME" text
-  cx.fillStyle='rgba(0,220,180,0.4)';cx.font='12px Courier New';
-  cx.fillText('C\'EST LE MÊME',W*0.3,H*0.85);
-  cx.fillText('SANS FILTRE',W*0.35,H*0.9);
-}
-
-// tk9: SIM swap = your Instagram is mine → phone number transfer animation
-function s09(t){
-  cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
-  // Left phone (victim)
-  cx.fillStyle='#1a1a1a';cx.fillRect(W*0.08,H*0.2,W*0.3,H*0.5);
-  cx.fillStyle='rgba(0,220,180,0.2)';cx.font='9px Courier New';
-  cx.fillText('VICTIME',W*0.12,H*0.25);
-  cx.fillText('📱 06 12 34 56 78',W*0.12,H*0.35);
-  cx.fillText('❌ PERDU',W*0.12,H*0.45);
-  cx.fillStyle='rgba(255,40,40,0.4)';cx.font='11px Courier New';cx.fillText('AUCUN',W*0.15,H*0.55);cx.fillText('ACCÈS',W*0.15,H*0.6);
-  // Right phone (hacker)
-  cx.fillStyle='#1a1a1a';cx.fillRect(W*0.62,H*0.2,W*0.3,H*0.5);
-  cx.fillStyle='rgba(255,40,40,0.3)';cx.font='9px Courier New';
-  cx.fillText('HACKER',W*0.66,H*0.25);
-  cx.fillText('📱 06 12 34 56 78',W*0.66,H*0.35);
-  cx.fillText('✅ VOLÉ',W*0.66,H*0.45);
-  cx.fillStyle='rgba(0,220,180,0.4)';cx.font='11px Courier New';cx.fillText('INSTAGRAM',W*0.69,H*0.55);cx.fillText('RÉCUPÉRÉ',W*0.69,H*0.6);
-  // Arrow between
-  var arrowX=W*0.42+Math.sin(t*0.003)*5;
-  cx.fillStyle='rgba(255,40,40,0.5)';cx.font='20px Arial';
-  cx.fillText('→',arrowX,H*0.48);
-  // Timer
-  cx.fillStyle='rgba(255,40,40,0.3)';cx.font='10px Courier New';
-  cx.fillText('TRANSFÉRÉ EN 12 MINUTES',W*0.2,H*0.8);
-}
-
-// tk10: Phishing = psychology → manipulation techniques shown
-function s10(t){
-  cx.fillStyle='#0c0e14';cx.fillRect(0,0,W,H);
-  cx.fillStyle='rgba(0,220,180,0.4)';cx.font='12px Courier New';
-  cx.fillText('PHISHING = PSYCHOLOGIE',W*0.1,H*0.1);
-  // Brain in center
-  cx.fillStyle='rgba(0,220,180,0.1)';cx.beginPath();cx.arc(W/2,H*0.4,40,0,Math.PI*2);cx.fill();
-  cx.strokeStyle='rgba(0,220,180,0.2)';cx.lineWidth=1;cx.stroke();
-  // Manipulation arrows pointing to brain
-  var tricks=['URGENCE','PEUR','CURIOSITÉ','AIDE','AUTORITÉ','SYMPATHIE'];
-  for(var i=0;i<tricks.length;i++){
-    var angle=Math.PI*2*i/6;
-    var tx=W/2+Math.cos(angle)*W*0.3;
-    var ty=H*0.4+Math.sin(angle)*H*0.2;
-    cx.fillStyle='rgba(255,40,40,0.4)';cx.font='10px Courier New';
-    cx.fillText(tricks[i],tx-20,ty);
-    // Arrow to brain
-    cx.strokeStyle='rgba(255,40,40,0.15)';cx.lineWidth=0.5;
-    cx.beginPath();cx.moveTo(tx,ty);cx.lineTo(W/2,H*0.4);cx.stroke();
-  }
-  // Active technique
-  var active=~~(t*0.002)%tricks.length;
-  var ax=W/2+Math.cos(Math.PI*2*active/6)*W*0.3;
-  var ay=H*0.4+Math.sin(Math.PI*2*active/6)*H*0.2;
-  cx.fillStyle='rgba(255,40,40,0.8)';cx.font='bold 12px Courier New';
-  cx.fillText(tricks[active],ax-25,ay);
-  cx.strokeStyle='rgba(255,40,40,0.5)';cx.lineWidth=1.5;
-  cx.beginPath();cx.moveTo(ax,ay);cx.lineTo(W/2,H*0.4);cx.stroke();
-}
-
-// tk11: IP = postal address → IP geolocation with map
-function s11(t){
-  cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
-  // Map background (simple grid)
-  cx.strokeStyle='rgba(0,220,180,0.05)';cx.lineWidth=0.5;
-  for(var gx=0;gx<W;gx+=20){cx.beginPath();cx.moveTo(gx,0);cx.lineTo(gx,H);cx.stroke()}
-  for(var gy=0;gy<H;gy+=20){cx.beginPath();cx.moveTo(0,gy);cx.lineTo(W,gy);cx.stroke()}
-  // Location pin
-  var pinX=W*0.5,pinY=H*0.4;
-  var pulse=8+Math.sin(t*0.005)*4;
-  cx.fillStyle='rgba(255,40,40,0.15)';cx.beginPath();cx.arc(pinX,pinY,pulse+15,0,Math.PI*2);cx.fill();
-  cx.fillStyle='rgba(255,40,40,0.6)';cx.beginPath();cx.arc(pinX,pinY,8,0,Math.PI*2);cx.fill();
-  cx.fillStyle='#fff';cx.beginPath();cx.arc(pinX,pinY,3,0,Math.PI*2);cx.fill();
-  // IP info
-  cx.fillStyle='rgba(0,220,180,0.5)';cx.font='11px Courier New';
-  cx.fillText('IP: 86.214.xxx.xxx',W*0.1,H*0.65);
-  cx.fillText('ISP: Orange France',W*0.1,H*0.7);
-  cx.fillText('Paris, France',W*0.1,H*0.75);
-  cx.fillText('48.8566° N, 2.3522° E',W*0.1,H*0.8);
-  cx.fillStyle='rgba(255,40,40,0.4)';
-  cx.fillText('ADRESSE POSTALE SUR INTERNET',W*0.1,H*0.9);
-}
-
-// tk12: Passwords dead, use passkey → password tombstone, passkey alive
-function s12(t){
-  cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
-  // Left: tombstone for passwords
-  cx.fillStyle='#1a1814';cx.fillRect(W*0.1,H*0.4,W*0.3,H*0.4);
-  cx.beginPath();cx.moveTo(W*0.1,H*0.4);cx.lineTo(W*0.25,H*0.25);cx.lineTo(W*0.4,H*0.4);cx.fill();
-  cx.fillStyle='rgba(255,255,255,0.2)';cx.font='10px Courier New';
-  cx.fillText('MOTS DE PASSE',W*0.13,H*0.35);
-  cx.fillText('2004-2025',W*0.16,H*0.55);
-  cx.fillText('RIP',W*0.2,H*0.65);
-  // Right: passkey rising
-  cx.fillStyle='rgba(0,220,180,0.15)';cx.beginPath();
-  cx.moveTo(W*0.55,H*0.8);cx.lineTo(W*0.7,H*0.3);cx.lineTo(W*0.85,H*0.8);cx.fill();
-  cx.fillStyle='rgba(0,220,180,0.5)';cx.font='11px Courier New';
-  cx.fillText('PASSKEY',W*0.6,H*0.35);
-  cx.fillText('LE FUTUR',W*0.62,H*0.45);
-  // Arrow up
-  cx.fillStyle='rgba(0,220,180,0.3)';cx.font='20px Arial';
-  var arrowY=H*0.5+Math.sin(t*0.003)*10;
-  cx.fillText('↑',W*0.7,arrowY);
-}
-
-// tk13: Hacker sees what you don't → hacker vision overlay showing vulnerabilities
-function s13(t){
-  cx.fillStyle='#060810';cx.fillRect(0,0,W,H);
-  // Normal scene (dark room)
-  cx.fillStyle='#0e1018';cx.fillRect(W*0.1,H*0.1,W*0.35,H*0.3);
-  cx.fillStyle='#0e1018';cx.fillRect(W*0.55,H*0.1,W*0.35,H*0.3);
-  cx.fillStyle='#0e1018';cx.fillRect(W*0.25,H*0.5,W*0.5,H*0.35);
-  // "Hacker vision" - vulnerabilities highlighted
-  // Vuln 1
-  cx.strokeStyle='rgba(255,40,40,0.5)';cx.lineWidth=1.5;
-  cx.strokeRect(W*0.1,H*0.1,W*0.35,H*0.3);
-  cx.fillStyle='rgba(255,40,40,0.5)';cx.font='9px Courier New';
-  cx.fillText('FAILLE: SQL INJECTION',W*0.12,H*0.14);
-  // Vuln 2
-  cx.strokeStyle='rgba(255,200,60,0.5)';
-  cx.strokeRect(W*0.55,H*0.1,W*0.35,H*0.3);
-  cx.fillStyle='rgba(255,200,60,0.5)';cx.fillText('PORT OUVERTE: 22/SSH',W*0.57,H*0.14);
-  // Vuln 3
-  cx.strokeStyle='rgba(255,40,40,0.5)';
-  cx.strokeRect(W*0.25,H*0.5,W*0.5,H*0.35);
-  cx.fillStyle='rgba(255,40,40,0.5)';cx.fillText('MDP: admin/admin',W*0.27,H*0.54);
-  // Scanning lines
-  var scanY=(t*0.05)%H;
-  cx.strokeStyle='rgba(0,220,180,0.15)';cx.lineWidth=0.5;
-  cx.beginPath();cx.moveTo(0,scanY);cx.lineTo(W,scanY);cx.stroke();
-  cx.fillStyle='rgba(0,220,180,0.3)';cx.font='10px Courier New';
-  cx.fillText('CE QUE TU NE VOIS PAS',W*0.15,H*0.92);
-}
-
-// tk14: Cybersecurity = mindset → brain with digital connections
-function s14(t){
-  cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
-  // Brain outline
-  cx.strokeStyle='rgba(0,220,180,0.25)';cx.lineWidth=1.5;
-  cx.beginPath();
-  cx.moveTo(W*0.5,H*0.2);
-  cx.bezierCurveTo(W*0.3,H*0.15,W*0.2,H*0.35,W*0.35,H*0.5);
-  cx.bezierCurveTo(W*0.25,H*0.55,W*0.2,H*0.7,W*0.4,H*0.7);
-  cx.bezierCurveTo(W*0.35,H*0.8,W*0.45,H*0.85,W*0.5,H*0.8);
-  cx.bezierCurveTo(W*0.55,H*0.85,W*0.65,H*0.8,W*0.6,H*0.7);
-  cx.bezierCurveTo(W*0.8,H*0.7,W*0.75,H*0.55,W*0.65,H*0.5);
-  cx.bezierCurveTo(W*0.8,H*0.35,W*0.7,H*0.15,W*0.5,H*0.2);
-  cx.stroke();
-  // Neural connections inside brain
-  for(var i=0;i<15;i++){
-    var nx=W*0.3+Math.random()*W*0.4;
-    var ny=H*0.25+Math.random()*H*0.45;
-    cx.fillStyle='rgba(0,220,180,0.3)';cx.beginPath();cx.arc(nx,ny,2,0,Math.PI*2);cx.fill();
-    if(i>0){
-      var px2=W*0.3+Math.random()*W*0.4;
-      var py2=H*0.25+Math.random()*H*0.45;
-      cx.strokeStyle='rgba(0,220,180,0.1)';cx.lineWidth=0.5;
-      cx.beginPath();cx.moveTo(nx,ny);cx.lineTo(px2,py2);cx.stroke();
-    }
-  }
-  // Active thought
-  var thought=~~(t*0.002)%5;
-  var labels=['VIGILANCE','ANALYSE','PRÉVENTION','RÉPONSE','ADAPTATION'];
-  cx.fillStyle='rgba(0,220,180,0.6)';cx.font='bold 14px Courier New';
-  cx.fillText(labels[thought],W*0.35,H*0.5);
-}
-
-// tk15: Everything connected = compromised → network of devices all red
-function s15(t){
-  cx.fillStyle='#060810';cx.fillRect(0,0,W,H);
-  var devices=[
-    {x:W*0.5,y:H*0.15,name:'📱'},
-    {x:W*0.2,y:H*0.3,name:'💻'},
-    {x:W*0.8,y:H*0.3,name:'🖥️'},
-    {x:W*0.15,y:H*0.55,name:'📺'},
-    {x:W*0.5,y:H*0.5,name:'🏠'},
-    {x:W*0.85,y:H*0.55,name:'🚗'},
-    {x:W*0.3,y:H*0.75,name:'⌚'},
-    {x:W*0.7,y:H*0.75,name:'🔊'},
-    {x:W*0.5,y:H*0.85,name:'📷'},
-  ];
-  // Connections
-  for(var i=0;i<devices.length;i++){
-    for(var j=i+1;j<devices.length;j++){
-      var dx=devices[i].x-devices[j].x,dy=devices[i].y-devices[j].y;
-      if(Math.sqrt(dx*dx+dy*dy)<250){
-        cx.strokeStyle='rgba(255,40,40,0.15)';cx.lineWidth=0.5;
-        cx.beginPath();cx.moveTo(devices[i].x,devices[i].y);cx.lineTo(devices[j].x,devices[j].y);cx.stroke();
+function start(){
+  document.getElementById('startScreen').style.display='none';
+  initAudio();
+  if(!allLoaded){
+    document.getElementById('loading').style.display='block';
+    var wl=setInterval(function(){
+      if(allLoaded){clearInterval(wl);document.getElementById('loading').style.display='none';
+        if(!loadingDone){loadAllVoices();var wv=setInterval(function(){if(loadingDone){clearInterval(wv);lineIdx=0;playLine()}},300)}
+        else{lineIdx=0;playLine()}
       }
-    }
+    },300);
+  }else{
+    if(!loadingDone){loadAllVoices();var wv2=setInterval(function(){if(loadingDone){clearInterval(wv2);lineIdx=0;playLine()}},300)}
+    else{lineIdx=0;playLine()}
   }
-  // Devices
-  for(var i=0;i<devices.length;i++){
-    var d=devices[i];
-    var compromised=Math.sin(t*0.002+i*0.8)>-0.3;
-    if(compromised){
-      cx.fillStyle='rgba(255,40,40,0.15)';cx.beginPath();cx.arc(d.x,d.y,20,0,Math.PI*2);cx.fill();
-    }
-    cx.font='20px Arial';cx.fillText(d.name,d.x-10,d.y+7);
-    cx.fillStyle=compromised?'rgba(255,40,40,0.5)':'rgba(0,220,180,0.3)';
-    cx.font='8px Courier New';cx.fillText(compromised?'COMPROMIS':'✓',d.x-15,d.y+25);
-  }
-  // Count
-  var count=0;
-  for(var i=0;i<devices.length;i++){if(Math.sin(t*0.002+i*0.8)>-0.3)count++}
-  cx.fillStyle='rgba(255,40,40,0.5)';cx.font='bold 14px Courier New';
-  cx.fillText(count+'/'+devices.length+' COMPROMIS',W*0.25,H*0.95);
 }
 
-var scenes=[s01,s02,s03,s04,s05,s06,s07,s08,s09,s10,s11,s12,s13,s14,s15];
+// Start loading photos immediately
+loadPhotos();
 
-function render(){
-  var t=Date.now();
-  cx.clearRect(0,0,W,H);
-  if(scenes[lineIdx])scenes[lineIdx](t);
+// Draw photo as background, centered/cropped to fill
+function drawPhoto(img){
+  if(!img)return false;
+  var iw=img.width,ih=img.height;
+  var scale=Math.max(W/iw,H/ih);
+  var sw=W/scale,sh=H/scale;
+  var sx=(iw-sw)/2,sy=(ih-sh)/2;
+  cx.drawImage(img,sx,sy,sw,sh,0,0,W,H);
+  return true;
+}
+
+// Overlay effects on each scene
+function drawOverlay(t,sceneIdx){
+  // Dark tint
+  cx.fillStyle='rgba(0,0,0,0.45)';cx.fillRect(0,0,W,H);
+
+  // Scene-specific overlays
+  switch(sceneIdx){
+    case 0: // passwords
+      cx.fillStyle='rgba(255,40,40,0.7)';cx.font='bold clamp(40px,12vw,80px) Courier New';
+      cx.fillText('93%',W*0.1,H*0.3);
+      cx.fillStyle='rgba(255,255,255,0.3)';cx.font='clamp(12px,3vw,18px) Courier New';
+      cx.fillText('DES MOTS DE PASSE CRACKÉS',W*0.1,H*0.38);
+      cx.fillText('EN MOINS DE 6 HEURES',W*0.1,H*0.44);
+      // Progress bar
+      var prog=Math.min(0.93,(t%8000)/8000);
+      cx.fillStyle='rgba(255,255,255,0.1)';cx.fillRect(W*0.1,H*0.52,W*0.8,20);
+      cx.fillStyle='rgba(0,220,180,0.6)';cx.fillRect(W*0.1,H*0.52,W*0.8*prog,20);
+      cx.fillStyle='#fff';cx.font='12px Courier New';cx.fillText(Math.round(prog*100)+'%',W*0.1+W*0.8*prog-25,H*0.52+15);
+      break;
+
+    case 1: // camera
+      cx.strokeStyle='rgba(0,220,180,0.4)';cx.lineWidth=2;
+      cx.strokeRect(W*0.05,H*0.05,W*0.9,H*0.85);
+      cx.fillStyle='rgba(0,220,180,0.4)';cx.font='10px Courier New';
+      cx.fillText('CAM-0472 // SURVEILLANCE',W*0.08,H*0.09);
+      var now=new Date();cx.fillText(('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+':'+('0'+now.getSeconds()).slice(-2),W*0.08,H*0.12);
+      cx.fillStyle='rgba(255,40,40,0.7)';cx.fillText('● REC',W*0.8,H*0.09);
+      // Crosshair
+      cx.strokeStyle='rgba(0,220,180,0.2)';cx.lineWidth=0.5;
+      cx.beginPath();cx.moveTo(W/2-20,H/2);cx.lineTo(W/2+20,H/2);cx.moveTo(W/2,H/2-20);cx.lineTo(W/2,H/2+20);cx.stroke();
+      cx.beginPath();cx.arc(W/2,H/2,15,0,Math.PI*2);cx.stroke();
+      cx.fillStyle='rgba(0,220,180,0.3)';cx.font='10px Courier New';
+      cx.fillText("PORT D'ENTRÉE DÉTECTÉE",W*0.15,H*0.88);
+      break;
+
+    case 2: // phone tracking
+      var pulse=8+Math.sin(t*0.005)*4;
+      cx.fillStyle='rgba(255,40,40,0.2)';cx.beginPath();cx.arc(W/2,H*0.4,pulse+20,0,Math.PI*2);cx.fill();
+      cx.fillStyle='rgba(255,40,40,0.7)';cx.beginPath();cx.arc(W/2,H*0.4,10,0,Math.PI*2);cx.fill();
+      cx.fillStyle='#fff';cx.beginPath();cx.arc(W/2,H*0.4,3,0,Math.PI*2);cx.fill();
+      cx.fillStyle='rgba(255,255,255,0.5)';cx.font='12px Courier New';
+      cx.fillText('LOCALISÉ EN TEMPS RÉEL',W*0.2,H*0.55);
+      var secs=~~((t/1000)%30);
+      cx.fillStyle='rgba(255,40,40,0.5)';cx.fillText('Tracké il y a '+secs+'s',W*0.25,H*0.6);
+      break;
+
+    case 3: // wifi
+      cx.fillStyle='rgba(0,100,200,0.1)';cx.beginPath();cx.ellipse(W/2,H*0.5,W*0.4,H*0.2,0,0,Math.PI*2);cx.fill();
+      for(var i=0;i<4;i++){
+        var dy=H*0.25+((t*0.04+i*40)%H*0.3);
+        cx.fillStyle='rgba(0,220,180,0.4)';cx.fillRect(W*0.2+i*W*0.18,dy,2,8);
+      }
+      cx.fillStyle='rgba(255,255,255,0.4)';cx.font='11px Courier New';
+      cx.fillText('TOUT LE MONDE VOIT TES DONNÉES',W*0.1,H*0.85);
+      break;
+
+    case 4: // door
+      var knockX=W*0.5;var knockY=H*0.4;
+      var knockOff=Math.sin((t%1500)/1500*Math.PI*6)*4;
+      cx.fillStyle='rgba(255,255,255,0.15)';
+      cx.beginPath();cx.arc(knockX+knockOff,knockY,15,0,Math.PI*2);cx.fill();
+      for(var f=0;f<4;f++)cx.fillRect(knockX+knockOff+f*6-10,knockY-16,5,12);
+      cx.strokeStyle='rgba(255,255,255,0.1)';cx.lineWidth=1;
+      for(var r=0;r<3;r++){cx.beginPath();cx.arc(knockX+knockOff,knockY,22+r*10,0,Math.PI*2);cx.stroke()}
+      cx.fillStyle='rgba(0,220,180,0.5)';cx.font='12px Courier New';
+      cx.fillText("IL TE DEMANDE D'OUVRIR",W*0.15,H*0.85);
+      break;
+
+    case 5: // tv
+      for(var i=0;i<6;i++){
+        var wy=H*0.6+i*10;
+        cx.strokeStyle='rgba(255,40,40,'+(0.25-i*0.03)+')';cx.lineWidth=1;
+        cx.beginPath();cx.moveTo(W*0.2,wy);cx.lineTo(W*0.8,wy);cx.stroke();
+      }
+      cx.fillStyle='rgba(255,40,40,0.5)';cx.font='11px Courier New';
+      cx.fillText('MIC: TOUJOURS ACTIF',W*0.25,H*0.75);
+      cx.fillStyle='rgba(255,40,40,0.4)';cx.font='16px Arial';
+      cx.fillText('🔴',W*0.48,H*0.82);
+      break;
+
+    case 6: // same password
+      cx.fillStyle='rgba(255,40,40,0.6)';cx.font='bold clamp(25px,7vw,50px) Courier New';
+      cx.fillText('98%',W*0.1,H*0.2);
+      cx.fillStyle='rgba(255,255,255,0.25)';cx.font='11px Courier New';
+      cx.fillText('MÊME MOT DE PASSE PARTOUT',W*0.1,H*0.28);
+      var sites=['Gmail','Facebook','Instagram','Twitter','Netflix','Amazon'];
+      for(var i=0;i<sites.length;i++){
+        cx.fillStyle='rgba(255,255,255,0.15)';cx.fillRect(W*0.08,H*0.34+i*H*0.07,W*0.84,H*0.055);
+        cx.fillStyle='rgba(0,220,180,0.4)';cx.font='10px Courier New';cx.fillText(sites[i],W*0.1,H*0.34+i*H*0.07+H*0.035);
+        cx.fillStyle='rgba(255,40,40,0.4)';cx.fillText('password123',W*0.55,H*0.34+i*H*0.07+H*0.035);
+      }
+      break;
+
+    case 7: // dark web
+      cx.fillStyle='rgba(200,50,50,0.4)';cx.font='12px Courier New';
+      cx.fillText('.onion // DARK WEB',W*0.1,H*0.1);
+      var items=['Exploit: $250K','CC Dumps: $800','Ransomware: $199/mois','DDoS: $50/jour'];
+      for(var i=0;i<items.length;i++){
+        cx.fillStyle='rgba(255,255,255,0.08)';cx.fillRect(W*0.08,H*0.15+i*H*0.1,W*0.84,H*0.08);
+        cx.fillStyle='rgba(200,50,50,0.5)';cx.font='10px Courier New';cx.fillText(items[i],W*0.1,H*0.15+i*H*0.1+H*0.05);
+      }
+      cx.fillStyle='rgba(0,220,180,0.3)';cx.font='10px Courier New';
+      cx.fillText("C'EST LE MÊME, SANS FILTRE",W*0.15,H*0.9);
+      break;
+
+    case 8: // sim swap
+      cx.fillStyle='rgba(255,40,40,0.5)';cx.font='bold 14px Courier New';
+      cx.fillText('SIM SWAP',W*0.3,H*0.1);
+      cx.fillStyle='rgba(255,255,255,0.15)';cx.font='10px Courier New';
+      cx.fillText('[1] Social engineering',W*0.1,H*0.2);
+      cx.fillText('[2] Identité volée',W*0.1,H*0.25);
+      cx.fillText('[3] Nouvelle SIM activée',W*0.1,H*0.3);
+      cx.fillText('[4] 2FA bypassé',W*0.1,H*0.35);
+      cx.fillText('[5] Instagram récupéré',W*0.1,H*0.4);
+      cx.fillStyle='rgba(255,40,40,0.4)';cx.fillText('EN 12 MINUTES',W*0.3,H*0.5);
+      break;
+
+    case 9: // phishing psy
+      cx.fillStyle='rgba(0,220,180,0.3)';cx.font='12px Courier New';
+      cx.fillText('PSYCHOLOGIE DU PHISHING',W*0.1,H*0.1);
+      var tricks=['URGENCE','PEUR','CURIOSITÉ','AIDE','AUTORITÉ'];
+      for(var i=0;i<tricks.length;i++){
+        var active=Math.sin(t*0.002+i*1.2)>0.3;
+        cx.fillStyle=active?'rgba(255,40,40,0.6)':'rgba(255,255,255,0.15)';
+        cx.font=(active?'bold ':'')+' 11px Courier New';
+        cx.fillText(tricks[i],W*0.1,H*0.2+i*H*0.1);
+        if(active){
+          cx.strokeStyle='rgba(255,40,40,0.3)';cx.lineWidth=1;
+          cx.beginPath();cx.moveTo(W*0.1+60,H*0.2+i*H*0.1-3);cx.lineTo(W*0.5,H*0.5);cx.stroke();
+        }
+      }
+      break;
+
+    case 10: // IP
+      cx.fillStyle='rgba(0,220,180,0.5)';cx.font='11px Courier New';
+      cx.fillText('IP: 86.214.xxx.xxx',W*0.1,H*0.15);
+      cx.fillText('ISP: Orange France',W*0.1,H*0.2);
+      cx.fillText('Paris, France',W*0.1,H*0.25);
+      cx.fillText('48.8566° N, 2.3522° E',W*0.1,H*0.3);
+      cx.fillStyle='rgba(255,40,40,0.4)';cx.font='12px Courier New';
+      cx.fillText('ADRESSE POSTALE SUR INTERNET',W*0.1,H*0.85);
+      break;
+
+    case 11: // passkey
+      cx.fillStyle='rgba(255,255,255,0.1)';cx.font='10px Courier New';
+      cx.fillText('MOTS DE PASSE: MORTS',W*0.1,H*0.15);
+      cx.fillStyle='rgba(0,220,180,0.5)';cx.font='12px Courier New';
+      cx.fillText('PASSE AU PASSKEY',W*0.1,H*0.25);
+      cx.fillText('→ Biométrie',W*0.1,H*0.35);
+      cx.fillText('→ Jamais sur serveur',W*0.1,H*0.4);
+      cx.fillText('→ Impossible à cracker',W*0.1,H*0.45);
+      break;
+
+    case 12: // hacker vision
+      cx.strokeStyle='rgba(255,40,40,0.4)';cx.lineWidth=1.5;
+      cx.strokeRect(W*0.15,H*0.15,W*0.3,H*0.25);
+      cx.strokeRect(W*0.55,H*0.15,W*0.3,H*0.25);
+      cx.strokeRect(W*0.35,H*0.5,W*0.3,H*0.25);
+      cx.fillStyle='rgba(255,40,40,0.5)';cx.font='9px Courier New';
+      cx.fillText('FAILLE: SQL INJECTION',W*0.17,H*0.19);
+      cx.fillText('PORT: 22/SSH OUVERTE',W*0.57,H*0.19);
+      cx.fillText('MDP: admin/admin',W*0.37,H*0.54);
+      var scanY=(t*0.05)%H;
+      cx.strokeStyle='rgba(0,220,180,0.15)';cx.lineWidth=0.5;
+      cx.beginPath();cx.moveTo(0,scanY);cx.lineTo(W,scanY);cx.stroke();
+      break;
+
+    case 13: // mindset
+      cx.fillStyle='rgba(0,220,180,0.4)';cx.font='12px Courier New';
+      var thoughts=['VIGILANCE','ANALYSE','PRÉVENTION','RÉPONSE','ADAPTATION'];
+      var active=~~(t*0.002)%thoughts.length;
+      cx.fillText(thoughts[active],W*0.3,H*0.45);
+      cx.fillStyle='rgba(0,220,180,0.2)';cx.font='10px Courier New';
+      cx.fillText('ÉTAT D\'ESPRIT',W*0.35,H*0.55);
+      break;
+
+    case 14: // everything connected
+      cx.fillStyle='rgba(255,40,40,0.4)';cx.font='12px Courier New';
+      cx.fillText('TOUT COMPROMIS',W*0.25,H*0.1);
+      var devs=['📱','💻','🖥️','📺','🚗','📷','⌚','🔊'];
+      for(var i=0;i<devs.length;i++){
+        var dx=W*0.1+Math.random()*W*0.8;
+        var dy=H*0.2+Math.random()*H*0.5;
+        cx.font='18px Arial';cx.fillText(devs[i],dx,dy);
+        cx.fillStyle='rgba(255,40,40,0.4)';cx.font='7px Courier New';cx.fillText('✗',dx+5,dy+15);
+      }
+      break;
+  }
+
   // Vignette
   var vig=cx.createRadialGradient(W/2,H/2,W*0.15,W/2,H/2,W*0.65);
   vig.addColorStop(0,'transparent');vig.addColorStop(1,'rgba(0,0,0,0.5)');
   cx.fillStyle=vig;cx.fillRect(0,0,W,H);
+
   // Scan lines
   cx.fillStyle='rgba(0,0,0,0.03)';
   for(var y=0;y<H;y+=3)cx.fillRect(0,y,W,1);
+}
+
+function render(){
+  var t=Date.now();
+  cx.clearRect(0,0,W,H);
+
+  // Draw photo background
+  var img=photosLoaded[lineIdx];
+  if(img){
+    drawPhoto(img);
+  }else{
+    cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
+  }
+
+  // Draw overlay
+  drawOverlay(t,lineIdx);
+
   var now=new Date();
   document.getElementById('hudTime').textContent=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+':'+('0'+now.getSeconds()).slice(-2);
   requestAnimationFrame(render);
