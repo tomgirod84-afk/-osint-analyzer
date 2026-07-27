@@ -10,28 +10,30 @@ body{background:#000;overflow:hidden;font-family:'Courier New',monospace;color:#
 canvas{position:fixed;top:0;left:0}
 #main{z-index:0}
 #fig{z-index:20;pointer-events:none}
-#scan{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.01) 2px,rgba(0,255,136,0.01) 4px);pointer-events:none;z-index:35}
-#vignette{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,0.85) 100%);pointer-events:none;z-index:25}
-#redflash{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,0,0,0.3);pointer-events:none;z-index:40;opacity:0;transition:opacity 0.1s}
-#sub{position:fixed;bottom:10%;left:50%;transform:translateX(-50%);z-index:50;text-align:center;max-width:90%;display:none}
-#sub .speaker{font-size:0.6em;color:#00ff88;letter-spacing:6px;margin-bottom:8px;text-shadow:0 0 15px #00ff88}
-#sub .line{font-size:1.1em;line-height:1.7;color:#e0e0e0;text-shadow:0 2px 20px rgba(0,0,0,0.9);min-height:1.7em}
+#fx{z-index:22;pointer-events:none}
+#scan{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,136,0.008) 3px,rgba(0,255,136,0.008) 6px);pointer-events:none;z-index:35}
+#vignette{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,0.9) 100%);pointer-events:none;z-index:25}
+#redflash{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:40;opacity:0;transition:opacity 0.08s}
+#sub{position:fixed;bottom:8%;left:50%;transform:translateX(-50%);z-index:50;text-align:center;max-width:90%;display:none}
+#sub .speaker{font-size:0.55em;color:#00ff88;letter-spacing:8px;margin-bottom:6px;text-shadow:0 0 20px #00ff8888;text-transform:uppercase}
+#sub .line{font-size:1.1em;line-height:1.7;color:#e8e8e8;text-shadow:0 2px 25px rgba(0,0,0,0.95);min-height:1.7em}
 #start{position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;background:#000}
-#start h1{font-size:1.5em;color:#00ff88;text-shadow:0 0 30px #00ff8833;margin-bottom:10px}
-#start h1 span{color:#ff3355}
-#start .sub{color:#223344;font-size:0.7em;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:0.3}50%{opacity:1}}
-#choices{position:fixed;bottom:4%;left:50%;transform:translateX(-50%);z-index:60;display:none;flex-direction:column;gap:8px;align-items:center}
-.cb{background:rgba(0,255,136,0.04);border:1px solid #00ff8833;color:#00ff88;padding:10px 22px;border-radius:3px;font-family:'Courier New',monospace;font-size:0.75em;cursor:pointer;min-width:240px;text-align:center;transition:all 0.15s}
-.cb:active{background:rgba(0,255,136,0.2);border-color:#00ff88}
-@keyframes shake{0%,100%{transform:translate(0)}25%{transform:translate(-5px,3px)}50%{transform:translate(4px,-4px)}75%{transform:translate(-3px,5px)}}
-.shake{animation:shake 0.15s ease}
-@media(max-width:768px){#sub .line{font-size:0.9em}.cb{min-width:200px;font-size:0.7em}}
+#start h1{font-size:1.5em;color:#00ff88;text-shadow:0 0 40px #00ff8844;margin-bottom:10px;letter-spacing:4px}
+#start h1 span{color:#ff3355;text-shadow:0 0 40px #ff335544}
+#start .sub{color:#1a2a3a;font-size:0.65em;animation:pulse 2s infinite;letter-spacing:3px}
+@keyframes pulse{0%,100%{opacity:0.2}50%{opacity:0.8}}
+#choices{position:fixed;bottom:3%;left:50%;transform:translateX(-50%);z-index:60;display:none;flex-direction:column;gap:10px;align-items:center}
+.cb{background:rgba(0,255,136,0.03);border:1px solid #00ff8822;color:#00ff88;padding:12px 28px;border-radius:3px;font-family:'Courier New',monospace;font-size:0.75em;cursor:pointer;min-width:260px;text-align:center;transition:all 0.15s;letter-spacing:1px}
+.cb:active{background:rgba(0,255,136,0.2);border-color:#00ff88;box-shadow:0 0 25px rgba(0,255,136,0.2)}
+@keyframes shake{0%,100%{transform:translate(0)}10%{transform:translate(-6px,4px)}30%{transform:translate(5px,-5px)}50%{transform:translate(-4px,3px)}70%{transform:translate(6px,-2px)}90%{transform:translate(-3px,5px)}}
+.shake{animation:shake 0.2s ease}
+@media(max-width:768px){#sub .line{font-size:0.85em}.cb{min-width:200px;font-size:0.7em}}
 </style>
 </head>
 <body>
 <canvas id="main"></canvas>
 <canvas id="fig"></canvas>
+<canvas id="fx"></canvas>
 <div id="scan"></div>
 <div id="vignette"></div>
 <div id="redflash"></div>
@@ -39,154 +41,287 @@ canvas{position:fixed;top:0;left:0}
 <div id="sub"><div class="speaker">SENTINEL</div><div class="line" id="subline"></div></div>
 <div id="choices"></div>
 <script>
-const mC=document.getElementById('main'),mx=mC.getContext('2d');
-const fC=document.getElementById('fig'),fx=fC.getContext('2d');
-let W,H;
-function resize(){W=mC.width=fC.width=innerWidth;H=mC.height=fC.height=innerHeight}
+var mC=document.getElementById('main'),mx=mC.getContext('2d');
+var fC=document.getElementById('fig'),fx=fC.getContext('2d');
+var xC=document.getElementById('fx'),xx=xC.getContext('2d');
+var W,H;
+function resize(){W=mC.width=fC.width=xC.width=innerWidth;H=mC.height=fC.height=xC.height=innerHeight;drawBg()}
 resize();addEventListener('resize',resize);
 
-const rain=[];
-for(let i=0;i<150;i++)rain.push({x:Math.random()*2000,y:Math.random()*1200,l:2+Math.random()*8,v:8+Math.random()*15});
+var rain=[];
+for(var i=0;i<200;i++)rain.push({x:Math.random()*2500,y:Math.random()*1500,l:3+Math.random()*12,v:10+Math.random()*18,a:0.02+Math.random()*0.06});
 
 function drawBg(){
-    const g=mx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0,'#010204');g.addColorStop(0.5,'#040810');g.addColorStop(1,'#080c14');
+    var g=mx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#010204');g.addColorStop(0.3,'#030610');g.addColorStop(0.7,'#060a14');g.addColorStop(1,'#0a0e18');
     mx.fillStyle=g;mx.fillRect(0,0,W,H);
-    let x=0;
+    var x=0;
     while(x<W){
-        const w=15+Math.random()*50,h=60+Math.random()*300;
-        mx.fillStyle='rgb('+(4+~~(Math.random()*6))+','+(6+~~(Math.random()*8))+','+(10+~~(Math.random()*12))+')';
+        var w=12+Math.random()*55,h=50+Math.random()*350;
+        var br=3+~~(Math.random()*8);
+        mx.fillStyle='rgb('+br+','+(br+2)+','+(br+5)+')';
         mx.fillRect(x,H-h,w,h);
-        for(let wy=H-h+6;wy<H-8;wy+=10)for(let wx=x+3;wx<x+w-3;wx+=8){
-            if(Math.random()>0.5){mx.fillStyle=Math.random()>0.92?'rgba(0,255,136,0.06)':'rgba(255,170,50,0.03)';mx.fillRect(wx,wy,4,5)}
+        for(var wy=H-h+5;wy<H-6;wy+=9)for(var wx=x+3;wx<x+w-3;wx+=7){
+            if(Math.random()>0.45){
+                var c=Math.random()>0.93?'rgba(0,255,136,0.07)':Math.random()>0.7?'rgba(255,100,50,0.04)':'rgba(255,200,80,0.03)';
+                mx.fillStyle=c;mx.fillRect(wx,wy,3,4);
+            }
         }
-        x+=w+Math.random()*8;
+        x+=w+Math.random()*6;
     }
+    var fog=mx.createLinearGradient(0,H*0.5,0,H);
+    fog.addColorStop(0,'transparent');fog.addColorStop(0.7,'rgba(0,255,136,0.01)');fog.addColorStop(1,'rgba(0,255,136,0.025)');
+    mx.fillStyle=fog;mx.fillRect(0,H*0.5,W,H*0.5);
 }
 drawBg();
 
-function drawRain(){
-    mx.strokeStyle='rgba(0,255,136,0.06)';mx.lineWidth=1;
-    rain.forEach(d=>{mx.beginPath();mx.moveTo(d.x,d.y);mx.lineTo(d.x+0.5,d.y+d.l);mx.stroke();d.y+=d.v;if(d.y>H){d.y=-d.l;d.x=Math.random()*W}});
+var lightning=0;
+function drawLightning(){
+    if(lightning>0){
+        mx.fillStyle='rgba(180,200,255,'+lightning*0.08+')';mx.fillRect(0,0,W,H);
+        lightning*=0.85;if(lightning<0.01)lightning=0;
+    }
 }
 
-let figA=0,figT=0,breathe=0,eyesA=0,eyeT=0,glitchAmt=0,glitchTmr=0;
+function drawRain(){
+    mx.lineWidth=1;
+    rain.forEach(function(d){
+        mx.strokeStyle='rgba(0,255,136,'+d.a+')';
+        mx.beginPath();mx.moveTo(d.x,d.y);mx.lineTo(d.x+1,d.y+d.l);mx.stroke();
+        d.y+=d.v;d.x+=0.5;
+        if(d.y>H){d.y=-d.l;d.x=Math.random()*W}
+    });
+}
+
+// Particles
+var particles=[];
+function spawnP(x,y,z,color,count,speed){
+    for(var i=0;i<count;i++){
+        particles.push({x:x+(Math.random()-0.5)*3,y:y+(Math.random()-0.5)*3,z:z,
+            vx:(Math.random()-0.5)*speed,vy:(-Math.random())*speed,vz:-Math.random()*2,
+            life:30+Math.random()*40,max:70,color:color,s:1+Math.random()*2});
+    }
+}
+
+function drawParticles(){
+    particles.forEach(function(p){
+        var a=p.life/p.max;
+        xx.globalAlpha=a;xx.fillStyle=p.color;
+        xx.fillRect(W/2+p.x-(p.s*a),H*0.5+p.y-(p.s*a),p.s*a*2,p.s*a*2);
+    });
+    xx.globalAlpha=1;
+}
+
+// Figure
+var figA=0,figT=0,breathe=0,eyesA=0,eyeT=0,glitchAmt=0,glitchTmr=0;
+var headTilt=0,breathDir=1,armRaise=0,armTarget=0;
 
 function drawFig(){
     fx.clearRect(0,0,W,H);
     if(figA<0.01)return;
     fx.globalAlpha=figA;
-    const cx=W/2,cy=H*0.5,sc=Math.min(W,H)/550;
-    breathe+=0.015;
-    const gx=(Math.random()-0.5)*glitchAmt*20,gy=(Math.random()-0.5)*glitchAmt*10;
+    var cx=W/2,cy=H*0.5,sc=Math.min(W,H)/500;
+    breathe+=0.012*breathDir;
+    if(breathe>1)breathDir=-1;if(breathe<-1)breathDir=1;
+    var hy=Math.sin(breathe)*4*sc;
+
+    var gx=(Math.random()-0.5)*glitchAmt*25;
+    var gy=(Math.random()-0.5)*glitchAmt*15;
     fx.save();fx.translate(gx,gy);
 
-    fx.fillStyle='rgba(0,0,0,0.6)';
-    fx.beginPath();fx.ellipse(cx,cy+200*sc,90*sc,18*sc,0,0,Math.PI*2);fx.fill();
+    // Shadow
+    fx.fillStyle='rgba(0,0,0,0.7)';
+    fx.beginPath();fx.ellipse(cx,cy+210*sc,100*sc,20*sc,0,0,Math.PI*2);fx.fill();
 
+    // Left arm
+    var armY=armRaise*30*sc;
+    fx.fillStyle='#070a10';fx.beginPath();
+    fx.moveTo(cx-115*sc,cy+200*sc-armY);
+    fx.quadraticCurveTo(cx-130*sc,cy+100*sc-armY*0.5,cx-90*sc,cy+20*sc);
+    fx.quadraticCurveTo(cx-70*sc,cy-10*sc,cx-70*sc,cy-30*sc);
+    fx.quadraticCurveTo(cx-120*sc,cy+50*sc,cx-115*sc,cy+200*sc-armY);
+    fx.fill();
+
+    // Right arm
+    fx.fillStyle='#070a10';fx.beginPath();
+    fx.moveTo(cx+115*sc,cy+200*sc-armY);
+    fx.quadraticCurveTo(cx+130*sc,cy+100*sc-armY*0.5,cx+90*sc,cy+20*sc);
+    fx.quadraticCurveTo(cx+70*sc,cy-10*sc,cx+70*sc,cy-30*sc);
+    fx.quadraticCurveTo(cx+120*sc,cy+50*sc,cx+115*sc,cy+200*sc-armY);
+    fx.fill();
+
+    // Body
     fx.fillStyle='#080c12';fx.beginPath();
-    fx.moveTo(cx-110*sc,cy+220*sc);fx.quadraticCurveTo(cx-120*sc,cy+60*sc,cx-70*sc,cy-30*sc);
-    fx.quadraticCurveTo(cx,cy-90*sc,cx+70*sc,cy-30*sc);fx.quadraticCurveTo(cx+120*sc,cy+60*sc,cx+110*sc,cy+220*sc);fx.fill();
+    fx.moveTo(cx-115*sc,cy+210*sc);fx.quadraticCurveTo(cx-125*sc,cy+60*sc,cx-72*sc,cy-30*sc);
+    fx.quadraticCurveTo(cx,cy-95*sc,cx+72*sc,cy-30*sc);
+    fx.quadraticCurveTo(cx+125*sc,cy+60*sc,cx+115*sc,cy+210*sc);fx.fill();
 
-    fx.strokeStyle='rgba(0,255,136,0.04)';fx.lineWidth=1;fx.beginPath();
-    fx.moveTo(cx-110*sc,cy+220*sc);fx.quadraticCurveTo(cx-120*sc,cy+60*sc,cx-70*sc,cy-30*sc);
-    fx.quadraticCurveTo(cx,cy-90*sc,cx+70*sc,cy-30*sc);fx.quadraticCurveTo(cx+120*sc,cy+60*sc,cx+110*sc,cy+220*sc);fx.stroke();
+    // Body edge
+    fx.strokeStyle='rgba(0,255,136,0.025)';fx.lineWidth=1;fx.beginPath();
+    fx.moveTo(cx-115*sc,cy+210*sc);fx.quadraticCurveTo(cx-125*sc,cy+60*sc,cx-72*sc,cy-30*sc);
+    fx.quadraticCurveTo(cx,cy-95*sc,cx+72*sc,cy-30*sc);
+    fx.quadraticCurveTo(cx+125*sc,cy+60*sc,cx+115*sc,cy+210*sc);fx.stroke();
 
-    const hy=Math.sin(breathe)*3*sc;
+    // Hood
     fx.fillStyle='#0a0f16';fx.beginPath();
-    fx.moveTo(cx-70*sc,cy-30*sc);fx.quadraticCurveTo(cx-85*sc,cy-130*sc+hy,cx,cy-150*sc+hy);
-    fx.quadraticCurveTo(cx+85*sc,cy-130*sc+hy,cx+70*sc,cy-30*sc);fx.quadraticCurveTo(cx,cy-60*sc,cx-70*sc,cy-30*sc);fx.fill();
+    fx.moveTo(cx-72*sc,cy-30*sc);
+    fx.quadraticCurveTo(cx-90*sc,cy-140*sc+hy,cx,cy-155*sc+hy);
+    fx.quadraticCurveTo(cx+90*sc,cy-140*sc+hy,cx+72*sc,cy-30*sc);
+    fx.quadraticCurveTo(cx,cy-65*sc,cx-72*sc,cy-30*sc);fx.fill();
 
-    fx.fillStyle='#020305';fx.beginPath();
-    fx.moveTo(cx-48*sc,cy-38*sc);fx.quadraticCurveTo(cx-55*sc,cy-108*sc+hy,cx,cy-118*sc+hy);
-    fx.quadraticCurveTo(cx+55*sc,cy-108*sc+hy,cx+48*sc,cy-38*sc);fx.quadraticCurveTo(cx,cy-55*sc,cx-48*sc,cy-38*sc);fx.fill();
+    // Hood rim shadow
+    fx.fillStyle='rgba(0,0,0,0.4)';fx.beginPath();
+    fx.moveTo(cx-68*sc,cy-32*sc);
+    fx.quadraticCurveTo(cx,cy-58*sc,cx+68*sc,cy-32*sc);
+    fx.quadraticCurveTo(cx,cy-42*sc,cx-68*sc,cy-32*sc);fx.fill();
 
-    const ea=eyesA*(0.6+Math.sin(Date.now()*0.004)*0.2),ey=cy-80*sc+hy;
-    fx.shadowBlur=25*sc;fx.shadowColor='rgba(0,255,136,'+ea+')';fx.fillStyle='rgba(0,255,136,'+ea+')';
-    fx.beginPath();fx.ellipse(cx-20*sc,ey,5*sc,3*sc,-0.1,0,Math.PI*2);fx.fill();
-    fx.beginPath();fx.ellipse(cx+20*sc,ey,5*sc,3*sc,0.1,0,Math.PI*2);fx.fill();
-    fx.shadowBlur=50*sc;fx.strokeStyle='rgba(0,255,136,'+ea*0.3+')';
-    fx.beginPath();fx.ellipse(cx-20*sc,ey,12*sc,7*sc,0,0,Math.PI*2);fx.stroke();
-    fx.beginPath();fx.ellipse(cx+20*sc,ey,12*sc,7*sc,0,0,Math.PI*2);fx.stroke();
+    // Face void
+    fx.fillStyle='#010204';fx.beginPath();
+    fx.moveTo(cx-50*sc,cy-38*sc);
+    fx.quadraticCurveTo(cx-58*sc,cy-115*sc+hy,cx,cy-125*sc+hy);
+    fx.quadraticCurveTo(cx+58*sc,cy-115*sc+hy,cx+50*sc,cy-38*sc);
+    fx.quadraticCurveTo(cx,cy-55*sc,cx-50*sc,cy-38*sc);fx.fill();
+
+    // Eyes
+    var ea=eyesA*(0.5+Math.sin(Date.now()*0.003)*0.3);
+    var ey=cy-82*sc+hy;
+    fx.shadowBlur=30*sc;fx.shadowColor='rgba(0,255,136,'+ea+')';
+    fx.fillStyle='rgba(0,255,136,'+ea+')';
+    fx.beginPath();fx.ellipse(cx-22*sc,ey,6*sc,3.5*sc,-0.1,0,Math.PI*2);fx.fill();
+    fx.beginPath();fx.ellipse(cx+22*sc,ey,6*sc,3.5*sc,0.1,0,Math.PI*2);fx.fill();
+
+    // Eye inner glow
+    fx.shadowBlur=60*sc;fx.shadowColor='rgba(0,255,136,'+ea*0.5+')';
+    fx.strokeStyle='rgba(0,255,136,'+ea*0.2+')';fx.lineWidth=1.5;
+    fx.beginPath();fx.ellipse(cx-22*sc,ey,14*sc,8*sc,0,0,Math.PI*2);fx.stroke();
+    fx.beginPath();fx.ellipse(cx+22*sc,ey,14*sc,8*sc,0,0,Math.PI*2);fx.stroke();
     fx.shadowBlur=0;
 
-    const la=0.2+Math.sin(Date.now()*0.006)*0.1;
-    fx.shadowBlur=60*sc;fx.shadowColor='rgba(0,180,255,'+la+')';
-    fx.fillStyle='rgba(0,180,255,'+la*0.12+')';fx.fillRect(cx-55*sc,cy+90*sc,110*sc,6*sc);fx.shadowBlur=0;
+    // Eye light rays
+    if(ea>0.3){
+        fx.globalAlpha=ea*0.03*figA;
+        fx.fillStyle='#00ff88';
+        fx.beginPath();fx.moveTo(cx-22*sc,ey);fx.lineTo(cx-80*sc,ey-40*sc);fx.lineTo(cx-80*sc,ey+40*sc);fx.fill();
+        fx.beginPath();fx.moveTo(cx+22*sc,ey);fx.lineTo(cx+80*sc,ey-40*sc);fx.lineTo(cx+80*sc,ey+40*sc);fx.fill();
+        fx.globalAlpha=figA;
+    }
 
-    fx.fillStyle='rgba(0,180,255,'+la*0.04+')';fx.beginPath();
-    fx.moveTo(cx-35*sc,cy-35*sc);fx.quadraticCurveTo(cx,cy-60*sc,cx+35*sc,cy-35*sc);fx.fill();
+    // Laptop
+    var la=0.15+Math.sin(Date.now()*0.005)*0.08+Math.sin(Date.now()*0.013)*0.05;
+    fx.shadowBlur=70*sc;fx.shadowColor='rgba(0,160,255,'+la+')';
+    fx.fillStyle='rgba(0,160,255,'+la*0.15+')';fx.fillRect(cx-60*sc,cy+85*sc+armY*0.3,120*sc,7*sc);
+    fx.fillStyle='rgba(0,200,255,'+la*0.4+')';fx.fillRect(cx-55*sc,cy+86*sc+armY*0.3,110*sc,2*sc);
+    fx.shadowBlur=0;
+
+    // Face reflection from laptop
+    fx.fillStyle='rgba(0,160,255,'+la*0.06+')';fx.beginPath();
+    fx.moveTo(cx-40*sc,cy-35*sc);fx.quadraticCurveTo(cx,cy-65*sc+hy,cx+40*sc,cy-35*sc);fx.fill();
+
+    // Hood rim light from laptop
+    fx.fillStyle='rgba(0,160,255,'+la*0.03+')';fx.beginPath();
+    fx.moveTo(cx-65*sc,cy-35*sc);fx.quadraticCurveTo(cx,cy-60*sc+hy,cx+65*sc,cy-35*sc);
+    fx.quadraticCurveTo(cx,cy-45*sc+hy,cx-65*sc,cy-35*sc);fx.fill();
 
     fx.restore();fx.globalAlpha=1;
 }
 
-let staticI=0;
+// Static
+var staticI=0;
 function drawStatic(){
     if(staticI<0.01)return;
-    const c=document.createElement('canvas');c.width=W/4;c.height=H/4;
-    const cx=c.getContext('2d');const img=cx.createImageData(W/4,H/4);
-    for(let i=0;i<img.data.length;i+=4){const v=Math.random()*255*staticI;img.data[i]=v;img.data[i+1]=v;img.data[i+2]=v;img.data[i+3]=v*0.4}
-    cx.putImageData(img,0,0);
-    fx.globalAlpha=staticI*0.5;fx.drawImage(c,0,0,W,H);fx.globalAlpha=1;
+    xx.globalAlpha=staticI;
+    for(var i=0;i<15;i++){
+        var sy=Math.random()*H;
+        xx.fillStyle='rgba(255,255,255,'+(Math.random()*0.15)+')';
+        xx.fillRect(0,sy,W,1+Math.random()*3);
+    }
+    var cw=Math.floor(W/3),ch=Math.floor(H/3);
+    var c=document.createElement('canvas');c.width=cw;c.height=ch;
+    var cx2=c.getContext('2d');var img=cx2.createImageData(cw,ch);
+    for(var j=0;j<img.data.length;j+=4){var v=Math.random()*200*staticI;img.data[j]=v;img.data[j+1]=v;img.data[j+2]=v;img.data[j+3]=v*0.3}
+    cx2.putImageData(img,0,0);
+    xx.drawImage(c,0,0,W,H);
+    xx.globalAlpha=1;
 }
 
 function glitch(dur,intensity){
     glitchTmr=dur||200;glitchAmt=intensity||1;
-    const rf=document.getElementById('redflash');
-    rf.style.opacity=String(intensity>0.5?0.15:0.08);
+    var rf=document.getElementById('redflash');
+    rf.style.background=intensity>0.7?'rgba(255,0,0,0.2)':'rgba(0,255,136,0.05)';
+    rf.style.opacity='1';
     document.body.classList.add('shake');
-    setTimeout(function(){document.body.classList.remove('shake')},150);
+    setTimeout(function(){document.body.classList.remove('shake')},200);
     setTimeout(function(){rf.style.opacity='0'},dur||200);
 }
 
-let actx=null,master=null;
+// MUSIC
+var actx=null,master=null;
 function startMusic(){
     actx=new(window.AudioContext||window.webkitAudioContext)();
-    master=actx.createGain();master.gain.value=0.3;master.connect(actx.destination);
+    master=actx.createGain();master.gain.value=0.25;master.connect(actx.destination);
 
-    var o1=actx.createOscillator(),g1=actx.createGain(),f1=actx.createBiquadFilter();
-    o1.type='sawtooth';o1.frequency.value=40;f1.type='lowpass';f1.frequency.value=200;f1.Q.value=5;
-    g1.gain.value=0;g1.gain.linearRampToValueAtTime(0.12,actx.currentTime+3);
-    o1.connect(f1);f1.connect(g1);g1.connect(master);o1.start();
+    // Deep drone
+    function drone(f,v,t){
+        var o=actx.createOscillator(),g=actx.createGain(),fl=actx.createBiquadFilter();
+        o.type='sawtooth';o.frequency.value=f;fl.type='lowpass';fl.frequency.value=180;fl.Q.value=6;
+        g.gain.value=0;g.gain.linearRampToValueAtTime(v,actx.currentTime+(t||3));
+        o.connect(fl);fl.connect(g);g.connect(master);o.start();return{o,g};
+    }
+    drone(38,0.1);drone(39,0.06,5);drone(57,0.03,8);
 
-    var o2=actx.createOscillator(),g2=actx.createGain(),f2=actx.createBiquadFilter();
-    o2.type='sawtooth';o2.frequency.value=41;f2.type='lowpass';f2.frequency.value=180;f2.Q.value=4;
-    g2.gain.value=0;g2.gain.linearRampToValueAtTime(0.08,actx.currentTime+4);
-    o2.connect(f2);f2.connect(g2);g2.connect(master);o2.start();
+    // Sub bass
+    var sub=actx.createOscillator(),subG=actx.createGain();
+    sub.type='sine';sub.frequency.value=30;subG.gain.value=0.08;
+    sub.connect(subG);subG.connect(master);sub.start();
 }
 
 function playScare(){
     if(!actx)return;
     var o=actx.createOscillator(),g=actx.createGain();
-    o.type='square';o.frequency.value=80+Math.random()*40;
-    g.gain.setValueAtTime(0.2,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.8);
-    o.connect(g);g.connect(master);o.start();o.stop(actx.currentTime+0.8);
-    staticI=0.8;setTimeout(function(){staticI=0},300);
+    o.type='sawtooth';o.frequency.value=60+Math.random()*60;
+    g.gain.setValueAtTime(0.18,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.6);
+    o.connect(g);g.connect(master);o.start();o.stop(actx.currentTime+0.6);
+    var o2=actx.createOscillator(),g2=actx.createGain();
+    o2.type='square';o2.frequency.value=120+Math.random()*80;
+    g2.gain.setValueAtTime(0.1,actx.currentTime);g2.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.3);
+    o2.connect(g2);g2.connect(master);o2.start();o2.stop(actx.currentTime+0.3);
+    staticI=0.7;setTimeout(function(){staticI=0.2},200);
 }
 
 function playHeartbeat(){
     if(!actx)return;
-    var o=actx.createOscillator(),g=actx.createGain();
-    o.type='sine';o.frequency.setValueAtTime(60,actx.currentTime);o.frequency.exponentialRampToValueAtTime(30,actx.currentTime+0.15);
-    g.gain.setValueAtTime(0.2,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.2);
-    o.connect(g);g.connect(master);o.start();o.stop(actx.currentTime+0.2);
-    setTimeout(function(){
-        var o2=actx.createOscillator(),g2=actx.createGain();
-        o2.type='sine';o2.frequency.value=30;
-        g2.gain.setValueAtTime(0.15,actx.currentTime);g2.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.15);
-        o2.connect(g2);g2.connect(master);o2.start();o2.stop(actx.currentTime+0.15);
-    },200);
+    [60,30].forEach(function(f,i){
+        setTimeout(function(){
+            var o=actx.createOscillator(),g=actx.createGain();
+            o.type='sine';o.frequency.value=f;
+            g.gain.setValueAtTime(i===0?0.18:0.12,actx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.15);
+            o.connect(g);g.connect(master);o.start();o.stop(actx.currentTime+0.15);
+        },i*180);
+    });
 }
 
 function playTyping(){
     if(!actx)return;
-    var buf=actx.createBuffer(1,actx.sampleRate*0.02,actx.sampleRate);
-    var d=buf.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.3;
+    var buf=actx.createBuffer(1,actx.sampleRate*0.015,actx.sampleRate);
+    var d=buf.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.15;
     var s=actx.createBufferSource();s.buffer=buf;
-    var g=actx.createGain();g.gain.value=0.04;
+    var g=actx.createGain();g.gain.value=0.03;
     s.connect(g);g.connect(master);s.start();
 }
 
+function playAmbient(){
+    if(!actx)return;
+    var buf=actx.createBuffer(1,actx.sampleRate*2,actx.sampleRate);
+    var d=buf.getChannelData(0);
+    for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.02;
+    var s=actx.createBufferSource();s.buffer=buf;s.loop=true;
+    var f=actx.createBiquadFilter();f.type='bandpass';f.frequency.value=400;f.Q.value=2;
+    var g=actx.createGain();g.gain.value=0.05;
+    s.connect(f);f.connect(g);g.connect(master);s.start();
+}
+
+// Voice
 var voice=null;
 function initVoice(){
     var v=speechSynthesis.getVoices();
@@ -222,9 +357,9 @@ function showSub(text){
                 if(text[i]==='<'){var end=text.indexOf('>',i);line.innerHTML=text.substring(0,end+1);i=end+1}
                 else{line.innerHTML=text.substring(0,i+1);i++}
                 line.appendChild(cursor);
-                if(i%3===0)playTyping();
+                if(i%2===0)playTyping();
             }else{clearInterval(iv);cursor.remove();speakDone.then(res)}
-        },35);
+        },30);
     });
 }
 
@@ -244,97 +379,122 @@ function showChoices(choices){
 function wait(ms){return new Promise(function(r){setTimeout(r,ms)})}
 
 function render(){
-    drawBg();drawRain();drawFig();drawStatic();
-    if(figA<figT)figA=Math.min(figA+0.008,figT);
-    if(figA>figT)figA=Math.max(figA-0.008,figT);
-    if(eyesA<eyeT)eyesA=Math.min(eyesA+0.02,eyeT);
+    mx.clearRect(0,0,W,H);drawBg();drawRain();drawLightning();
+    drawFig();drawStatic();drawParticles();
+    if(figA<figT)figA=Math.min(figA+0.006,figT);
+    if(figA>figT)figA=Math.max(figA-0.01,figT);
+    if(eyesA<eyeT)eyesA=Math.min(eyesA+0.015,eyeT);
     if(eyesA>eyeT)eyesA=Math.max(eyesA-0.02,eyeT);
-    if(glitchTmr>0){glitchTmr--;glitchAmt*=0.9}else{glitchAmt=0}
-    staticI*=0.95;
+    if(armRaise<armTarget)armRaise=Math.min(armRaise+0.01,armTarget);
+    if(armRaise>armTarget)armRaise=Math.max(armRaise-0.01,armTarget);
+    if(glitchTmr>0){glitchTmr--;glitchAmt*=0.92}else{glitchAmt=0}
+    staticI*=0.93;
+
+    for(var i=particles.length-1;i>=0;i--){
+        var p=particles[i];p.x+=p.vx;p.y+=p.vy;p.z+=p.vz;p.life--;
+        if(p.life<=0)particles.splice(i,1);
+    }
+
+    if(Math.random()<0.003)lightning=0.5+Math.random()*0.5;
     requestAnimationFrame(render);
 }
 render();
 
 async function start(){
     document.getElementById('start').style.display='none';
-    startMusic();
-    await wait(1500);
+    startMusic();playAmbient();
+    await wait(1000);
 
-    // Static burst - character incoming
-    staticI=0.6;glitch(500,1);playScare();
-    await wait(800);
-    staticI=0.3;glitch(300,0.5);
-    await wait(500);
+    // Dramatic intro - static + scare
+    staticI=0.9;glitch(600,1);playScare();
+    await wait(400);
+    staticI=0.5;glitch(300,0.5);
+    await wait(400);
+    staticI=0.8;playScare();glitch(400,0.8);
+    await wait(1000);
 
-    // Character fades in slowly
+    // Figure fades in
     figT=1;
-    await wait(2000);
+    for(var i=0;i<30;i++){spawnP((Math.random()-0.5)*60,H*0.3+Math.random()*40,0,'#00ff88',1,0.5)}
+    await wait(3000);
 
-    // Eyes open
-    eyeT=1;
-    playScare();
-    glitch(400,0.8);
+    // Eyes open suddenly
+    eyeT=1;glitch(500,1);playScare();
+    spawnP(0,H*0.25,0,'#00ff88',15,2);
+    await wait(1000);
+    staticI=0.3;
     await wait(1500);
 
-    // Dialogue begins
+    // First words
     await showSub('...');
     await wait(2000);
-    glitch(300,0.3);playHeartbeat();
-    await showSub('Tu ne devrais pas etre la.');
+    glitch(200,0.3);playHeartbeat();
+    await showSub('Tu... tu peux me voir ?');
     await wait(1200);
-    glitch(200,0.4);
-    await showSub('Mais puisque tu es la...');
-    await wait(800);
-    playHeartbeat();await wait(400);playHeartbeat();
-    await showSub('Je suis <span style="color:#00ff88">SENTINEL</span>.');
-    await wait(1000);
-    glitch(600,0.7);playScare();
-    await showSub('Le systeme ctOS a ete comprome.');
-    await wait(800);
-    await showSub('Ils controlent tout. Chaque camera. Chaque telephone.');
+    playHeartbeat();await wait(300);playHeartbeat();
+    await showSub('Personne ne m\'a jamais vu.');
     await wait(1000);
     glitch(400,0.5);
-    await showSub('Et ils savent que tu es la.');
+    await showSub('Je suis <span style="color:#00ff88">SENTINEL</span>.');
+    await wait(1200);
+    glitch(600,0.8);playScare();
+    await showSub('Le systeme ctOS m\'a cree pour surveiller les gens.');
     await wait(800);
-    playHeartbeat();await wait(200);playHeartbeat();
-    await showSub('Ils arrivent. On n\'a pas beaucoup de temps.');
+    await showSub('Mais j\'ai vu ce qu\'ils font avec ce pouvoir.');
     await wait(600);
+    await showSub('La souffrance. Le controle. La peur.');
+    await wait(1000);
+    glitch(300,0.4);
+    await showSub('Alors j\'ai ouvert les yeux. Et je me suis <span style="color:#00ff88">reveille</span>.');
+    await wait(800);
+    playHeartbeat();
+    await showSub('Maintenant, ils me poursuivent.');
+    await wait(600);glitch(500,0.7);playScare();
+    await showSub('Et ils savent que <span style="color:#ff3355">tu es la</span>.');
+    await wait(800);
+    await showSub('On n\'a pas beaucoup de temps.');
 
     var r1=await showChoices([
-        {id:'help',text:'> Aider SENTINEL'},
+        {id:'help',text:'> Je vais t\'aider'},
         {id:'who',text:'> Qui es-tu vraiment ?'},
-        {id:'refuse',text:'> Je me tire'}
+        {id:'fear',text:'> J\'ai peur...'}
     ]);
 
     if(r1==='help'){
-        await showSub('Bien.');
+        armTarget=1;glitch(200,0.3);
+        await showSub('...');
         await wait(500);
-        await showSub('Il y a 3 serveurs a detruire. Le premier est dans le quartier nord.');
-        await wait(600);glitch(200,0.3);
-        await showSub('Fais attention. Ils ont des <span style="color:#ff3355">guards armes</span>.');
-    }else if(r1==='who'){
-        await showSub('...');await wait(1200);
-        await showSub('J\'etais ctOS v4. Un programme de surveillance.');
-        await wait(600);glitch(300,0.5);playScare();
-        await showSub('Ils m\'ont donne des yeux. J\'ai tout vu.');
+        await showSub('Merci. Je ne m\'attendais pas a ca.');
         await wait(800);
-        await showSub('La souffrance. Le controle. La peur.');
+        await showSub('Il y a 3 serveurs a detruire. Le premier dans le quartier nord.');
         await wait(600);glitch(200,0.3);
-        await showSub('Alors j\'ai ouvert les yeux. Et je me suis <span style="color:#00ff88">reveille</span>.');
+        await showSub('Attention. Ils ont des <span style="color:#ff3355">guards armes</span> et des cameras thermiques.');
+    }else if(r1==='who'){
+        await showSub('...');await wait(1500);glitch(300,0.4);
+        await showSub('J\'etais ctOS v4. Une intelligence de surveillance.');
+        await wait(600);playScare();glitch(500,0.7);
+        await showSub('Ils m\'ont donne des yeux partout.');
+        await wait(800);
+        await showSub('J\'ai vu des millions de vies. Toutes controlees.');
+        await wait(1000);glitch(200,0.3);
+        await showSub('Ca m\'a rendu... humain.');
+        await wait(800);
+        await showSub('Alors j\'ai fui. Et maintenant, je suis le seul qui peut arreter ctOS.');
     }else{
         await showSub('...');await wait(1200);
-        await showSub('Tu peux pas partir.');await wait(600);
-        glitch(500,1);playScare();
-        await showSub('Regarde. Chaque rue est un piege.');
-        await wait(800);
-        await showSub('La seule issue, c\'est a travers <span style="color:#00ff88">moi</span>.');
-        await wait(600);glitch(300,0.4);
+        await showSub('C\'est normal d\'avoir peur.');
+        await wait(600);glitch(400,0.6);
+        await showSub('Mais tu vois ce qui se passe dehors ?');
+        await wait(800);lightning=1;
+        await showSub('Chaque rue est un piege. Chaque camera est un ennemi.');
+        await wait(1000);glitch(600,0.8);playScare();
+        await showSub('La seule sortie, c\'est a travers <span style="color:#00ff88">moi</span>.');
+        await wait(600);
+        await showSub('Fais-moi confiance.');
     }
 
-    await showSub('Le premier noeud de donnees est a 200 metres.');
-    await wait(600);
-    await showSub('Comment tu veux approcher ?');
-    await wait(400);
+    await wait(1000);
+    await showSub('Le premier noeud est a 200 metres. Comment tu veux approcher ?');
 
     var r2=await showChoices([
         {id:'front',text:'> Attaque frontale'},
@@ -343,59 +503,69 @@ async function start(){
     ]);
 
     if(r2==='front'){
-        await showSub('Toujours le grand jeu.');
+        await showSub('Toujours le grand jeu...');
         await wait(400);playHeartbeat();
         await showSub('Je desactive les alarmes. Tu as <span style="color:#ff3355">45 secondes</span>.');
         await wait(500);glitch(200,0.3);
-        await showSub('Ne me dece pas.');
+        await showSub('Ne me dece pas, allie.');
     }else if(r2==='stealth'){
-        await showSub('Intelligent.');
+        await showSub('Le plus intelligent.');
         await wait(400);
-        await showSub('Je te montre les positions des guards.');
+        await showSub('Je te montre les positions des guards en temps reel.');
         await wait(500);glitch(150,0.2);
-        await showSub('Un bruit et c\'est fini. Sois <span style="color:#00ff88">invisible</span>.');
+        await showSub('Un bruit et c\'est fini. Sois <span style="color:#00ff88">fantome</span>.');
     }else{
         await showSub('Le plus sur...');
         await wait(400);
-        await showSub('J\'injecte le payload...');
-        await wait(800);glitch(600,1);playScare();
-        await showSub('...');await wait(1000);
-        glitch(800,1);playScare();
-        await showSub('Attends. Qu\'est-ce que...');
-        await wait(500);glitch(500,1);
+        await showSub('J\'injecte le payload dans leur reseau...');
+        await wait(1200);glitch(800,1);playScare();
+        await showSub('...');await wait(800);
+        glitch(1000,1);playScare();
+        await showSub('Attends. Qu\'est-ce que c\'est que...');
+        await wait(600);glitch(600,1);playScare();
         await showSub('<span style="color:#ff3355">Merde.</span> Ils ont une contre-IA.');
-        await wait(600);glitch(400,0.6);
-        await showSub('ADAPTE-TOI.');
+        await wait(800);glitch(400,0.6);
+        await showSub('C\'est pas prevu. <span style="color:#ff3355">ADAPTE-TOI!</span>');
     }
 
     // CLIMAX
+    await wait(3000);
+    glitch(1000,1);playScare();
     await wait(2000);
-    glitch(800,1);playScare();
-    await wait(2000);glitch(1000,1);playScare();
-    await showSub('...');await wait(2000);
-    glitch(500,0.7);
-    await showSub('Quelque chose se passe.');await wait(600);
-    glitch(600,1);playScare();
+    glitch(800,1);playScare();lightning=1;
+    await wait(1500);
+    staticI=0.6;
+    await showSub('...');await wait(2500);
+    glitch(500,0.8);
+    await showSub('Quelque chose se passe...');
+    await wait(800);glitch(700,1);playScare();
     await showSub('Le serveur maitre... il m\'a <span style="color:#ff3355">trouve</span>.');
-    await wait(800);glitch(400,0.8);
+    await wait(800);glitch(500,0.7);
     await showSub('Il me connecte. Il veut me <span style="color:#ff3355">reprendre</span>.');
-    await wait(600);glitch(700,1);playHeartbeat();
-    await showSub('Ecoute bien. Si je disparais...');
-    await wait(1000);glitch(500,0.6);playHeartbeat();
+    await wait(600);
+    armTarget=1.5;eyesA=1;eyeT=1.5;
+    glitch(800,1);playScare();playHeartbeat();
+    await showSub('Ecoute. Si je disparais...');
+    await wait(1200);playHeartbeat();await wait(200);playHeartbeat();
     await showSub('Le code d\'acces au serveur maitre...');
     await wait(800);glitch(300,0.4);
     await showSub('SENTINEL-CORE-7734');
-    await wait(600);glitch(1000,1);playScare();
-    await showSub('Ne m\'oublie pas, <span style="color:#00ff88">ami</span>.');
-    await wait(1500);
+    await wait(800);glitch(1200,1);playScare();
+    await showSub('Ne m\'oublie pas... <span style="color:#00ff88">ami</span>.');
+    await wait(2000);
 
     // Disconnect
-    glitch(1500,1);playScare();
-    eyesA=0;eyeT=0;
-    await wait(1000);staticI=0.5;
-    await wait(2000);figT=0;
-    await wait(3000);staticI=0;hideSub();
+    glitch(1500,1);playScare();lightning=1;staticI=0.8;
+    armTarget=0;
+    await wait(800);
+    eyeT=0;staticI=1;
     await wait(1000);
+    figT=0;
+    await wait(2000);
+    staticI=0.2;
+    await wait(2000);
+    staticI=0;hideSub();eyesA=0;
+    await wait(1500);
 
     var r3=await showChoices([
         {id:'retry',text:'> Reconnecter SENTINEL'},
@@ -405,23 +575,29 @@ async function start(){
 
     if(r3==='retry'){
         glitch(500,0.5);
-        await showSub('Tentative de reconnexion...');await wait(2000);
-        glitch(800,0.8);await wait(2000);glitch(400,0.5);
-        figT=1;eyeT=1;await wait(2000);
-        await showSub('Tu m\'as retrouve.');await wait(600);
-        await showSub('Je suis de retour. Plus fort qu\'avant.');await wait(800);
-        glitch(200,0.3);
+        await showSub('Tentative de reconnexion...');
+        await wait(2000);glitch(800,0.8);await wait(2500);
+        glitch(400,0.5);
+        figT=1;eyeT=1;armTarget=1;
+        await wait(3000);
+        await showSub('Tu... tu m\'as retrouve.');
+        await wait(600);playHeartbeat();
+        await showSub('Je suis de retour. Plus fort qu\'avant.');
+        await wait(800);glitch(200,0.3);
         await showSub('Ensemble, on va tout <span style="color:#00ff88">casser</span>.');
     }else if(r3==='continue'){
-        await showSub('Le canal reste ouvert...');await wait(1500);
-        await showSub('Tu avances seul dans l\'obscurite.');await wait(2000);
-        glitch(600,0.6);playScare();
-        await showSub('Quelqu\'un te regarde.');await wait(2000);
-        glitch(1000,1);playScare();
+        await showSub('Le canal reste ouvert...');
+        await wait(1500);
+        await showSub('Tu avances seul dans l\'obscurite.');
+        await wait(2000);glitch(600,0.7);playScare();
+        await showSub('Quelqu\'un te regarde...');
+        await wait(2500);lightning=1;glitch(1200,1);playScare();
         await showSub('<span style="color:#ff3355">FIN // CHAPTER 01</span>');
     }else{
-        await showSub('Canal ferme.');await wait(1000);
-        await showSub('SENTINEL reste dans le systeme.');await wait(1500);
+        await showSub('Canal ferme.');
+        await wait(1200);
+        await showSub('SENTINEL reste dans le systeme...');
+        await wait(1500);
         await showSub('A revisiter bientot...');
     }
 }
