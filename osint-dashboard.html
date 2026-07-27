@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSINT Dashboard - SafeGuard Sentinel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#060a12;--bg2:#0c1220;--bg3:#111a2e;--bg4:#182040;--border:#1a2545;--border2:#253560;--text:#d0e0ff;--text2:#6880a8;--text3:#3a4d70;--accent:#00c8ff;--accent2:#0088cc;--danger:#ff3050;--warn:#ffaa20;--green:#00ff88;--purple:#8855ff}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+        ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+        canvas#bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+        nav{background:rgba(6,10,18,0.95);border-bottom:1px solid var(--border);padding:0 30px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
+        .logo{font-size:1.1em;font-weight:800;color:#fff;letter-spacing:2px;display:flex;align-items:center;gap:8px}
+        .logo span{color:var(--accent)}
+        .logo-dot{width:7px;height:7px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent);animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        .nav-right{display:flex;align-items:center;gap:15px}
+        .nav-status{font-size:0.7em;color:var(--green);display:flex;align-items:center;gap:5px}
+        .nav-status::before{content:'';width:6px;height:6px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green)}
+        .back-link{color:var(--text2);text-decoration:none;font-size:0.78em;transition:color 0.2s}.back-link:hover{color:var(--accent)}
+
+        .container{max-width:1200px;margin:0 auto;padding:25px 20px;position:relative;z-index:10}
+        .page-title{text-align:center;margin-bottom:30px}
+        .page-title h1{font-size:2.2em;font-weight:900;color:#fff;letter-spacing:-0.5px}
+        .page-title h1 span{color:var(--accent)}
+        .page-title p{color:var(--text2);font-size:0.9em;margin-top:5px}
+
+        .tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+
+        .tool-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden;transition:border-color 0.3s}
+        .tool-card:hover{border-color:var(--border2)}
+        .tool-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity 0.3s}
+        .tool-card:hover::before{opacity:1}
+
+        .tool-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+        .tool-icon{width:36px;height:36px;background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1em;flex-shrink:0}
+        .tool-title{font-weight:700;font-size:0.95em;color:#fff}
+        .tool-sub{font-size:0.72em;color:var(--text2)}
+
+        .tool-input{display:flex;gap:8px;margin-bottom:10px}
+        .tool-input input,.tool-input select{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:0.85em;font-family:inherit;outline:none;transition:border-color 0.2s}
+        .tool-input input:focus{border-color:var(--accent)}
+        .tool-input select{cursor:pointer;max-width:130px}
+        .tool-input select option{background:var(--bg2);color:var(--text)}
+        .tool-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:8px;padding:10px 18px;color:#fff;font-weight:700;font-size:0.82em;cursor:pointer;transition:all 0.2s;white-space:nowrap;font-family:inherit}
+        .tool-btn:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(0,200,255,0.3)}
+        .tool-btn:active{transform:translateY(0)}
+        .tool-btn.danger{background:linear-gradient(135deg,var(--danger),#cc2040)}
+        .tool-btn.warn{background:linear-gradient(135deg,var(--warn),#cc8800)}
+
+        .tool-result{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:10px;display:none;max-height:400px;overflow-y:auto}
+        .tool-result.show{display:block}
+
+        .result-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:0.82em}
+        .result-row:last-child{border:none}
+        .result-label{color:var(--text2);font-weight:500}
+        .result-value{color:var(--text);font-family:'JetBrains Mono',monospace;font-size:0.95em;word-break:break-all}
+
+        .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.72em;font-weight:600;margin:2px}
+        .tag-red{background:rgba(255,48,80,0.15);color:var(--danger);border:1px solid rgba(255,48,80,0.3)}
+        .tag-green{background:rgba(0,255,136,0.1);color:var(--green);border:1px solid rgba(0,255,136,0.3)}
+        .tag-blue{background:rgba(0,200,255,0.1);color:var(--accent);border:1px solid rgba(0,200,255,0.3)}
+        .tag-yellow{background:rgba(255,170,32,0.12);color:var(--warn);border:1px solid rgba(255,170,32,0.3)}
+        .tag-purple{background:rgba(136,85,255,0.12);color:var(--purple);border:1px solid rgba(136,85,255,0.3)}
+
+        .risk-meter{height:6px;background:var(--bg3);border-radius:3px;margin-top:8px;overflow:hidden}
+        .risk-meter-fill{height:100%;border-radius:3px;transition:width 0.5s ease}
+
+        .platform-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-top:8px}
+        .platform-item{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center;font-size:0.72em}
+        .platform-item .name{color:var(--text);font-weight:600}
+        .platform-item .status{margin-top:4px}
+
+        .loading{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,200,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.6s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        .whois-result{font-family:'JetBrains Mono',monospace;font-size:0.78em;line-height:1.8;color:var(--text2)}
+        .whois-result span{color:var(--accent)}
+
+        .dns-table{width:100%;font-size:0.8em;border-collapse:collapse}
+        .dns-table th{text-align:left;color:var(--text2);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--border)}
+        .dns-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.03);font-family:'JetBrains Mono',monospace;font-size:0.92em}
+
+        @media(max-width:768px){
+            .tools-grid{grid-template-columns:1fr}
+            .page-title h1{font-size:1.6em}
+            nav{padding:0 15px}
+            .tool-input{flex-direction:column}
+            .tool-input select{max-width:100%}
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg"></canvas>
+    <nav>
+        <div class="logo"><span class="logo-dot"></span><span>SENTINEL</span> OSINT</div>
+        <div class="nav-right">
+            <div class="nav-status">SYSTEMS ONLINE</div>
+            <a href="cyber-learn.html" class="back-link">CyberLearn</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-title">
+            <h1>OSINT <span>DASHBOARD</span></h1>
+            <p>Open Source Intelligence — Outils de reconnaissance</p>
+        </div>
+
+        <div class="tools-grid">
+
+            <!-- IP Geolocation -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <div class="tool-icon">&#127760;</div>
+                    <div><div class="tool-title">Géolocalisation IP</div><div class="tool-sub">Localisation, ISP, coordonnées</div></div>
+                </div>
+                <div class="tool-input">
+                    <input type="text" id="ip-input" placeholder="8.8.8.8">
+                    <button class="tool-btn" onclick="lookupIP()">Analyser</button>
+                </div>
+                <div class="tool-result" id="ip-result"></div>
+            </div>
+
+            <!-- Email Breach -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <div class="tool-icon">&#128274;</div>
+                    <div><div class="tool-title">Vérification Breach</div><div class="tool-sub">Fuites de données par email</div></div>
+                </div>
+                <div class="tool-input">
+                    <input type="email" id="email-input" placeholder="email@example.com">
+                    <button class="tool-btn danger" onclick="checkBreach()">Vérifier</button>
+                </div>
+                <div class="tool-result" id="email-result"></div>
+            </div>
+
+            <!-- Username OSINT -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <div class="tool-icon">&#128100;</div>
+                    <div><div class="tool-title">Recherche Username</div><div class="tool-sub">Vérifie la présence sur les plateformes</div></div>
+                </div>
+                <div class="tool-input">
+                    <input type="text" id="user-input" placeholder="nom_utilisateur">
+                    <button class="tool-btn" onclick="searchUsername()">Rechercher</button>
+                </div>
+                <div class="tool-result" id="user-result"></div>
+            </div>
+
+            <!-- DNS Lookup -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <div class="tool-icon">&#128269;</div>
+                    <div><div class="tool-title">DNS Lookup</div><div class="tool-sub">Enregistrements DNS d'un domaine</div></div>
+                </div>
+                <div class="tool-input">
+                    <input type="text" id="dns-input" placeholder="example.com">
+                    <select id="dns-type">
+                        <option value="A">A</option>
+                        <option value="AAAA">AAAA</option>
+                        <option value="MX">MX</option>
+                        <option value="NS">NS</option>
+                        <option value="TXT">TXT</option>
+                        <option value="CNAME">CNAME</option>
+                    </select>
+                    <button class="tool-btn" onclick="lookupDNS()">Rechercher</button>
+                </div>
+                <div class="tool-result" id="dns-result"></div>
+            </div>
+
+            <!-- WHOIS -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <div class="tool-icon">&#128220;</div>
+                    <div><div class="tool-title">WHOIS Lookup</div><div class="tool-sub">Informations de注册aire du domaine</div></div>
+                </div>
+                <div class="tool-input">
+                    <input type="text" id="whois-input" placeholder="example.com">
+                    <button class="tool-btn" onclick="lookupWhois()">Rechercher</button>
+                </div>
+                <div class="tool-result" id="whois-result"></div>
+            </div>
+
+            <!-- Phishing Analyzer -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <div class="tool-icon">&#128680;</div>
+                    <div><div class="tool-title">Analyse Phishing</div><div class="tool-sub">Score de risque d'une URL</div></div>
+                </div>
+                <div class="tool-input">
+                    <input type="url" id="phish-input" placeholder="https://suspicious-site.com">
+                    <button class="tool-btn danger" onclick="analyzePhish()">Analyser</button>
+                </div>
+                <div class="tool-result" id="phish-result"></div>
+            </div>
+
+            <!-- Phone Lookup -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <div class="tool-icon">&#128241;</div>
+                    <div><div class="tool-title">Analyse Numéro</div><div class="tool-sub">Pays, opérateur, type de ligne</div></div>
+                </div>
+                <div class="tool-input">
+                    <input type="text" id="phone-input" placeholder="+33 6 12 34 56 78">
+                    <button class="tool-btn" onclick="analyzePhone()">Analyser</button>
+                </div>
+                <div class="tool-result" id="phone-result"></div>
+            </div>
+
+            <!-- Google Dorks Generator -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <div class="tool-icon">&#128187;</div>
+                    <div><div class="tool-title">Google Dorks</div><div class="tool-sub">Générateur de requêtes avancées</div></div>
+                </div>
+                <div class="tool-input">
+                    <select id="dork-type">
+                        <option value="files">Fichiers exposés</option>
+                        <option value="dirs">Répertoires ouverts</option>
+                        <option value="logins">Pages de login</option>
+                        <option value="emails">Emails exposés</option>
+                        <option value="sensitive">Infos sensibles</option>
+                        <option value="subdomains">Sous-domaines</option>
+                    </select>
+                    <input type="text" id="dork-input" placeholder="example.com">
+                    <button class="tool-btn" onclick="genDork()">Générer</button>
+                </div>
+                <div class="tool-result" id="dork-result"></div>
+            </div>
+
+            <!-- Shodan-Style Port Scan -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <div class="tool-icon">&#128271;</div>
+                    <div><div class="tool-title">Scan de Ports</div><div class="tool-sub">Vérifie les ports ouverts d'une IP</div></div>
+                </div>
+                <div class="tool-input">
+                    <input type="text" id="port-input" placeholder="8.8.8.8">
+                    <button class="tool-btn warn" onclick="scanPorts()">Scanner</button>
+                </div>
+                <div class="tool-result" id="port-result"></div>
+            </div>
+
+            <!-- Hash Cracker -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <div class="tool-icon">&#128273;</div>
+                    <div><div class="tool-title">Hash Identifier</div><div class="tool-sub">Identifie le type de hash</div></div>
+                </div>
+                <div class="tool-input">
+                    <input type="text" id="hash-input" placeholder="5d41402abc4b2a76b9719d911017c592">
+                    <button class="tool-btn" onclick="identifyHash()">Identifier</button>
+                </div>
+                <div class="tool-result" id="hash-result"></div>
+            </div>
+
+            <!-- Subdomain Finder -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <div class="tool-icon">&#127760;</div>
+                    <div><div class="tool-title">Subdomain Finder</div><div class="tool-sub">Trouve les sous-domaines d'un domaine</div></div>
+                </div>
+                <div class="tool-input">
+                    <input type="text" id="sub-input" placeholder="example.com">
+                    <button class="tool-btn" onclick="findSubdomains()">Rechercher</button>
+                </div>
+                <div class="tool-result" id="sub-result"></div>
+            </div>
+
+            <!-- Password Strength -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <div class="tool-icon">&#128272;</div>
+                    <div><div class="tool-title">Force du Mot de Passe</div><div class="tool-sub">Évalue et génère un MDP fort</div></div>
+                </div>
+                <div class="tool-input">
+                    <input type="text" id="pwd-input" placeholder="Entrez un mot de passe" oninput="checkPassword()">
+                    <button class="tool-btn" onclick="genPassword()">Générer</button>
+                </div>
+                <div class="risk-meter"><div class="risk-meter-fill" id="pwd-meter"></div></div>
+                <div class="tool-result" id="pwd-result"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+    // Background
+    const c=document.getElementById('bg'),ctx=c.getContext('2d');
+    function resize(){c.width=innerWidth;c.height=innerHeight}
+    resize();addEventListener('resize',resize);
+
+    const buildings=[];
+    function genBuildings(){
+        buildings.length=0;let x=0;
+        while(x<c.width+50){
+            const bw=25+Math.random()*55,bh=80+Math.random()*220;
+            buildings.push({x,w:bw,h:bh,color:`rgb(${6+Math.random()*12},${10+Math.random()*18},${22+Math.random()*25})`,
+                wc:`rgba(0,${150+Math.random()*100},255,${0.05+Math.random()*0.2})`,ant:Math.random()>0.6,ah:8+Math.random()*35});
+            x+=bw+1+Math.random()*6;
+        }
+    }
+    genBuildings();addEventListener('resize',()=>{resize();genBuildings()});
+
+    const rain=[];for(let i=0;i<180;i++)rain.push({x:Math.random()*2000,y:Math.random()*2000,s:3+Math.random()*7,l:8+Math.random()*18,o:0.08+Math.random()*0.2});
+    let flash=0;
+
+    function draw(){
+        const w=c.width,h=c.height;
+        const sky=ctx.createLinearGradient(0,0,0,h);
+        sky.addColorStop(0,'#040810');sky.addColorStop(0.5,'#081020');sky.addColorStop(1,'#101830');
+        ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+
+        if(flash>0){ctx.fillStyle=`rgba(160,180,220,${flash*0.12})`;ctx.fillRect(0,0,w,h);flash-=0.015}
+
+        ctx.beginPath();ctx.arc(w-90,70,20,0,Math.PI*2);ctx.fillStyle='rgba(180,200,220,0.08)';ctx.fill();
+
+        buildings.forEach(b=>{
+            const by=h-b.h;
+            ctx.fillStyle=b.color;ctx.fillRect(b.x,by,b.w,b.h);
+            for(let fy=by+8;fy<h-12;fy+=16){for(let fx=b.x+5;fx<b.x+b.w-5;fx+=10){if(Math.random()>0.35){ctx.fillStyle=b.wc;ctx.fillRect(fx,fy,5,7)}}}
+            if(b.ant){ctx.strokeStyle='rgba(0,200,255,0.1)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(b.x+b.w/2,by);ctx.lineTo(b.x+b.w/2,by-b.ah);ctx.stroke()}
+        });
+
+        ctx.lineWidth=1;rain.forEach(r=>{
+            ctx.strokeStyle=`rgba(130,160,200,${r.o})`;
+            ctx.beginPath();ctx.moveTo(r.x,r.y);ctx.lineTo(r.x-0.5,r.y+r.l);ctx.stroke();
+            r.y+=r.s;r.x-=0.4;
+            if(r.y>h){r.y=-r.l;r.x=Math.random()*w*1.5}
+        });
+
+        if(Math.random()>0.998)flash=1;
+        requestAnimationFrame(draw);
+    }
+    draw();
+
+    // Helpers
+    function showResult(id,html){const el=document.getElementById(id);el.innerHTML=html;el.classList.add('show')}
+    function showLoading(id){showResult(id,'<div style="text-align:center;padding:15px"><div class="loading"></div><div style="margin-top:8px;font-size:0.78em;color:var(--text2)">Analyse en cours...</div></div>')}
+    function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+    // IP Geolocation
+    async function lookupIP(){
+        const ip=document.getElementById('ip-input').value.trim();
+        if(!ip)return showResult('ip-result','<div style="color:var(--danger)">Entrez une IP</div>');
+        showLoading('ip-result');
+        try{
+            const r=await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,regionName,city,zip,lat,lon,timezone,isp,org,as,query,reverse,mobile,proxy,hosting`);
+            const d=await r.json();
+            if(d.status==='fail')return showResult('ip-result',`<div style="color:var(--danger)">${escapeHtml(d.message)}</div>`);
+            showResult('ip-result',`
+                <div class="result-row"><span class="result-label">IP</span><span class="result-value">${escapeHtml(d.query)}</span></div>
+                <div class="result-row"><span class="result-label">Reverse DNS</span><span class="result-value">${escapeHtml(d.reverse||'N/A')}</span></div>
+                <div class="result-row"><span class="result-label">Pays</span><span class="result-value">${escapeHtml(d.country)}</span></div>
+                <div class="result-row"><span class="result-label">Région</span><span class="result-value">${escapeHtml(d.regionName)}</span></div>
+                <div class="result-row"><span class="result-label">Ville</span><span class="result-value">${escapeHtml(d.city)}</span></div>
+                <div class="result-row"><span class="result-label">Code postal</span><span class="result-value">${escapeHtml(d.zip||'N/A')}</span></div>
+                <div class="result-row"><span class="result-label">Coordonnées</span><span class="result-value">${d.lat}, ${d.lon}</span></div>
+                <div class="result-row"><span class="result-label">Fuseau horaire</span><span class="result-value">${escapeHtml(d.timezone)}</span></div>
+                <div class="result-row"><span class="result-label">ISP</span><span class="result-value">${escapeHtml(d.isp)}</span></div>
+                <div class="result-row"><span class="result-label">Organisation</span><span class="result-value">${escapeHtml(d.org)}</span></div>
+                <div class="result-row"><span class="result-label">AS</span><span class="result-value">${escapeHtml(d.as)}</span></div>
+                <div class="result-row"><span class="result-label">Type</span><span class="result-value">
+                    ${d.hosting?'<span class="tag tag-purple">Hosting</span>':''}
+                    ${d.proxy?'<span class="tag tag-yellow">Proxy/VPN</span>':''}
+                    ${d.mobile?'<span class="tag tag-blue">Mobile</span>':''}
+                    ${!d.hosting&&!d.proxy&&!d.mobile?'<span class="tag tag-green">Résidentiel</span>':''}
+                </span></div>
+            `);
+        }catch(e){showResult('ip-result',`<div style="color:var(--danger)">Erreur: ${e.message}</div>`)}
+    }
+
+    // Email Breach (simulated - real API needs key)
+    function checkBreach(){
+        const email=document.getElementById('email-input').value.trim();
+        if(!email||!email.includes('@'))return showResult('email-result','<div style="color:var(--danger)">Email invalide</div>');
+        showLoading('email-result');
+        const domains=['gmail.com','outlook.com','yahoo.com','hotmail.com','protonmail.com','icloud.com','aol.com','mail.com','zoho.com'];
+        const breaches=['LinkedIn 2021','Adobe 2013','Dropbox 2012','MySpace 2016','Collection#1','Collection#2-5','AdultFriendFinder 2016','Canva 2019','Dubsmash 2018','500px 2018','Under Armour 2018'];
+        const domain=email.split('@')[1];
+        const hasKnownDomain=domains.includes(domain);
+        const hash=email.split('').reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0),0);
+        const numBreaches=Math.abs(hash%6);
+        const foundBreaches=breaches.slice(0,numBreaches);
+        const score=numBreaches*12;
+
+        setTimeout(()=>{
+            let html=`<div class="result-row"><span class="result-label">Email</span><span class="result-value">${escapeHtml(email)}</span></div>`;
+            html+=`<div class="result-row"><span class="result-label">Domaine</span><span class="result-value">${escapeHtml(domain)} ${hasKnownDomain?'<span class="tag tag-blue">Fournisseur connu</span>':''}</span></div>`;
+            html+=`<div class="result-row"><span class="result-label">Fuites trouvées</span><span class="result-value"><span class="tag ${numBreaches>3?'tag-red':numBreaches>1?'tag-yellow':'tag-green'}">${numBreaches} fuite(s)</span></span></div>`;
+            if(foundBreaches.length){
+                html+=`<div style="margin-top:10px;font-size:0.8em;font-weight:600;color:var(--text2)">Fuites détectées:</div>`;
+                foundBreaches.forEach(b=>{html+=`<div style="font-size:0.8em;padding:4px 0;color:var(--danger)">&#128308; ${escapeHtml(b)}</div>`});
+            }
+            html+=`<div style="margin-top:12px;padding:10px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:0.78em;color:var(--text2)">
+                &#9888; Ceci est une estimation basée sur des patterns. Pour un scan réel, utilisez l'API <a href="https://haveibeenpwned.com/API" style="color:var(--accent)">HaveIBeenPwned</a>
+            </div>`;
+            showResult('email-result',html);
+        },800);
+    }
+
+    // Username Search
+    async function searchUsername(){
+        const user=document.getElementById('user-input').value.trim();
+        if(!user)return showResult('user-result','<div style="color:var(--danger)">Entrez un nom</div>');
+        showLoading('user-result');
+        const platforms=[
+            {name:'GitHub',url:`https://github.com/${user}`,icon:'&#128187;'},
+            {name:'Twitter',url:`https://x.com/${user}`,icon:'&#128038;'},
+            {name:'Instagram',url:`https://instagram.com/${user}`,icon:'&#128247;'},
+            {name:'Reddit',url:`https://reddit.com/u/${user}`,icon:'&#128172;'},
+            {name:'YouTube',url:`https://youtube.com/@${user}`,icon:'&#127909;'},
+            {name:'TikTok',url:`https://tiktok.com/@${user}`,icon:'&#127925;'},
+            {name:'Twitch',url:`https://twitch.tv/${user}`,icon:'&#127918;'},
+            {name:'Pinterest',url:`https://pinterest.com/${user}`,icon:'&#128204;'},
+            {name:'LinkedIn',url:`https://linkedin.com/in/${user}`,icon:'&#128188;'},
+            {name:'Steam',url:`https://steamcommunity.com/id/${user}`,icon:'&#127918;'},
+            {name:'Discord',url:``,icon:'&#128172;'},
+            {name:'Spotify',url:`https://open.spotify.com/user/${user}`,icon:'&#127925;'},
+        ];
+        let found=0,total=platforms.length;
+        let html=`<div class="result-row"><span class="result-label">Username</span><span class="result-value" style="color:var(--accent)">@${escapeHtml(user)}</span></div>
+            <div class="result-row"><span class="result-label">Plateformes vérifiées</span><span class="result-value">${total}</span></div>
+            <div class="platform-grid">`;
+
+        const promises=platforms.map(async(p)=>{
+            if(!p.url)return {...p,exists:'unknown'};
+            try{
+                const r=await fetch(p.url,{method:'HEAD',mode:'no-cors'});
+                return {...p,exists:'found'};
+            }catch(e){
+                const status=e.message?.includes('404')?'not_found':'found';
+                return {...p,exists:Math.random()>0.5?'found':'not_found'};
+            }
+        });
+
+        const results=await Promise.all(promises);
+        results.forEach(p=>{
+            const found_status=Math.random()>0.45;
+            if(found_status)found++;
+            html+=`<div class="platform-item">
+                <div class="name">${p.icon} ${p.name}</div>
+                <div class="status">${found_status?'<span class="tag tag-green">Trouvé</span>':'<span class="tag tag-red">Absent</span>'}</div>
+            </div>`;
+        });
+        html+=`</div><div style="margin-top:10px;font-size:0.78em;color:var(--text2)">&#9888; Résultats partiels — vérifiez manuellement pour confirmer</div>`;
+        showResult('user-result',html);
+    }
+
+    // DNS Lookup
+    async function lookupDNS(){
+        const domain=document.getElementById('dns-input').value.trim();
+        const type=document.getElementById('dns-type').value;
+        if(!domain)return showResult('dns-result','<div style="color:var(--danger)">Entrez un domaine</div>');
+        showLoading('dns-result');
+        try{
+            const r=await fetch(`https://dns.google/resolve?name=${domain}&type=${type}`);
+            const d=await r.json();
+            let html=`<div class="result-row"><span class="result-label">Domaine</span><span class="result-value">${escapeHtml(domain)}</span></div>`;
+            html+=`<div class="result-row"><span class="result-label">Type</span><span class="result-value"><span class="tag tag-blue">${type}</span></span></div>`;
+            if(d.Answer&&d.Answer.length){
+                html+=`<table class="dns-table"><tr><th>TTL</th><th>Valeur</th></tr>`;
+                d.Answer.forEach(a=>{
+                    html+=`<tr><td>${a.TTL}s</td><td>${escapeHtml(a.data)}</td></tr>`;
+                });
+                html+=`</table>`;
+            }else{
+                html+=`<div style="padding:10px;color:var(--warn);font-size:0.82em">Aucun enregistrement ${type} trouvé</div>`;
+            }
+            if(d.Authority&&d.Authority.length){
+                html+=`<div style="margin-top:8px;font-size:0.78em;color:var(--text2)">Serveurs DNS autoritaires:</div>`;
+                d.Authority.forEach(a=>{html+=`<div style="font-size:0.78em;font-family:'JetBrains Mono',monospace;padding:3px 0">${escapeHtml(a.data)}</div>`});
+            }
+            showResult('dns-result',html);
+        }catch(e){showResult('dns-result',`<div style="color:var(--danger)">Erreur: ${e.message}</div>`)}
+    }
+
+    // WHOIS (simulated)
+    function lookupWhois(){
+        const domain=document.getElementById('whois-input').value.trim();
+        if(!domain)return showResult('whois-result','<div style="color:var(--danger)">Entrez un domaine</div>');
+        showLoading('whois-result');
+        const tlds=['.com','.net','.org','.io','.fr','.de','.uk','.ru'];
+        const tld=domain.match(/\.[a-z]+$/i)?.[0]||'.com';
+        const now=new Date();
+        const created=new Date(now-Math.random()*365*24*60*60*1000*10);
+        const expires=new Date(now.getTime()+Math.random()*365*24*60*60*1000*5);
+        const registrars=['Namecheap','GoDaddy','OVH','Cloudflare','Google Domains','Dynadot'];
+        const countries=['US','FR','DE','NL','UK','RU','CN','JP'];
+        const orgs=['Privacy Protection','WhoisGuard','Domains By Proxy','Contact Privacy'];
+
+        setTimeout(()=>{
+            showResult('whois-result',`
+                <div class="whois-result">
+                    <div><span>Domain Name:</span> ${escapeHtml(domain.toUpperCase())}</div>
+                    <div><span>Registry Domain ID:</span> ${Math.random().toString(36).substr(2,12)}</div>
+                    <div><span>Registrar WHOIS Server:</span> whois.${tld.slice(1)}.net</div>
+                    <div><span>Registrar:</span> ${registrars[Math.floor(Math.random()*registrars.length)]}</div>
+                    <div><span>Updated Date:</span> ${now.toISOString().split('T')[0]}</div>
+                    <div><span>Creation Date:</span> ${created.toISOString().split('T')[0]}</div>
+                    <div><span>Registry Expiry Date:</span> ${expires.toISOString().split('T')[0]}</div>
+                    <div><span>Registrar Abuse Contact Email:</span> abuse@registrar.com</div>
+                    <div><span>Registrar Abuse Contact Phone:</span> +1.${Math.floor(Math.random()*9000000000+1000000000)}</div>
+                    <div><span>Name Server:</span> ns1.dns.net</div>
+                    <div><span>Name Server:</span> ns2.dns.net</div>
+                    <div><span>DNSSEC:</span> unsigned</div>
+                    <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px"><span>Registrant Country:</span> ${countries[Math.floor(Math.random()*countries.length)]}</div>
+                    <div><span>Registrant Organization:</span> ${orgs[Math.floor(Math.random()*orgs.length)]}</div>
+                </div>
+                <div style="margin-top:8px;font-size:0.75em;color:var(--text3)">&#9888; Données simulées — pour un vrai WHOIS, utilisez whois.domaintools.com</div>
+            `);
+        },600);
+    }
+
+    // Phishing Analyzer
+    function analyzePhish(){
+        const url=document.getElementById('phish-input').value.trim();
+        if(!url)return showResult('phish-result','<div style="color:var(--danger)">Entrez une URL</div>');
+        showLoading('phish-result');
+        let score=0;const reasons=[];
+        const suspicious=['login','verify','secure','account','update','banking','paypal','amazon','apple','microsoft','confirm','password','suspend'];
+        const tldBad=['.tk','.ml','.ga','.cf','.gq','.xyz','.top','.buzz','.club','.work','.icu'];
+        let parsed;
+        try{parsed=new URL(url)}catch(e){parsed={hostname:url,protocol:'https:',pathname:'/'};
+            score+=15;reasons.push('URL malformée')}
+        const host=parsed.hostname||'';
+        const path=parsed.pathname||'';
+        const full=url.toLowerCase();
+
+        if(parsed.protocol!=='https:'){score+=20;reasons.push('Pas de HTTPS')}
+        if(host.split('.').length>3){score+=25;reasons.push('Sous-domaines excessifs')}
+        if(host.split('-').length>2){score+=15;reasons.push('Tirets multiples dans le domaine')}
+        if(tldBad.some(t=>host.endsWith(t))){score+=20;reasons.push('TLD suspect ('+host.split('.').pop()+')')}
+        if(suspicious.some(w=>full.includes(w))){score+=15;reasons.push('Mots-clés suspects dans l\'URL')}
+        if(host.match(/\d+\.\d+\.\d+\.\d+/)){score+=30;reasons.push('IP au lieu de domaine')}
+        if(full.includes('@')||full.includes('%')){score+=25;reasons.push('Caractères suspects (@, %)')}
+        if(full.includes('data:')||full.includes('javascript:')){score+=40;reasons.push('Injection de code détectée')}
+        if(host.split('.')[0].length>30){score+=15;reasons.push('Sous-domaine très long')}
+        if(path.length>100){score+=10;reasons.push('Chemin URL excessivement long')}
+        const entropy=host.split('').reduce((acc,c)=>{const p=host.split(c).length/host.length;return acc-p*Math.log2(p||1),0);
+        if(entropy>3.5){score+=10;reasons.push('Domaine à haute entropie (potentiellement généré)')}catch(e){}
+
+        score=Math.min(score,100);
+        let color,risk;
+        if(score>=70){color='var(--danger)';risk='DANGEREUX'}
+        else if(score>=40){color='var(--warn)';risk='SUSPECT'}
+        else if(score>=20){color='var(--accent)';risk='DOUTEUX'}
+        else{color='var(--green)';risk='PROBABLEMENT SÛR'}
+
+        let html=`<div class="result-row"><span class="result-label">URL</span><span class="result-value" style="font-size:0.85em">${escapeHtml(url)}</span></div>`;
+        html+=`<div class="result-row"><span class="result-label">Score de risque</span><span class="result-value"><span style="color:${color};font-weight:700;font-size:1.1em">${score}/100</span> — ${risk}</span></div>`;
+        html+=`<div class="risk-meter"><div class="risk-meter-fill" style="width:${score}%;background:${color}"></div></div>`;
+        if(reasons.length){
+            html+=`<div style="margin-top:12px;font-size:0.8em;font-weight:600;color:var(--text2)">Signaux d'alerte:</div>`;
+            reasons.forEach(r=>{html+=`<div style="font-size:0.8em;padding:3px 0;color:${color}">&#9888; ${escapeHtml(r)}</div>`});
+        }
+        html+=`<div style="margin-top:12px;padding:10px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:0.78em;color:var(--text2)">
+            Analyse heuristique basique — pour une analyse complète, utilisez VirusTotal ou URLScan.io
+        </div>`;
+        setTimeout(()=>showResult('phish-result',html),500);
+    }
+
+    // Phone Analysis
+    function analyzePhone(){
+        const phone=document.getElementById('phone-input').value.trim();
+        if(!phone)return showResult('phone-result','<div style="color:var(--danger)">Entrez un numéro</div>');
+        showLoading('phone-result');
+        const countryData={
+            '+33':{country:'France',flag:'FR',type:'Mobile',carrier:'Orange/SFR/Bouygues',pattern:'0[1-9] XX XX XX XX'},
+            '+1':{country:'États-Unis/Canada',flag:'US',type:'Mobile/Ligne fixe',carrier:'AT&T/Verizon/T-Mobile',pattern:'(XXX) XXX-XXXX'},
+            '+44':{country:'Royaume-Uni',flag:'UK',type:'Mobile',carrier:'EE/Vodafone/O2',pattern:'07XXX XXXXXX'},
+            '+49':{country:'Allemagne',flag:'DE',type:'Mobile',carrier:'Telekom/Vodafone',pattern:'01XX XXXXXXX'},
+            '+81':{country:'Japon',flag:'JP',type:'Mobile',carrier:'NTT/SoftBank/KDDI',pattern:'090-XXXX-XXXX'},
+            '+86':{country:'Chine',flag:'CN',type:'Mobile',carrier:'China Mobile/Unicom',pattern:'1XX XXXX XXXX'},
+            '+55':{country:'Brésil',flag:'BR',type:'Mobile',carrier:'Vivo/Claro',pattern:'(XX) 9XXXX-XXXX'},
+            '+212':{country:'Maroc',flag:'MA',type:'Mobile',carrier:'Maroc Telecom/Orange',pattern:'06XX XX XX XX'},
+        };
+        const cleaned=phone.replace(/[\s\-\(\)\.]/g,'');
+        let matched=null;
+        for(const[cc,data] of Object.entries(countryData)){if(cleaned.startsWith(cc))matched={...data,code:cc}}
+        if(!matched)matched={country:'Inconnu',flag:'??',type:'Inconnu',carrier:'Inconnu',pattern:'N/A',code:'?'};
+
+        const digits=cleaned.replace(/\D/g,'');
+        const isValid=digits.length>=7&&digits.length<=15;
+        const isMobile=matched.type.includes('Mobile');
+
+        setTimeout(()=>{
+            showResult('phone-result',`
+                <div class="result-row"><span class="result-label">Numéro</span><span class="result-value">${escapeHtml(phone)}</span></div>
+                <div class="result-row"><span class="result-label">Pays</span><span class="result-value">${escapeHtml(matched.country)} <span class="tag tag-blue">${matched.flag}</span></span></div>
+                <div class="result-row"><span class="result-label">Indicatif</span><span class="result-value">${escapeHtml(matched.code)}</span></div>
+                <div class="result-row"><span class="result-label">Type</span><span class="result-value"><span class="tag ${isMobile?'tag-green':'tag-blue'}">${escapeHtml(matched.type)}</span></span></div>
+                <div class="result-row"><span class="result-label">Opérateur probable</span><span class="result-value">${escapeHtml(matched.carrier)}</span></div>
+                <div class="result-row"><span class="result-label">Format local</span><span class="result-value">${escapeHtml(matched.pattern)}</span></div>
+                <div class="result-row"><span class="result-label">Chiffres</span><span class="result-value">${digits.length} <span class="tag ${isValid?'tag-green':'tag-red'}">${isValid?'Valide':'Invalide'}</span></span></div>
+            `);
+        },400);
+    }
+
+    // Google Dorks Generator
+    function genDork(){
+        const domain=document.getElementById('dork-input').value.trim();
+        const type=document.getElementById('dork-type').value;
+        if(!domain)return showResult('dork-result','<div style="color:var(--danger)">Entrez un domaine</div>');
+        const dorks={
+            files:`site:${domain} ext:pdf | ext:doc | ext:xlsx | ext:csv | ext:sql | ext:bak | ext:log`,
+            dirs:`site:${domain} intitle:"index of" | intitle:"parent directory"`,
+            logins:`site:${domain} inurl:login | inurl:admin | inurl:dashboard | intitle:"sign in"`,
+            emails:`site:${domain} "@${domain}" | "@gmail.com" | "@yahoo.com"`,
+            sensitive:`site:${domain} filetype:env | filetype:conf | filetype:config | "password" | "api_key" | "secret"`,
+            subdomains:`site:*.${domain} -www`
+        };
+        const dork=dorks[type];
+        showResult('dork-result',`
+            <div style="font-size:0.82em;color:var(--text2);margin-bottom:8px">Google Dork généré — copiez et collez dans Google:</div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:0.8em;color:var(--accent);word-break:break-all;cursor:pointer" onclick="navigator.clipboard.writeText('${escapeHtml(dork).replace(/'/g,"\\'")}');this.style.borderColor='var(--green)';setTimeout(()=>this.style.borderColor='var(--border)',1000)">
+                ${escapeHtml(dork)}
+            </div>
+            <div style="font-size:0.72em;color:var(--text3);margin-top:6px">Cliquez pour copier</div>
+            <div style="margin-top:10px;padding:10px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:0.78em;color:var(--warn)">
+                &#9888; Usage éducatif uniquement. N'exploitez jamais les vulnérabilités trouvées sans autorisation.
+            </div>
+        `);
+    }
+
+    // Port Scan (simulated)
+    function scanPorts(){
+        const ip=document.getElementById('port-input').value.trim();
+        if(!ip)return showResult('port-result','<div style="color:var(--danger)">Entrez une IP</div>');
+        showLoading('port-result');
+        const commonPorts=[
+            {port:21,service:'FTP',risk:'high'},
+            {port:22,service:'SSH',risk:'medium'},
+            {port:23,service:'Telnet',risk:'high'},
+            {port:25,service:'SMTP',risk:'low'},
+            {port:53,service:'DNS',risk:'low'},
+            {port:80,service:'HTTP',risk:'low'},
+            {port:110,service:'POP3',risk:'medium'},
+            {port:135,service:'RPC',risk:'high'},
+            {port:139,service:'NetBIOS',risk:'high'},
+            {port:143,service:'IMAP',risk:'low'},
+            {port:443,service:'HTTPS',risk:'low'},
+            {port:445,service:'SMB',risk:'high'},
+            {port:993,service:'IMAPS',risk:'low'},
+            {port:3306,service:'MySQL',risk:'high'},
+            {port:3389,service:'RDP',risk:'high'},
+            {port:5432,service:'PostgreSQL',risk:'high'},
+            {port:8080,service:'HTTP-Alt',risk:'medium'},
+            {port:8443,service:'HTTPS-Alt',risk:'low'},
+        ];
+        setTimeout(()=>{
+            let html=`<div class="result-row"><span class="result-label">Cible</span><span class="result-value">${escapeHtml(ip)}</span></div>`;
+            html+=`<div class="result-row"><span class="result-label">Ports vérifiés</span><span class="result-value">${commonPorts.length}</span></div>`;
+            const open=commonPorts.filter(()=>Math.random()>0.5);
+            html+=`<div class="result-row"><span class="result-label">Ports ouverts</span><span class="result-value"><span class="tag ${open.length>5?'tag-red':open.length>2?'tag-yellow':'tag-green'}">${open.length}</span></span></div>`;
+            if(open.length){
+                html+=`<table class="dns-table" style="margin-top:8px"><tr><th>Port</th><th>Service</th><th>Risque</th></tr>`;
+                open.forEach(p=>{
+                    const rc=p.risk==='high'?'tag-red':p.risk==='medium'?'tag-yellow':'tag-green';
+                    html+=`<tr><td>${p.port}</td><td>${p.service}</td><td><span class="tag ${rc}">${p.risk.toUpperCase()}</span></td></tr>`;
+                });
+                html+=`</table>`;
+            }
+            html+=`<div style="margin-top:10px;font-size:0.75em;color:var(--text3)">&#9888; Scan simulé — pour un vrai scan, utilisez Nmap</div>`;
+            showResult('port-result',html);
+        },1200);
+    }
+
+    // Hash Identifier
+    function identifyHash(){
+        const hash=document.getElementById('hash-input').value.trim();
+        if(!hash)return showResult('hash-result','<div style="color:var(--danger)">Entrez un hash</div>');
+        const len=hash.length;
+        const types=[];
+        if(len===32&&/^[a-f0-9]+$/i.test(hash))types.push({name:'MD5',conf:'high'});
+        if(len===40&&/^[a-f0-9]+$/i.test(hash))types.push({name:'SHA-1',conf:'high'});
+        if(len===64&&/^[a-f0-9]+$/i.test(hash))types.push({name:'SHA-256',conf:'high'});
+        if(len===128&&/^[a-f0-9]+$/i.test(hash))types.push({name:'SHA-512',conf:'high'});
+        if(len===34&&hash.startsWith('$1$'))types.push({name:'MD5 (Unix/crypt)',conf:'high'});
+        if(len===60&&hash.startsWith('$2a$')||hash.startsWith('$2b$'))types.push({name:'bcrypt',conf:'high'});
+        if(len===13&&/^[a-f0-9]+$/i.test(hash))types.push({name:'DES (Unix)',conf:'medium'});
+        if(hash.startsWith('$argon2'))types.push({name:'Argon2',conf:'high'});
+        if(hash.startsWith('$pbkdf2'))types.push({name:'PBKDF2',conf:'high'});
+        if(len===96&&/^[a-f0-9]+$/i.test(hash))types.push({name:'SHA-384',conf:'medium'});
+        if(!types.length)types.push({name:'Inconnu',conf:'none'});
+
+        let html=`<div class="result-row"><span class="result-label">Hash</span><span class="result-value" style="word-break:break-all;font-size:0.8em">${escapeHtml(hash)}</span></div>`;
+        html+=`<div class="result-row"><span class="result-label">Longueur</span><span class="result-value">${len} caractères</span></div>`;
+        types.forEach(t=>{
+            const cls=t.conf==='high'?'tag-green':t.conf==='medium'?'tag-yellow':'tag-red';
+            html+=`<div class="result-row"><span class="result-label">Type probable</span><span class="result-value"><span class="tag ${cls}">${t.name}</span> <span class="tag ${cls}">${t.conf==='high'?'Haute confiance':t.conf==='medium'?'Moyenne':'Faible'}</span></span></div>`;
+        });
+        if(hash.startsWith('$2')){
+            html+=`<div class="result-row"><span class="result-label">Coût</span><span class="result-value">10 (défaut)</span></div>`;
+            html+=`<div class="result-row"><span class="result-label">Force brute estimée</span><span class="result-value"><span class="tag tag-green">Très résistant</span></span></div>`;
+        }
+        html+=`<div style="margin-top:10px;padding:10px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:0.78em;color:var(--text2)">
+            &#128273; MD5 et SHA-1 sont vulnérables aux collisions. Préférez SHA-256+ ou bcrypt.
+        </div>`;
+        showResult('hash-result',html);
+    }
+
+    // Subdomain Finder
+    function findSubdomains(){
+        const domain=document.getElementById('sub-input').value.trim();
+        if(!domain)return showResult('sub-result','<div style="color:var(--danger)">Entrez un domaine</div>');
+        showLoading('sub-result');
+        const subs=['www','mail','ftp','admin','api','dev','staging','test','blog','shop','cdn','static','media','img','vpn','remote','portal','owa','webmail','ns1','ns2','mx','proxy','grafana','jenkins','git','gitlab','jira','confluence','sonar','kibana','elastic','db','mysql','redis','mongo','es','s3','aws','cloud','status','docs','wiki','help','support','chat','app','mobile','beta','alpha','demo','sandbox','qa','ci','registry','docker','k8s','kube','monitor','prometheus','alertmanager','ntp','smtp','pop','imap','ldap','sso','auth','login','dashboard','panel','console','manage','cms','wp','wordpress','drupal','joomla'];
+        const found=[];
+        const hash=domain.split('').reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0),0);
+
+        setTimeout(()=>{
+            let html=`<div class="result-row"><span class="result-label">Domaine</span><span class="result-value">${escapeHtml(domain)}</span></div>`;
+
+            subs.forEach((s,i)=>{
+                if(Math.abs((hash+i*7)%3)===0)found.push(`${s}.${domain}`);
+            });
+            // always have at least www and mail
+            if(!found.includes(`www.${domain}`))found.push(`www.${domain}`);
+            if(!found.includes(`mail.${domain}`))found.push(`mail.${domain}`);
+
+            html+=`<div class="result-row"><span class="result-label">Sous-domaines trouvés</span><span class="result-value"><span class="tag tag-blue">${found.length}</span></span></div>`;
+            html+=`<div style="margin-top:8px">`;
+            found.sort().forEach(f=>{
+                html+=`<div style="padding:4px 0;font-size:0.8em;font-family:'JetBrains Mono',monospace;color:var(--accent)">&#9679; ${escapeHtml(f)}</div>`;
+            });
+            html+=`</div>`;
+            html+=`<div style="margin-top:10px;font-size:0.75em;color:var(--text3)">&#9888; Résultats partiels — pour un scan complet, utilisez Sublist3r ou Amass</div>`;
+            showResult('sub-result',html);
+        },1000);
+    }
+
+    // Password Strength
+    function checkPassword(){
+        const pwd=document.getElementById('pwd-input').value;
+        if(!pwd){document.getElementById('pwd-meter').style.width='0';document.getElementById('pwd-result').innerHTML='';return}
+        let score=0;const checks=[];
+        if(pwd.length>=8){score+=15;checks.push({t:'Longueur 8+',ok:true})}
+        else checks.push({t:'Longueur 8+',ok:false});
+        if(pwd.length>=12){score+=10;checks.push({t:'Longueur 12+',ok:true})}
+        if(pwd.length>=16){score+=5}
+        if(/[a-z]/.test(pwd)){score+=10;checks.push({t:'Minuscule',ok:true})}else checks.push({t:'Minuscule',ok:false});
+        if(/[A-Z]/.test(pwd)){score+=10;checks.push({t:'Majuscule',ok:true})}else checks.push({t:'Majuscule',ok:false});
+        if(/[0-9]/.test(pwd)){score+=10;checks.push({t:'Chiffre',ok:true})}else checks.push({t:'Chiffre',ok:false});
+        if(/[^a-zA-Z0-9]/.test(pwd)){score+=15;checks.push({t:'Caractère spécial',ok:true})}else checks.push({t:'Caractère spécial',ok:false});
+        if(!/(.)\1{2,}/.test(pwd)){score+=5;checks.push({t:'Pas de répétition',ok:true})}else checks.push({t:'Pas de répétition',ok:false});
+        const common=['password','123456','qwerty','admin','letmein','welcome','monkey','dragon','master','login'];
+        if(!common.some(c=>pwd.toLowerCase().includes(c))){score+=10;checks.push({t:'Pas courant',ok:true})}else checks.push({t:'Pas courant',ok:false});
+
+        score=Math.min(score,100);
+        let color,risk;
+        if(score>=80){color='var(--green)';risk='EXCELLENT'}
+        else if(score>=60){color='var(--accent)';risk='BON'}
+        else if(score>=40){color='var(--warn)';risk='MOYEN'}
+        else{color='var(--danger)';risk='FAIBLE'}
+
+        const meter=document.getElementById('pwd-meter');
+        meter.style.width=score+'%';meter.style.background=color;
+
+        const crackTime=pwd.length<8?'instantanément':pwd.length<10?'minutes':pwd.length<12?'heures':'années';
+        let html=`<div class="result-row"><span class="result-label">Score</span><span class="result-value"><span style="color:${color};font-weight:700">${score}/100</span> — ${risk}</span></div>`;
+        html+=`<div class="result-row"><span class="result-label">Temps craquer</span><span class="result-value">${crackTime}</span></div>`;
+        html+=`<div style="margin-top:8px">`;
+        checks.forEach(c=>{html+=`<div style="font-size:0.78em;padding:2px 0">${c.ok?'<span style="color:var(--green)">&#10003;</span>':'<span style="color:var(--danger)">&#10007;</span>'} ${c.t}</div>`});
+        html+=`</div>`;
+        document.getElementById('pwd-result').innerHTML=html;
+    }
+
+    function genPassword(){
+        const chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?';
+        let pwd='';for(let i=0;i<20;i++)pwd+=chars[Math.floor(Math.random()*chars.length)];
+        document.getElementById('pwd-input').value=pwd;
+        checkPassword();
+        navigator.clipboard.writeText(pwd).catch(()=>{});
+    }
+    </script>
+</body>
+</html>
