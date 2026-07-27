@@ -243,18 +243,24 @@ function start(){
 // === RENDER ===
 function drawPhotoSmooth(img,t){
   if(!img)return;
-  // Ken Burns: slow zoom from CENTER (not left)
-  var elapsed=(t-sceneStartTime)*0.00008;
-  var scale=1.05+elapsed*0.12;
+  // Ken Burns: slow zoom from center, fills entire canvas
+  var elapsed=(t-sceneStartTime)*0.00006;
+  var scale=1+elapsed*0.1;
   var iw=img.width,ih=img.height;
-  // Calculate crop to fill screen, centered
-  var ratio=Math.max(W,H)/(Math.min(iw,ih)*scale);
-  var sw=iw*ratio,sh=ih*ratio;
-  var sx=(iw-sw)/2,sy=(ih-sh)/2;
-  // Clamp to avoid going out of bounds
-  sx=Math.max(0,Math.min(iw-sw,sx));
-  sy=Math.max(0,Math.min(ih-sh,sy));
-  cx.drawImage(img,sx,sy,sw,sh,0,0,W,H);
+  // Object-fit: cover - fill canvas completely, centered
+  var canvasRatio=W/H;
+  var imgRatio=iw/ih;
+  var drawW,drawH;
+  if(imgRatio>canvasRatio){
+    // Image wider than canvas - fit by height
+    drawH=H*scale;drawW=drawH*imgRatio;
+  }else{
+    // Image taller than canvas - fit by width
+    drawW=W*scale;drawH=drawW/imgRatio;
+  }
+  var dx=(W-drawW)/2;
+  var dy=(H-drawH)/2;
+  cx.drawImage(img,0,0,iw,ih,dx,dy,drawW,drawH);
 }
 
 function render(){
