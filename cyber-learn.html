@@ -657,7 +657,7 @@
     }
 
     // Intro screen
-    setTimeout(()=>{const intro=document.getElementById('intro-screen');intro.classList.add('hidden');setTimeout(()=>{intro.style.display='none'},700)},3200);
+    setTimeout(()=>{const intro=document.getElementById('intro-screen');intro.style.opacity='0';intro.style.pointerEvents='none';setTimeout(()=>{intro.remove()},600)},3200);
 
     // Matrix rain
     const mc=document.getElementById('matrix-canvas');
