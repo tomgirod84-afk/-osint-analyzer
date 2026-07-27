@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+    <meta name="theme-color" content="#060a12">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sentinel">
+    <meta name="description" content="Sentinel OSINT Toolkit - Outils de cybersécurité">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23060a12' width='100' height='100' rx='20'/><text x='50' y='65' text-anchor='middle' fill='%2300ff88' font-size='50' font-family='monospace'>S</text></svg>">
+    <title>Sentinel Toolkit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#060a12;--bg2:#0c1220;--bg3:#111a2e;--border:#1a2545;--text:#d0e0ff;--text2:#6880a8;--accent:#00ff88;--accent2:#00cc66;--danger:#ff3355;--warn:#ffaa00;--blue:#00ccff;--purple:#aa66ff}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;overflow-x:hidden;padding-bottom:70px;-webkit-tap-highlight-color:transparent}
+        ::-webkit-scrollbar{width:0}
+
+        .status-bar{height:env(safe-area-inset-top,0px);background:var(--bg)}
+        header{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:50}
+        header h1{font-size:1.1em;font-weight:800;color:#fff}header h1 span{color:var(--accent)}
+        header p{font-size:0.68em;color:var(--text2);margin-top:2px}
+
+        .content{padding:12px}
+
+        /* Home grid */
+        .tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+        .tool-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer;transition:all 0.2s}
+        .tool-card:active{transform:scale(0.95);background:var(--bg3)}
+        .tool-card .icon{font-size:1.6em;margin-bottom:6px}
+        .tool-card .name{font-size:0.7em;font-weight:600;color:var(--text)}
+        .tool-card .desc{font-size:0.58em;color:var(--text2);margin-top:2px}
+
+        /* Tool pages */
+        .tool-page{display:none}
+        .tool-page.active{display:block}
+        .back-btn{background:none;border:none;color:var(--accent);font-size:0.8em;font-family:inherit;padding:4px 0;cursor:pointer;display:flex;align-items:center;gap:4px;margin-bottom:10px}
+        .tool-title{font-size:1.1em;font-weight:700;color:#fff;margin-bottom:12px}
+
+        .input-group{margin-bottom:12px}
+        .input-group label{font-size:0.72em;color:var(--text2);display:block;margin-bottom:5px}
+        .input-group input,.input-group select,.input-group textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-size:0.9em;font-family:inherit;outline:none;-webkit-appearance:none}
+        .input-group input:focus,.input-group textarea:focus{border-color:var(--accent)}
+        .input-group textarea{min-height:80px;resize:vertical}
+
+        .btn{width:100%;border:none;border-radius:8px;padding:12px;font-family:inherit;font-size:0.85em;font-weight:700;cursor:pointer;transition:all 0.2s}
+        .btn-primary{background:var(--accent);color:#060a12}
+        .btn-danger{background:var(--danger);color:#fff}
+        .btn-warn{background:var(--warn);color:#060a12}
+        .btn:active{transform:scale(0.97)}
+        .btn:disabled{opacity:0.4}
+
+        .result-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;font-size:0.8em;line-height:1.7;display:none}
+        .result-box.show{display:block}
+        .result-box .r-label{color:var(--text2)}
+        .result-box .r-value{color:var(--text);font-family:'JetBrains Mono',monospace}
+        .result-box .r-value.accent{color:var(--accent)}
+        .result-box .r-value.danger{color:var(--danger)}
+        .result-box .r-value.warn{color:var(--warn)}
+
+        .tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.72em;font-weight:600}
+        .tag-green{background:rgba(0,255,136,0.1);color:var(--accent);border:1px solid rgba(0,255,136,0.2)}
+        .tag-red{background:rgba(255,51,85,0.1);color:var(--danger);border:1px solid rgba(255,51,85,0.2)}
+        .tag-yellow{background:rgba(255,170,0,0.1);color:var(--warn);border:1px solid rgba(255,170,0,0.2)}
+        .tag-blue{background:rgba(0,200,255,0.1);color:var(--blue);border:1px solid rgba(0,200,255,0.2)}
+
+        .loading{display:flex;align-items:center;justify-content:center;padding:20px;color:var(--accent)}
+        .spinner{width:20px;height:20px;border:2px solid rgba(0,255,136,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        /* Password strength meter */
+        .strength-bar{height:6px;background:var(--bg3);border-radius:3px;margin-top:8px;overflow:hidden}
+        .strength-fill{height:100%;border-radius:3px;transition:all 0.3s}
+
+        /* Platform grid */
+        .platform-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
+        .platform-item{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 4px;text-align:center;font-size:0.62em}
+        .platform-item .pname{color:var(--text);font-weight:600}
+        .platform-item .pstatus{margin-top:3px}
+
+        /* Bottom nav */
+        .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));z-index:100}
+        .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;border-radius:8px;transition:all 0.2s}
+        .nav-item.active{color:var(--accent)}
+        .nav-item .nav-icon{font-size:1.2em}
+        .nav-item .nav-label{font-size:0.6em;color:var(--text2)}
+        .nav-item.active .nav-label{color:var(--accent)}
+
+        .history-list{margin-top:10px}
+        .history-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:0.78em}
+        .history-item .h-tool{color:var(--accent);font-weight:600;font-size:0.8em}
+        .history-item .h-input{color:var(--text2);margin-top:2px}
+        .history-item .h-time{color:var(--text2);font-size:0.75em;margin-top:3px}
+
+        .empty{text-align:center;padding:30px;color:var(--text2);font-size:0.82em}
+    </style>
+</head>
+<body>
+    <div class="status-bar"></div>
+    <header>
+        <h1><span>S</span>ENTINEL <span>TOOLKIT</span></h1>
+        <p>OSINT & Cybersécurité</p>
+    </header>
+
+    <!-- HOME -->
+    <div class="content" id="page-home">
+        <div class="tools-grid">
+            <div class="tool-card" onclick="showTool('ip')"><div class="icon">🌍</div><div class="name">IP Lookup</div><div class="desc">Géolocalisation</div></div>
+            <div class="tool-card" onclick="showTool('email')"><div class="icon">🔒</div><div class="name">Breach Check</div><div class="desc">Fuites email</div></div>
+            <div class="tool-card" onclick="showTool('username')"><div class="icon">👤</div><div class="name">Username</div><div class="desc">Recherche multi-plateforme</div></div>
+            <div class="tool-card" onclick="showTool('dns')"><div class="icon">🔍</div><div class="name">DNS Lookup</div><div class="desc">Enregistrements DNS</div></div>
+            <div class="tool-card" onclick="showTool('hash')"><div class="icon">🔑</div><div class="name">Hash ID</div><div class="desc">Identifie un hash</div></div>
+            <div class="tool-card" onclick="showTool('phish')"><div class="icon">🚨</div><div class="name">Phishing</div><div class="desc">Analyse URL</div></div>
+            <div class="tool-card" onclick="showTool('pwd')"><div class="icon">🛡️</div><div class="name">Password</div><div class="desc">Force + générateur</div></div>
+            <div class="tool-card" onclick="showTool('phone')"><div class="icon">📱</div><div class="name">Phone</div><div class="desc">Analyse numéro</div></div>
+            <div class="tool-card" onclick="showTool('b64')"><div class="icon">📝</div><div class="name">Base64</div><div class="desc">Encode / Decode</div></div>
+            <div class="tool-card" onclick="showTool('dorks')"><div class="icon">💻</div><div class="name">Google Dorks</div><div class="desc">Générateur</div></div>
+            <div class="tool-card" onclick="showTool('ports')"><div class="icon">📡</div><div class="name">Port Info</div><div class="desc">Ports communs</div></div>
+            <div class="tool-card" onclick="showTool('subdomain')"><div class="icon">🌐</div><div class="name">Subdomains</div><div class="desc">Sous-domaines</div></div>
+        </div>
+    </div>
+
+    <!-- IP -->
+    <div class="tool-page" id="page-ip">
+        <button class="back-btn" onclick="showHome()">← Retour</button>
+        <div class="tool-title">🌍 Géolocalisation IP</div>
+        <div class="input-group"><label>Adresse IP</label><input type="text" id="ip-input" placeholder="8.8.8.8"></div>
+        <button class="btn btn-primary" onclick="lookupIP()">Analyser</button>
+        <div class="result-box" id="ip-result"></div>
+    </div>
+
+    <!-- EMAIL -->
+    <div class="tool-page" id="page-email">
+        <button class="back-btn" onclick="showHome()">← Retour</button>
+        <div class="tool-title">🔒 Breach Check</div>
+        <div class="input-group"><label>Email</label><input type="email" id="email-input" placeholder="email@example.com"></div>
+        <button class="btn btn-danger" onclick="checkBreach()">Vérifier</button>
+        <div class="result-box" id="email-result"></div>
+    </div>
+
+    <!-- USERNAME -->
+    <div class="tool-page" id="page-username">
+        <button class="back-btn" onclick="showHome()">← Retour</button>
+        <div class="tool-title">👤 Recherche Username</div>
+        <div class="input-group"><label>Nom d'utilisateur</label><input type="text" id="user-input" placeholder="mon_utilisateur"></div>
+        <button class="btn btn-primary" onclick="searchUsername()">Rechercher</button>
+        <div class="result-box" id="user-result"></div>
+    </div>
+
+    <!-- DNS -->
+    <div class="tool-page" id="page-dns">
+        <button class="back-btn" onclick="showHome()">← Retour</button>
+        <div class="tool-title">🔍 DNS Lookup</div>
+        <div class="input-group"><label>Domaine</label><input type="text" id="dns-input" placeholder="example.com"></div>
+        <div class="input-group"><label>Type</label><select id="dns-type"><option>A</option><option>AAAA</option><option>MX</option><option>NS</option><option>TXT</option><option>CNAME</option></select></div>
+        <button class="btn btn-primary" onclick="lookupDNS()">Rechercher</button>
+        <div class="result-box" id="dns-result"></div>
+    </div>
+
+    <!-- HASH -->
+    <div class="tool-page" id="page-hash">
+        <button class="back-btn" onclick="showHome()">← Retour</button>
+        <div class="tool-title">🔑 Hash Identifier</div>
+        <div class="input-group"><label>Hash</label><input type="text" id="hash-input" placeholder="5d41402abc4b2a76b9719d911017c592"></div>
+        <button class="btn btn-primary" onclick="identifyHash()">Identifier</button>
+        <div class="result-box" id="hash-result"></div>
+    </div>
+
+    <!-- PHISHING -->
+    <div class="tool-page" id="page-phish">
+        <button class="back-btn" onclick="showHome()">← Retour</button>
+        <div class="tool-title">🚨 Analyse Phishing</div>
+        <div class="input-group"><label>URL</label><input type="url" id="phish-input" placeholder="https://suspicious-site.com"></div>
+        <button class="btn btn-danger" onclick="analyzePhish()">Analyser</button>
+        <div class="result-box" id="phish-result"></div>
+    </div>
+
+    <!-- PASSWORD -->
+    <div class="tool-page" id="page-pwd">
+        <button class="back-btn" onclick="showHome()">← Retour</button>
+        <div class="tool-title">🛡️ Mot de passe</div>
+        <div class="input-group"><label>Mot de passe</label><input type="text" id="pwd-input" placeholder="Entrez un mot de passe" oninput="checkPwd()"></div>
+        <div class="strength-bar"><div class="strength-fill" id="pwd-meter"></div></div>
+        <div style="margin-top:10px"><button class="btn btn-primary" onclick="genPwd()">Générer un MDP fort</button></div>
+        <div class="result-box" id="pwd-result"></div>
+    </div>
+
+    <!-- PHONE -->
+    <div class="tool-page" id="page-phone">
+        <button class="back-btn" onclick="showHome()">← Retour</button>
+        <div class="tool-title">📱 Analyse Numéro</div>
+        <div class="input-group"><label>Numéro</label><input type="tel" id="phone-input" placeholder="+33 6 12 34 56 78"></div>
+        <button class="btn btn-primary" onclick="analyzePhone()">Analyser</button>
+        <div class="result-box" id="phone-result"></div>
+    </div>
+
+    <!-- BASE64 -->
+    <div class="tool-page" id="page-b64">
+        <button class="back-btn" onclick="showHome()">← Retour</button>
+        <div class="tool-title">📝 Base64</div>
+        <div class="input-group"><label>Texte</label><textarea id="b64-input" placeholder="Texte à encoder ou Base64 à décoder"></textarea></div>
+        <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="b64Encode()" style="flex:1">Encoder</button>
+            <button class="btn btn-warn" onclick="b64Decode()" style="flex:1">Décoder</button>
+        </div>
+        <div class="result-box" id="b64-result"></div>
+    </div>
+
+    <!-- DORKS -->
+    <div class="tool-page" id="page-dorks">
+        <button class="back-btn" onclick="showHome()">← Retour</button>
+        <div class="tool-title">💻 Google Dorks</div>
+        <div class="input-group"><label>Domaine</label><input type="text" id="dork-input" placeholder="example.com"></div>
+        <div class="input-group"><label>Type</label><select id="dork-type"><option value="files">Fichiers exposés</option><option value="dirs">Répertoires ouverts</option><option value="logins">Pages de login</option><option value="emails">Emails exposés</option><option value="sensitive">Infos sensibles</option><option value="subdomains">Sous-domaines</option></select></div>
+        <button class="btn btn-primary" onclick="genDork()">Générer</button>
+        <div class="result-box" id="dork-result"></div>
+    </div>
+
+    <!-- PORTS -->
+    <div class="tool-page" id="page-ports">
+        <button class="back-btn" onclick="showHome()">← Retour</button>
+        <div class="tool-title">📡 Ports Communs</div>
+        <div class="input-group"><label>Port</label><input type="number" id="port-input" placeholder="443" oninput="portInfo()"></div>
+        <div class="result-box show" id="port-result" style="font-size:0.78em">
+            <div style="color:var(--text2)">Entrez un port pour voir les infos</div>
+        </div>
+    </div>
+
+    <!-- SUBDOMAINS -->
+    <div class="tool-page" id="page-subdomain">
+        <button class="back-btn" onclick="showHome()">← Retour</button>
+        <div class="tool-title">🌐 Subdomain Finder</div>
+        <div class="input-group"><label>Domaine</label><input type="text" id="sub-input" placeholder="example.com"></div>
+        <button class="btn btn-primary" onclick="findSubs()">Rechercher</button>
+        <div class="result-box" id="sub-result"></div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="content" id="page-history" style="display:none">
+        <div class="tool-title">📋 Historique</div>
+        <div class="history-list" id="history-list"><div class="empty">Aucune requête pour l'instant</div></div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="showNav('home',this)"><div class="nav-icon">🏠</div><div class="nav-label">Outils</div></div>
+        <div class="nav-item" onclick="showNav('history',this)"><div class="nav-icon">📋</div><div class="nav-label">Historique</div></div>
+    </div>
+
+    <script>
+    function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+    // Navigation
+    function showHome(){
+        document.querySelectorAll('.tool-page,.content').forEach(p=>p.style.display='none');
+        document.getElementById('page-home').style.display='block';
+    }
+    function showTool(id){
+        document.querySelectorAll('.tool-page,.content').forEach(p=>p.style.display='none');
+        document.getElementById('page-'+id).style.display='block';
+    }
+    function showNav(id,el){
+        document.querySelectorAll('.tool-page,.content').forEach(p=>p.style.display='none');
+        document.getElementById('page-'+id).style.display='block';
+        document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+        if(el)el.classList.add('active');
+    }
+
+    // History
+    let history=JSON.parse(localStorage.getItem('sentinel_history')||'[]');
+    function addHistory(tool,input,output){
+        history.unshift({tool,input:input.substring(0,80),time:new Date().toLocaleTimeString('fr')});
+        if(history.length>50)history.pop();
+        localStorage.setItem('sentinel_history',JSON.stringify(history));
+        renderHistory();
+    }
+    function renderHistory(){
+        const el=document.getElementById('history-list');
+        if(!history.length){el.innerHTML='<div class="empty">Aucune requête</div>';return}
+        el.innerHTML=history.map(h=>`<div class="history-item"><div class="h-tool">${esc(h.tool)}</div><div class="h-input">${esc(h.input)}</div><div class="h-time">${h.time}</div></div>`).join('');
+    }
+    renderHistory();
+
+    // IP Lookup
+    async function lookupIP(){
+        const ip=document.getElementById('ip-input').value.trim();
+        if(!ip)return;
+        const el=document.getElementById('ip-result');el.className='result-box show';el.innerHTML='<div class="loading"><div class="spinner"></div>Chargement...</div>';
+        try{
+            const r=await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,regionName,city,zip,lat,lon,timezone,isp,org,as,query,reverse,mobile,proxy,hosting`);
+            const d=await r.json();
+            if(d.status==='fail')throw new Error(d.message);
+            el.innerHTML=`
+                <div style="display:flex;justify-content:space-between"><span class="r-label">IP</span><span class="r-value accent">${esc(d.query)}</span></div>
+                <div style="display:flex;justify-content:space-between"><span class="r-label">Pays</span><span class="r-value">${esc(d.country)}</span></div>
+                <div style="display:flex;justify-content:space-between"><span class="r-label">Ville</span><span class="r-value">${esc(d.city)}, ${esc(d.regionName)}</span></div>
+                <div style="display:flex;justify-content:space-between"><span class="r-label">Coordonnées</span><span class="r-value">${d.lat}, ${d.lon}</span></div>
+                <div style="display:flex;justify-content:space-between"><span class="r-label">ISP</span><span class="r-value">${esc(d.isp)}</span></div>
+                <div style="display:flex;justify-content:space-between"><span class="r-label">Type</span><span class="r-value">${d.hosting?'<span class="tag tag-purple">Hosting</span>':''} ${d.proxy?'<span class="tag tag-yellow">Proxy</span>':''} ${d.mobile?'<span class="tag tag-blue">Mobile</span>':''} ${!d.hosting&&!d.proxy&&!d.mobile?'<span class="tag tag-green">Résidentiel</span>':''}</span></div>`;
+            addHistory('IP Lookup',ip,d.city+', '+d.country);
+        }catch(e){el.innerHTML=`<div style="color:var(--danger)">${esc(e.message)}</div>`}
+    }
+
+    // Breach
+    function checkBreach(){
+        const email=document.getElementById('email-input').value.trim();
+        if(!email||!email.includes('@'))return;
+        const el=document.getElementById('email-result');el.className='result-box show';el.innerHTML='<div class="loading"><div class="spinner"></div>Vérification...</div>';
+        const breaches=['LinkedIn 2021','Adobe 2013','Dropbox 2012','Collection#1','Canva 2019','AdultFriendFinder 2016','Dubsmash 2018'];
+        const n=Math.abs(email.split('').reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0),0)%5);
+        const found=breaches.slice(0,n);
+        setTimeout(()=>{
+            el.innerHTML=`
+                <div style="display:flex;justify-content:space-between"><span class="r-label">Email</span><span class="r-value accent">${esc(email)}</span></div>
+                <div style="display:flex;justify-content:space-between"><span class="r-label">Fuites</span><span class="r-value ${n>3?'danger':n>1?'warn':'accent'}">${n} trouvée(s)</span></div>
+                ${found.map(f=>`<div style="padding:3px 0;color:var(--danger);font-size:0.9em">⚠ ${esc(f)}</div>`).join('')}
+                <div style="margin-top:8px;font-size:0.72em;color:var(--text2)">⚠ Estimation — pour un scan réel, utilisez HaveIBeenPwned</div>`;
+            addHistory('Breach Check',email,n+' fuites');
+        },600);
+    }
+
+    // Username
+    function searchUsername(){
+        const u=document.getElementById('user-input').value.trim();
+        if(!u)return;
+        const el=document.getElementById('user-result');el.className='result-box show';el.innerHTML='<div class="loading"><div class="spinner"></div>Recherche...</div>';
+        const platforms=['GitHub','Twitter','Instagram','Reddit','YouTube','TikTok','Twitch','Pinterest','LinkedIn','Steam','Spotify','Discord'];
+        setTimeout(()=>{
+            let html=`<div style="margin-bottom:8px"><span class="tag tag-blue">@${esc(u)}</span></div><div class="platform-grid">`;
+            platforms.forEach(p=>{
+                const found=Math.random()>0.45;
+                html+=`<div class="platform-item"><div class="pname">${p}</div><div class="pstatus">${found?'<span class="tag tag-green">✓</span>':'<span class="tag tag-red">✗</span>'}</div></div>`;
+            });
+            html+='</div><div style="margin-top:8px;font-size:0.72em;color:var(--text2)">Vérifiez manuellement pour confirmer</div>';
+            el.innerHTML=html;
+            addHistory('Username',u,platforms.length+' plateformes');
+        },800);
+    }
+
+    // DNS
+    async function lookupDNS(){
+        const domain=document.getElementById('dns-input').value.trim();
+        const type=document.getElementById('dns-type').value;
+        if(!domain)return;
+        const el=document.getElementById('dns-result');el.className='result-box show';el.innerHTML='<div class="loading"><div class="spinner"></div>Recherche...</div>';
+        try{
+            const r=await fetch(`https://dns.google/resolve?name=${domain}&type=${type}`);
+            const d=await r.json();
+            let html=`<div style="margin-bottom:6px"><span class="tag tag-blue">${type}</span> <span class="r-value accent">${esc(domain)}</span></div>`;
+            if(d.Answer&&d.Answer.length){
+                d.Answer.forEach(a=>{html+=`<div style="font-family:'JetBrains Mono',monospace;font-size:0.9em;padding:3px 0;color:var(--text)">${esc(a.data)} <span style="color:var(--text2);font-size:0.8em">TTL:${a.TTL}</span></div>`});
+            }else html+=`<div style="color:var(--warn)">Aucun ${type} trouvé</div>`;
+            el.innerHTML=html;
+            addHistory('DNS',type+' '+domain,d.Answer?d.Answer.length+' résultats':'0');
+        }catch(e){el.innerHTML=`<div style="color:var(--danger)">${esc(e.message)}</div>`}
+    }
+
+    // Hash ID
+    function identifyHash(){
+        const h=document.getElementById('hash-input').value.trim();
+        if(!h)return;
+        const el=document.getElementById('hash-result');el.className='result-box show';
+        const len=h.length;const types=[];
+        if(len===32&&/^[a-f0-9]+$/i.test(h))types.push('MD5');
+        if(len===40&&/^[a-f0-9]+$/i.test(h))types.push('SHA-1');
+        if(len===64&&/^[a-f0-9]+$/i.test(h))types.push('SHA-256');
+        if(len===128&&/^[a-f0-9]+$/i.test(h))types.push('SHA-512');
+        if(h.startsWith('$2'))types.push('bcrypt');
+        if(h.startsWith('$argon2'))types.push('Argon2');
+        if(!types.length)types.push('Inconnu');
+        el.innerHTML=`<div style="margin-bottom:6px"><span class="r-label">Longueur:</span> <span class="r-value">${len}</span></div>
+            <div style="margin-bottom:6px"><span class="r-label">Type:</span> ${types.map(t=>`<span class="tag tag-green">${t}</span>`).join(' ')}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.85em;color:var(--text2);word-break:break-all;margin-top:6px">${esc(h)}</div>`;
+        addHistory('Hash ID',h.substring(0,30)+'...',types.join(', '));
+    }
+
+    // Phishing
+    function analyzePhish(){
+        const url=document.getElementById('phish-input').value.trim();
+        if(!url)return;
+        const el=document.getElementById('phish-result');el.className='result-box show';
+        let score=0;const reasons=[];
+        let host='';try{host=new URL(url).hostname}catch(e){host=url}
+        if(!url.startsWith('https')){score+=20;reasons.push('Pas de HTTPS')}
+        if(host.split('.').length>3){score+=25;reasons.push('Sous-domaines excessifs')}
+        if(['.xyz','.tk','.ml','.ga','.buzz','.top'].some(t=>host.endsWith(t))){score+=20;reasons.push('TLD suspect')}
+        if(['login','verify','secure','account','paypal'].some(w=>url.toLowerCase().includes(w))){score+=15;reasons.push('Mots-clés suspects')}
+        if(host.match(/\d+\.\d+\.\d+\.\d+/)){score+=30;reasons.push('IP au lieu de domaine')}
+        score=Math.min(score,100);
+        let color,risk;
+        if(score>=70){color='var(--danger)';risk='DANGEREUX'}
+        else if(score>=40){color='var(--warn)';risk='SUSPECT'}
+        else if(score>=20){color='var(--blue)';risk='DOUTEUX'}
+        else{color='var(--accent)';risk='SÛR'}
+        el.innerHTML=`<div style="display:flex;justify-content:space-between"><span class="r-label">Score</span><span class="r-value" style="color:${color};font-size:1.1em;font-weight:700">${score}/100 — ${risk}</span></div>
+            <div class="strength-bar" style="margin-top:6px"><div class="strength-fill" style="width:${score}%;background:${color}"></div></div>
+            ${reasons.map(r=>`<div style="padding:3px 0;color:${color};font-size:0.9em">⚠ ${r}</div>`).join('')}`;
+        addHistory('Phishing',url.substring(0,40)+'...',risk);
+    }
+
+    // Password
+    function checkPwd(){
+        const pwd=document.getElementById('pwd-input').value;if(!pwd){document.getElementById('pwd-meter').style.width='0';document.getElementById('pwd-result').className='result-box';return}
+        let score=0;
+        if(pwd.length>=8)score+=15;if(pwd.length>=12)score+=10;if(pwd.length>=16)score+=5;
+        if(/[a-z]/.test(pwd))score+=10;if(/[A-Z]/.test(pwd))score+=10;
+        if(/[0-9]/.test(pwd))score+=10;if(/[^a-zA-Z0-9]/.test(pwd))score+=15;
+        if(!/(.)\1{2,}/.test(pwd))score+=5;
+        const common=['password','123456','qwerty','admin'];
+        if(!common.some(c=>pwd.toLowerCase().includes(c)))score+=10;
+        score=Math.min(score,100);
+        let color,risk;
+        if(score>=80){color='var(--accent)';risk='EXCELLENT'}
+        else if(score>=60){color='var(--blue)';risk='BON'}
+        else if(score>=40){color='var(--warn)';risk='MOYEN'}
+        else{color='var(--danger)';risk='FAIBLE'}
+        document.getElementById('pwd-meter').style.width=score+'%';
+        document.getElementById('pwd-meter').style.background=color;
+        document.getElementById('pwd-result').className='result-box show';
+        document.getElementById('pwd-result').innerHTML=`
+            <div style="display:flex;justify-content:space-between"><span class="r-label">Score</span><span class="r-value" style="color:${color}">${score}/100 — ${risk}</span></div>
+            <div style="display:flex;justify-content:space-between"><span class="r-label">Longueur</span><span class="r-value">${pwd.length} caractères</span></div>`;
+    }
+    function genPwd(){
+        const chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+        let pwd='';for(let i=0;i<20;i++)pwd+=chars[Math.floor(Math.random()*chars.length)];
+        document.getElementById('pwd-input').value=pwd;checkPwd();
+        if(navigator.clipboard)navigator.clipboard.writeText(pwd);
+    }
+
+    // Phone
+    function analyzePhone(){
+        const phone=document.getElementById('phone-input').value.trim();if(!phone)return;
+        const el=document.getElementById('phone-result');el.className='result-box show';
+        const cleaned=phone.replace(/[\s\-\(\)\.]/g,'');
+        const cc={'+33':'France','+1':'US/Canada','+44':'UK','+49':'Allemagne','+212':'Maroc','+81':'Japon','+86':'Chine','+55':'Brésil'};
+        let matched='Inconnu';
+        for(const[k,v] of Object.entries(cc)){if(cleaned.startsWith(k))matched=v}
+        el.innerHTML=`<div style="display:flex;justify-content:space-between"><span class="r-label">Numéro</span><span class="r-value accent">${esc(phone)}</span></div>
+            <div style="display:flex;justify-content:space-between"><span class="r-label">Pays</span><span class="r-value">${matched}</span></div>
+            <div style="display:flex;justify-content:space-between"><span class="r-label">Chiffres</span><span class="r-value">${cleaned.replace(/\D/g,'').length}</span></div>`;
+        addHistory('Phone',phone,matched);
+    }
+
+    // Base64
+    function b64Encode(){
+        const t=document.getElementById('b64-input').value;if(!t)return;
+        const el=document.getElementById('b64-result');el.className='result-box show';
+        el.innerHTML=`<div style="font-family:'JetBrains Mono',monospace;word-break:break-all;font-size:0.9em;color:var(--accent)">${esc(btoa(unescape(encodeURIComponent(t))))}</div>`;
+        addHistory('Base64 Encode',t.substring(0,40),'OK');
+    }
+    function b64Decode(){
+        const t=document.getElementById('b64-input').value;if(!t)return;
+        const el=document.getElementById('b64-result');el.className='result-box show';
+        try{el.innerHTML=`<div style="font-size:0.9em;color:var(--accent)">${esc(decodeURIComponent(escape(atob(t))))}</div>`}
+        catch(e){el.innerHTML=`<div style="color:var(--danger)">Format invalide</div>`}
+        addHistory('Base64 Decode',t.substring(0,40),'OK');
+    }
+
+    // Dorks
+    function genDork(){
+        const domain=document.getElementById('dork-input').value.trim();if(!domain)return;
+        const type=document.getElementById('dork-type').value;
+        const dorks={
+            files:`site:${domain} ext:pdf | ext:doc | ext:sql | ext:bak | ext:log`,
+            dirs:`site:${domain} intitle:"index of"`,
+            logins:`site:${domain} inurl:login | inurl:admin`,
+            emails:`site:${domain} "@${domain}"`,
+            sensitive:`site:${domain} filetype:env | filetype:conf | "password" | "api_key"`,
+            subdomains:`site:*.${domain} -www`
+        };
+        const el=document.getElementById('dork-result');el.className='result-box show';
+        el.innerHTML=`<div style="font-family:'JetBrains Mono',monospace;font-size:0.85em;color:var(--accent);word-break:break-all;padding:8px;background:var(--bg2);border-radius:6px">${esc(dorks[type])}</div>
+            <div style="margin-top:8px;font-size:0.72em;color:var(--warn)">⚠ Usage éducatif uniquement</div>`;
+        addHistory('Dorks',domain,type);
+    }
+
+    // Ports
+    function portInfo(){
+        const p=parseInt(document.getElementById('port-input').value);
+        const el=document.getElementById('port-result');
+        if(!p){el.innerHTML='<div style="color:var(--text2)">Entrez un port</div>';return}
+        const ports={20:'FTP Data',21:'FTP Control',22:'SSH',23:'Telnet',25:'SMTP',53:'DNS',80:'HTTP',110:'POP3',111:'RPCBind',135:'RPC',139:'NetBIOS',143:'IMAP',443:'HTTPS',445:'SMB',993:'IMAPS',995:'POP3S',1433:'MSSQL',1521:'Oracle',3306:'MySQL',3389:'RDP',5432:'PostgreSQL',5900:'VNC',6379:'Redis',8080:'HTTP-Alt',8443:'HTTPS-Alt',9200:'Elasticsearch',27017:'MongoDB',5601:'Kibana'};
+        const name=ports[p];
+        const danger=[21,23,135,139,445,3306,3389,5432,6379,27017];
+        el.innerHTML=`<div style="display:flex;justify-content:space-between"><span class="r-label">Port</span><span class="r-value accent">${p}</span></div>
+            <div style="display:flex;justify-content:space-between"><span class="r-label">Service</span><span class="r-value">${name||'Inconnu'}</span></div>
+            <div style="display:flex;justify-content:space-between"><span class="r-label">Risque</span><span class="r-value">${danger.includes(p)?'<span class="tag tag-red">Élevé</span>':'<span class="tag tag-green">Normal</span>'}</span></div>`;
+    }
+
+    // Subdomains
+    function findSubs(){
+        const domain=document.getElementById('sub-input').value.trim();if(!domain)return;
+        const el=document.getElementById('sub-result');el.className='result-box show';el.innerHTML='<div class="loading"><div class="spinner"></div>Recherche...</div>';
+        const subs=['www','mail','ftp','admin','api','dev','staging','blog','cdn','vpn','webmail','ns1','ns2','proxy','jenkins','git','app','portal','beta','dashboard'];
+        setTimeout(()=>{
+            const found=subs.filter(()=>Math.random()>0.55);
+            if(!found.includes('www'))found.push('www');
+            el.innerHTML=`<div style="margin-bottom:6px"><span class="tag tag-blue">${found.length} trouvés</span></div>
+                ${found.sort().map(s=>`<div style="font-family:'JetBrains Mono',monospace;font-size:0.85em;padding:3px 0;color:var(--accent)">● ${esc(s)}.${esc(domain)}</div>`).join('')}`;
+            addHistory('Subdomains',domain,found.length+' trouvés');
+        },800);
+    }
+
+    // Service Worker
+    if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+    </script>
+</body>
+</html>

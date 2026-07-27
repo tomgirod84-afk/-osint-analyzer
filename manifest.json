@@ -1,0 +1,18 @@
+{
+    "name": "Sentinel OSINT Toolkit",
+    "short_name": "Sentinel",
+    "description": "OSINT & Cybersécurité - Outils de reconnaissance",
+    "start_url": "./sentinel-toolkit.html",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#060a12",
+    "theme_color": "#060a12",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23060a12' width='512' height='512' rx='100'/><text x='256' y='320' text-anchor='middle' fill='%2300ff88' font-size='280' font-family='monospace' font-weight='bold'>S</text></svg>",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
