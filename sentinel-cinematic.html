@@ -207,20 +207,19 @@ async function initVoice(){
 
 function speakAudio(id){
     return new Promise(function(res){
-        if(!voiceManifest||!voiceManifest[id]){console.log('[VOICE] no manifest for',id);res();return}
+        if(!voiceManifest||!voiceManifest[id]){res();return}
         if(currentAudio){currentAudio.pause();currentAudio=null}
         var src='voice_lines/'+voiceManifest[id];
-        console.log('[VOICE] playing',id,'->',src);
+        console.log('[VOICE] playing',id);
         if(voiceCache[id]){
             playCached(voiceCache[id]).then(res);return;
         }
         var a=new Audio();a.volume=1.0;
         a.oncanplaythrough=function(){
-            console.log('[VOICE] loaded',id);
             voiceCache[id]=a;
             playCached(a).then(res);
         };
-        a.onerror=function(e){console.log('[VOICE] error loading',id,a.error);res()};
+        a.onerror=function(){res()};
         a.src=src;
     });
 }
@@ -462,9 +461,12 @@ function hideName(){speakerEl.style.opacity='0'}
 async function narrate(name,audioId,text,delay){
     showName(name);
     mouthTarget=1;
-    speakAudio(audioId);
+    // Start audio + typewriter together
+    var audioDone=speakAudio(audioId);
     await reveal(text,32);
     mouthTarget=0;
+    // Wait for audio to finish (pacing)
+    await audioDone;
     if(delay)await wait(delay);
 }
 
