@@ -40,8 +40,7 @@
         <button class="start-btn" onclick="startGame()">GO</button>
         <div class="controls-info">
             <span>Q D</span> ou <span>← →</span> — Tourner<br>
-            <span>ESPACE</span> — Boost<br>
-            <span>Swipe</span> sur mobile
+            <span>ESPACE</span> — Boost
         </div>
     </div>
     <div id="ui">
@@ -72,19 +71,17 @@
     let baseSpeed=4,speed=4,boostFuel=100,boosting=false,roadOffset=0;
     let obstacles=[],particles=[],buildings=[],keys={},shake=0,combo=0,comboTimer=0;
     let touchLeft=false,touchRight=false,touchBoost=false;
+    let invincible=0;
 
-    // Pre-generate stars
     const stars=[];
     for(let i=0;i<80;i++)stars.push({x:Math.random()*2-1,y:Math.random(),s:0.5+Math.random()*1.5,b:Math.random()});
 
-    // Music - lightweight synthwave
+    // Music
     let musicCtx=null,musicInterval=null;
     function startMusic(){
         try{
             musicCtx=new(window.AudioContext||window.webkitAudioContext)();
             const master=musicCtx.createGain();master.gain.value=0.2;master.connect(musicCtx.destination);
-
-            // Pre-create hi-hat buffer once
             const hatBufLen=Math.floor(musicCtx.sampleRate*0.04);
             const hatBuf=musicCtx.createBuffer(1,hatBufLen,musicCtx.sampleRate);
             const hatData=hatBuf.getChannelData(0);
@@ -94,47 +91,37 @@
             const bassPattern=[55,0,55,0,65.4,0,73.4,0];
             const leadPattern=[0,440,0,523,0,440,0,349];
             let beatIdx=0;
-            const now=musicCtx.currentTime;
 
             function playBeat(){
                 if(!musicCtx||musicCtx.state==='closed')return;
                 const t=musicCtx.currentTime;
-                const bassFreq=bassPattern[beatIdx%8];
-                const leadFreq=leadPattern[beatIdx%8];
-
-                // Kick on even beats
                 if(beatIdx%2===0){
                     const o=musicCtx.createOscillator(),g=musicCtx.createGain();
                     o.type='sine';o.frequency.setValueAtTime(120,t);o.frequency.exponentialRampToValueAtTime(30,t+0.12);
                     g.gain.setValueAtTime(0.4,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.15);
                     o.connect(g);g.connect(master);o.start(t);o.stop(t+0.15);
                 }
-
-                // Hi-hat every beat
                 const hs=musicCtx.createBufferSource();hs.buffer=hatBuf;
                 const hg=musicCtx.createGain();hg.gain.value=0.06;
                 const hp=musicCtx.createBiquadFilter();hp.type='highpass';hp.frequency.value=7000;
                 hs.connect(hp);hp.connect(hg);hg.connect(master);hs.start(t);
 
-                // Bass
-                if(bassFreq>0){
+                const bf=bassPattern[beatIdx%8];
+                if(bf>0){
                     const o=musicCtx.createOscillator(),g=musicCtx.createGain();
-                    o.type='sawtooth';o.frequency.value=bassFreq;
+                    o.type='sawtooth';o.frequency.value=bf;
                     g.gain.setValueAtTime(0.2,t);g.gain.exponentialRampToValueAtTime(0.001,t+step*0.9);
                     o.connect(g);g.connect(master);o.start(t);o.stop(t+step*0.9);
                 }
-
-                // Lead
-                if(leadFreq>0){
+                const lf=leadPattern[beatIdx%8];
+                if(lf>0){
                     const o=musicCtx.createOscillator(),g=musicCtx.createGain();
-                    o.type='square';o.frequency.value=leadFreq;
+                    o.type='square';o.frequency.value=lf;
                     g.gain.setValueAtTime(0.08,t);g.gain.exponentialRampToValueAtTime(0.001,t+step*0.7);
                     o.connect(g);g.connect(master);o.start(t);o.stop(t+step*0.7);
                 }
-
                 beatIdx++;
             }
-
             musicInterval=setInterval(playBeat,step*1000);
             playBeat();
         }catch(e){}
@@ -148,40 +135,40 @@
     function resetGame(){
         playerX=0;targetLane=0;score=0;distance=0;
         baseSpeed=4;speed=4;boostFuel=100;boosting=false;
-        obstacles=[];particles=[];buildings=[];combo=0;comboTimer=0;
+        obstacles=[];particles=[];buildings=[];combo=0;comboTimer=0;invincible=120;
         for(let i=0;i<20;i++)addBuilding(i*200);
     }
 
     function addBuilding(z){
         const side=Math.random()>0.5?1:-1;
         const lane=side*(3+Math.floor(Math.random()*4)*1.2);
-        const w=30+Math.random()*50;
-        const h=40+Math.random()*120;
+        const w=30+Math.random()*50,h=40+Math.random()*120;
         const neon=['#00ff88','#00ccff','#ff3355','#ffaa00','#aa66ff'][Math.floor(Math.random()*5)];
         buildings.push({x:lane,z,w,h,neon});
     }
 
     function addObstacle(){
-        const lanes=[-2.4,-1.2,0,1.2,2.4];
+        const lanes=[-2.4,-1.2,1.2,2.4];
         const lane=lanes[Math.floor(Math.random()*lanes.length)];
-        const types=['car','car','car','truck','cone'];
-        const type=types[Math.floor(Math.random()*types.length)];
+        for(const o of obstacles){
+            if(o.x===lane&&Math.abs(o.z-(distance+200))<40)return;
+        }
+        const type=Math.random()>0.3?'car':'truck';
         const colors=['#ff3355','#ff5500','#ffaa00','#aa66ff','#00ccff'];
-        obstacles.push({x:lane,z:distance+200,w:type==='truck'?2:1,
+        obstacles.push({x:lane,z:distance+200,w:type==='truck'?1.8:1.1,
             color:colors[Math.floor(Math.random()*colors.length)],type,passed:false});
     }
 
     function spawnParticles(x,y,z,color,count){
         for(let i=0;i<count;i++){
-            particles.push({x:x+(Math.random()-0.5)*2,y:y+Math.random()*2,z:z,
+            particles.push({x:x+(Math.random()-0.5)*2,y:y+Math.random()*2,z,
                 vx:(Math.random()-0.5)*3,vy:-Math.random()*2,vz:-speed-Math.random()*5,
                 life:20+Math.random()*20,maxLife:40,color,size:1+Math.random()*3});
         }
     }
 
     function worldToScreen(wx,wy,wz){
-        const z=wz-distance;
-        if(z<=0)return null;
+        const z=wz-distance;if(z<=0)return null;
         const fov=250,scale=fov/z;
         return{x:W/2+(wx*100*scale),y:H*0.65+(wy*50*scale),s:scale,z:z};
     }
@@ -200,7 +187,6 @@
 
         const roadW=W*0.5,roadLeft=W/2-roadW/2;
         ctx.fillStyle='#111122';ctx.fillRect(roadLeft,H*0.65,roadW,H*0.35);
-
         ctx.fillStyle='#1a1a30';
         ctx.fillRect(roadLeft,H*0.65,8,H*0.35);
         ctx.fillRect(roadLeft+roadW-8,H*0.65,8,H*0.35);
@@ -223,7 +209,6 @@
         ctx.beginPath();ctx.moveTo(roadLeft+roadW,H*0.65);ctx.lineTo(roadLeft+roadW,H);ctx.stroke();
         ctx.shadowBlur=0;
 
-        // Buildings
         const sortedB=buildings.filter(b=>{const z=b.z-distance;return z>10&&z<300}).sort((a,b)=>b.z-a.z);
         sortedB.forEach(b=>{
             const p=worldToScreen(b.x,0,b.z);if(!p)return;
@@ -251,6 +236,8 @@
 
     function drawPlayer(){
         const px=W/2+playerX*100,py=H*0.78,carW=36,carH=48;
+        const isInv=invincible>0&&Math.floor(Date.now()/100)%2===0;
+        if(isInv){ctx.globalAlpha=0.4}
 
         ctx.fillStyle='rgba(0,0,0,0.4)';
         ctx.beginPath();ctx.ellipse(px,py+carH/2+5,carW/2+8,10,0,0,Math.PI*2);ctx.fill();
@@ -282,6 +269,7 @@
             ctx.lineTo(px+Math.random()*6-3,py+carH/2+flameH);ctx.lineTo(px-Math.random()*6+3,py+carH/2+flameH);
             ctx.fill();
         }
+        ctx.globalAlpha=1;
         if(Math.random()>0.3)spawnParticles(playerX,1,distance,boosting?'#ff5500':'#556688',1);
     }
 
@@ -290,14 +278,11 @@
         sorted.forEach(o=>{
             const p=worldToScreen(o.x,0,o.z);if(!p)return;
             const ow=o.w*120*p.s,oh=1.5*40*p.s;
-
             ctx.shadowBlur=12;ctx.shadowColor=o.color;ctx.fillStyle=o.color;
             if(o.type==='truck'){
                 ctx.fillRect(p.x-ow/2,p.y-oh/2,ow,oh);
                 ctx.fillStyle='rgba(255,255,255,0.15)';
                 ctx.fillRect(p.x-ow/2+3,p.y-oh/2+3,ow-6,oh*0.2);
-            }else if(o.type==='cone'){
-                ctx.beginPath();ctx.moveTo(p.x,p.y-oh);ctx.lineTo(p.x-ow/2,p.y);ctx.lineTo(p.x+ow/2,p.y);ctx.fill();
             }else{
                 ctx.fillRect(p.x-ow/2,p.y-oh/2,ow,oh);
                 ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(p.x-ow/2+2,p.y-oh/2+2,ow-4,oh*0.3);
@@ -306,11 +291,6 @@
                 ctx.fillRect(p.x+ow/2-7,p.y+oh/2-4,5,4);
             }
             ctx.shadowBlur=0;
-
-            if(p.s>0.5){
-                ctx.strokeStyle='rgba(255,55,85,0.3)';ctx.lineWidth=2;ctx.setLineDash([4,4]);
-                ctx.strokeRect(p.x-ow/2-3,p.y-oh/2-3,ow+6,oh+6);ctx.setLineDash([]);
-            }
         });
     }
 
@@ -345,6 +325,7 @@
         score+=Math.floor(speed);
         comboTimer--;if(comboTimer<=0)combo=0;
         roadOffset+=speed*3;
+        if(invincible>0)invincible--;
 
         if(Math.random()<0.02+baseSpeed*0.002)addObstacle();
         if(buildings.length<30)addBuilding(distance+300);
@@ -356,25 +337,28 @@
             if(pt.life<=0)particles.splice(i,1);
         }
 
-        // Collision - only when obstacle is near player in Z (ahead or just passed)
-        for(const o of obstacles){
-            if(o.passed)continue;
-            const dz=o.z-distance;
-            if(dz>40)continue; // too far ahead, skip
-            if(dz<-10){o.passed=true;combo++;comboTimer=60;score+=combo*50;continue} // passed safely
-            const dx=Math.abs(o.x-playerX);
-            const hitW=o.w*0.4+0.35;
-            if(dz>-3&&dz<4&&dx<hitW){
-                gameRunning=false;shake=15;
-                spawnParticles(playerX,1,distance,'#ff3355',30);
-                spawnParticles(playerX,1,distance,'#ffaa00',20);
-                stopMusic();
-                setTimeout(()=>{
-                    document.getElementById('game-over').classList.add('show');
-                    document.getElementById('final-score').textContent=score;
-                    document.getElementById('final-dist').textContent=`Distance: ${(distance/100).toFixed(0)}m`;
-                },800);
-                return;
+        if(invincible<=0){
+            for(const o of obstacles){
+                if(o.passed)continue;
+                const dz=o.z-distance;
+                if(dz>50)continue;
+                if(dz<-8){
+                    o.passed=true;combo++;comboTimer=60;score+=combo*50;continue;
+                }
+                const dx=Math.abs(o.x-playerX);
+                const hitW=o.w*0.35+0.3;
+                if(dz>=0&&dz<3.5&&dx<hitW){
+                    gameRunning=false;shake=20;
+                    spawnParticles(playerX,1,distance,'#ff3355',30);
+                    spawnParticles(playerX,1,distance,'#ffaa00',20);
+                    stopMusic();
+                    setTimeout(()=>{
+                        document.getElementById('game-over').classList.add('show');
+                        document.getElementById('final-score').textContent=score;
+                        document.getElementById('final-dist').textContent=`Distance: ${(distance/100).toFixed(0)}m`;
+                    },800);
+                    return;
+                }
             }
         }
 
@@ -405,7 +389,6 @@
         ctx.fillStyle='#111';ctx.fillRect(barX,barY,barW,barH);
         ctx.fillStyle=boosting?'#ff3355':'#00ff88';ctx.fillRect(barX,barY,barW*(boostFuel/100),barH);
         ctx.strokeStyle='#1a2a3a';ctx.strokeRect(barX,barY,barW,barH);
-
         ctx.restore();
         requestAnimationFrame(draw);
     }
