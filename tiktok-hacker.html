@@ -69,23 +69,23 @@ var lines=[
 ];
 var lineIdx=0,speaking=false,sceneStartTime=0;
 
-// Photos
+// Better photos - dark, cyber, relevant
 var photosURLs=[
-  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=900&q=80",
-  "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=900&q=80",
-  "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=900&q=80",
-  "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=900&q=80",
-  "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=900&q=80",
-  "https://images.unsplash.com/photo-1593784991095-a205069470b6?w=900&q=80",
-  "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=900&q=80",
-  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=900&q=80",
-  "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=900&q=80",
-  "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?w=900&q=80",
-  "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=900&q=80",
-  "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=900&q=80",
-  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=900&q=80",
-  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=900&q=80",
-  "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=900&q=80"
+  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=900&q=80",  // hacker dark room screens
+  "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=900&q=80",  // security camera dome
+  "https://images.unsplash.com/photo-1589492477829-5e65395b66cc?w=900&q=80", // phone in dark
+  "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=900&q=80",  // network cables server
+  "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=900&q=80",  // door dark hallway
+  "https://images.unsplash.com/photo-1593784991095-a205069470b6?w=900&q=80", // smart tv dark room
+  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=900&q=80",  // matrix code green
+  "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=900&q=80",  // dark server room
+  "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=900&q=80",  // password lock code
+  "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?w=900&q=80", // social manipulation
+  "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=900&q=80",  // code on screen
+  "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&q=80", // fingerprint biometric
+  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=900&q=80",  // hacker hoodie
+  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=900&q=80", // laptop code dark
+  "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=900&q=80"   // iot smart devices
 ];
 var photos=[];
 var photosReady=false;
@@ -107,91 +107,75 @@ function initMusic(){
   if(!ac)try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}
   if(!ac||musicStarted)return;musicStarted=true;
 
-  // Master gain
-  var master=ac.createGain();master.gain.value=0.3;master.connect(ac.destination);
+  var master=ac.createGain();master.gain.value=0.25;master.connect(ac.destination);
 
   // Reverb
   var reverb=ac.createConvolver();
   var rLen=ac.sampleRate*2;var rBuf=ac.createBuffer(2,rLen,ac.sampleRate);
   for(var ch=0;ch<2;ch++){var d=rBuf.getChannelData(ch);for(var i=0;i<rLen;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/rLen,3)}
   reverb.buffer=rBuf;
-  var revGain=ac.createGain();revGain.gain.value=0.25;
+  var revG=ac.createGain();revG.gain.value=0.2;
 
-  // Pad (dark ambient drone)
+  // Dark pad
   var pad1=ac.createOscillator();pad1.type='sawtooth';pad1.frequency.value=55;
   var pad2=ac.createOscillator();pad2.type='sine';pad2.frequency.value=82.5;
-  var pad3=ac.createOscillator();pad3.type='triangle';pad3.frequency.value=110;
-  var padGain=ac.createGain();padGain.gain.value=0.08;
-  var padFilt=ac.createBiquadFilter();padFilt.type='lowpass';padFilt.frequency.value=300;padFilt.Q.value=2;
-  pad1.connect(padFilt);pad2.connect(padFilt);pad3.connect(padFilt);padFilt.connect(padGain);padGain.connect(master);
+  var padGain=ac.createGain();padGain.gain.value=0.07;
+  var padF=ac.createBiquadFilter();padF.type='lowpass';padF.frequency.value=250;padF.Q.value=2;
+  pad1.connect(padF);pad2.connect(padF);padF.connect(padGain);padGain.connect(master);
 
-  // LFO on pad
-  var lfo=ac.createOscillator();lfo.type='sine';lfo.frequency.value=0.1;
-  var lfoG=ac.createGain();lfoG.gain.value=15;
+  // LFO
+  var lfo=ac.createOscillator();lfo.type='sine';lfo.frequency.value=0.08;
+  var lfoG=ac.createGain();lfoG.gain.value=20;
   lfo.connect(lfoG);lfoG.connect(pad1.frequency);
 
   // Bass pulse
   var bass=ac.createOscillator();bass.type='sine';bass.frequency.value=40;
-  var bassGain=ac.createGain();bassGain.gain.value=0;
-  bass.connect(bassGain);bassGain.connect(master);
-  // Bass rhythm
-  var bassInterval=60/128*4; // 128 BPM, every 4 beats
+  var bassG=ac.createGain();bassG.gain.value=0;
+  bass.connect(bassG);bassG.connect(master);bassG.connect(reverb);
+  var bassInterval=60/128*4;
   function pulseBass(){
-    if(!ac)return;
-    var now=ac.currentTime;
-    bassGain.gain.cancelScheduledValues(now);
-    bassGain.gain.setValueAtTime(0.15,now);
-    bassGain.gain.exponentialRampToValueAtTime(0.001,now+bassInterval*0.8);
-    bass.frequency.setValueAtTime(40+Math.random()*20,now);
+    var now=ac.currentTime;bassG.gain.cancelScheduledValues(now);
+    bassG.gain.setValueAtTime(0.12,now);bassG.gain.exponentialRampToValueAtTime(0.001,now+bassInterval*0.8);
+    bass.frequency.setValueAtTime(40+Math.random()*15,now);
     setTimeout(pulseBass,bassInterval*1000);
   }
 
-  // Hi-hat (noise)
-  var hatLen=0.05;
-  function playHat(){
-    if(!ac)return;
-    var buf=ac.createBuffer(1,ac.sampleRate*hatLen,ac.sampleRate);
-    var data=buf.getChannelData(0);
-    for(var i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,8);
-    var src=ac.createBufferSource();src.buffer=buf;
-    var hFilt=ac.createBiquadFilter();hFilt.type='highpass';hFilt.frequency.value=8000;
-    var hGain=ac.createGain();hGain.gain.value=0.06;
-    src.connect(hFilt);hFilt.connect(hGain);hGain.connect(master);hGain.connect(reverb);
-    src.start();
+  // Kick
+  function playKick(){
+    var now=ac.currentTime;
+    var o=ac.createOscillator();o.type='sine';
+    o.frequency.setValueAtTime(150,now);o.frequency.exponentialRampToValueAtTime(30,now+0.15);
+    var g=ac.createGain();g.gain.setValueAtTime(0.2,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.3);
+    o.connect(g);g.connect(master);g.connect(reverb);o.start(now);o.stop(now+0.3);
   }
-  // Hi-hat pattern (8th notes at 128 BPM)
-  var hatInterval=60/128/2*1000;
+  function kickLoop(){playKick();setTimeout(kickLoop,60/128*1000)}
+
+  // Hi-hat
+  function playHat(){
+    var buf=ac.createBuffer(1,ac.sampleRate*0.04,ac.sampleRate);
+    var data=buf.getChannelData(0);for(var i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,8);
+    var s=ac.createBufferSource();s.buffer=buf;
+    var f=ac.createBiquadFilter();f.type='highpass';f.frequency.value=8000;
+    var g=ac.createGain();g.gain.value=0.05;
+    s.connect(f);f.connect(g);g.connect(master);g.connect(reverb);s.start();
+  }
   var hatCount=0;
   function hatLoop(){
     hatCount++;
-    if(hatCount%2===0)playHat(); // accent on quarter notes
-    else{if(Math.random()>0.3)playHat()} // ghost notes
-    setTimeout(hatLoop,hatInterval);
+    if(hatCount%2===0)playHat();
+    else if(Math.random()>0.4)playHat();
+    setTimeout(hatLoop,60/128/2*1000);
   }
-
-  // Kick drum
-  function playKick(){
-    if(!ac)return;
-    var now=ac.currentTime;
-    var osc=ac.createOscillator();osc.type='sine';
-    osc.frequency.setValueAtTime(150,now);osc.frequency.exponentialRampToValueAtTime(30,now+0.15);
-    var g=ac.createGain();g.gain.setValueAtTime(0.25,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.3);
-    osc.connect(g);g.connect(master);g.connect(reverb);
-    osc.start(now);osc.stop(now+0.3);
-  }
-  var kickInterval=60/128*1000;
-  function kickLoop(){playKick();setTimeout(kickLoop,kickInterval)}
 
   // Pad reverb
-  padGain.connect(reverb);reverb.connect(revGain);revGain.connect(master);
+  padGain.connect(reverb);reverb.connect(revG);revG.connect(master);
 
-  // Start everything
   var now=ac.currentTime;
-  pad1.start(now);pad2.start(now);pad3.start(now);lfo.start(now);bass.start(now);
+  pad1.start(now);pad2.start(now);lfo.start(now);bass.start(now);
   setTimeout(function(){pulseBass();kickLoop();hatLoop()},500);
 }
 
-// === AUDIO VOICE ===
+// === VOICE ===
 var audioBuffers={voiceReady:false};
 function loadVoices(){
   var loaded=0;
@@ -206,14 +190,30 @@ function loadVoices(){
 
 function playVoice(id,cb){
   if(!audioBuffers[id])return;
-  var src=ac.createBufferSource();src.buffer=audioBuffers[id];src.playbackRate.value=1.05;
-  var comp=ac.createDynamicsCompressor();comp.threshold.value=-18;comp.ratio.value=3;
-  var rev=ac.createConvolver();var rL=ac.sampleRate*0.8;var rB=ac.createBuffer(1,rL,ac.sampleRate);
-  var d=rB.getChannelData(0);for(var i=0;i<rL;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/rL,2);
-  rev.buffer=rB;
-  var dry=ac.createGain();dry.gain.value=0.8;var wet=ac.createGain();wet.gain.value=0.15;
-  var out=ac.createGain();out.gain.value=1.2;
-  src.connect(comp);comp.connect(dry);dry.connect(out);comp.connect(rev);rev.connect(wet);wet.connect(out);out.connect(ac.destination);
+  var src=ac.createBufferSource();src.buffer=audioBuffers[id];src.playbackRate.value=1.0;
+
+  // Better voice chain: comp -> EQ -> reverb -> master
+  var comp=ac.createDynamicsCompressor();comp.threshold.value=-18;comp.knee.value=8;comp.ratio.value=3;comp.attack.value=0.003;comp.release.value=0.1;
+
+  // EQ: boost low-mid for warmth, cut mud
+  var eq1=ac.createBiquadFilter();eq1.type='peaking';eq1.frequency.value=200;eq1.gain.value=3;eq1.Q.value=1;
+  var eq2=ac.createBiquadFilter();eq2.type='peaking';eq2.frequency.value=400;eq2.gain.value=-2;eq2.Q.value=1;
+  var eq3=ac.createBiquadFilter();eq3.type='highshelf';eq3.frequency.value=3000;eq3.gain.value=2;
+
+  // Voice reverb
+  var vRev=ac.createConvolver();var vRL=ac.sampleRate*1;var vRB=ac.createBuffer(1,vRL,ac.sampleRate);
+  var vD=vRB.getChannelData(0);for(var i=0;i<vRL;i++)vD[i]=(Math.random()*2-1)*Math.pow(1-i/vRL,2);
+  vRev.buffer=vRB;
+
+  var dry=ac.createGain();dry.gain.value=0.8;
+  var wet=ac.createGain();wet.gain.value=0.2;
+  var out=ac.createGain();out.gain.value=1.3;
+
+  src.connect(comp);comp.connect(eq1);eq1.connect(eq2);eq2.connect(eq3);
+  eq3.connect(dry);dry.connect(out);
+  eq3.connect(vRev);vRev.connect(wet);wet.connect(out);
+  out.connect(ac.destination);
+
   src.onended=cb||function(){};src.start();
 }
 
@@ -228,11 +228,7 @@ function speak(text,id){
   });
 }
 
-function nextScene(){
-  lineIdx++;if(lineIdx>=lines.length)lineIdx=0;
-  sceneStartTime=Date.now();
-  playLine();
-}
+function nextScene(){lineIdx++;if(lineIdx>=lines.length)lineIdx=0;sceneStartTime=Date.now();playLine()}
 function nextLine(){if(!speaking)return;speaking=false;document.getElementById('subtitle').style.display='none';nextScene()}
 function playLine(){speak(lines[lineIdx].t,lines[lineIdx].id)}
 
@@ -240,61 +236,48 @@ function start(){
   document.getElementById('startScreen').style.display='none';
   initMusic();
   if(!audioBuffers.voiceReady){
-    loadVoices();
-    var w=setInterval(function(){if(audioBuffers.voiceReady){clearInterval(w);lineIdx=0;sceneStartTime=Date.now();playLine()}},300);
+    loadVoices();var w=setInterval(function(){if(audioBuffers.voiceReady){clearInterval(w);lineIdx=0;sceneStartTime=Date.now();playLine()}},300);
   }else{lineIdx=0;sceneStartTime=Date.now();playLine()}
 }
 
 // === RENDER ===
-var glitchAmt=0,glitchTimer=0;
-
 function drawPhotoSmooth(img,t){
   if(!img)return;
-  // Ken Burns: slow zoom in
-  var elapsed=(t-sceneStartTime)*0.0001;
-  var scale=1+elapsed*0.15;
+  // Ken Burns: slow zoom from CENTER (not left)
+  var elapsed=(t-sceneStartTime)*0.00008;
+  var scale=1.05+elapsed*0.12;
   var iw=img.width,ih=img.height;
-  var sw=W/scale,sh=H/scale;
+  // Calculate crop to fill screen, centered
+  var ratio=Math.max(W,H)/(Math.min(iw,ih)*scale);
+  var sw=iw*ratio,sh=ih*ratio;
   var sx=(iw-sw)/2,sy=(ih-sh)/2;
-  cx.drawImage(img,Math.max(0,sx),Math.max(0,sy),sw,sh,0,0,W,H);
+  // Clamp to avoid going out of bounds
+  sx=Math.max(0,Math.min(iw-sw,sx));
+  sy=Math.max(0,Math.min(ih-sh,sy));
+  cx.drawImage(img,sx,sy,sw,sh,0,0,W,H);
 }
 
 function render(){
   var t=Date.now();
   cx.clearRect(0,0,W,H);
 
-  // Photo background with Ken Burns
   var img=photos[lineIdx];
-  if(img){
-    drawPhotoSmooth(img,t);
-  }else{
-    cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
-  }
+  if(img)drawPhotoSmooth(img,t);
+  else{cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H)}
 
   // Dark overlay
-  cx.fillStyle='rgba(0,0,0,0.4)';cx.fillRect(0,0,W,H);
+  cx.fillStyle='rgba(0,0,0,0.35)';cx.fillRect(0,0,W,H);
 
-  // Animated scan line
+  // Scan line
   var scanY=(t*0.08)%H;
-  cx.fillStyle='rgba(0,220,180,0.03)';
-  cx.fillRect(0,scanY-2,W,4);
+  cx.fillStyle='rgba(0,220,180,0.025)';cx.fillRect(0,scanY-1,W,3);
 
-  // Particles
-  cx.fillStyle='rgba(0,220,180,0.15)';cx.font='8px Courier New';
-  for(var i=0;i<20;i++){
-    var px=(Math.sin(t*0.0003+i*1.7)*0.5+0.5)*W;
-    var py=(Math.cos(t*0.0002+i*2.3)*0.5+0.5)*H;
-    var ch=String.fromCharCode(0x30+~~(Math.random()*74));
-    cx.fillText(ch,px,py);
-  }
-
-  // Glitch effect (on scene change)
-  if(glitchTimer>0){
-    glitchTimer-=16;glitchAmt*=0.9;
-    for(var i=0;i<3;i++){
-      var gy=Math.random()*H;
-      cx.fillStyle='rgba(0,220,180,'+(glitchAmt*0.15)+')';cx.fillRect(0,gy,W,2+Math.random()*4);
-    }
+  // Floating code particles
+  cx.fillStyle='rgba(0,220,180,0.12)';cx.font='8px Courier New';
+  for(var i=0;i<15;i++){
+    var px=(Math.sin(t*0.00025+i*1.7)*0.5+0.5)*W;
+    var py=(Math.cos(t*0.00018+i*2.3)*0.5+0.5)*H;
+    cx.fillText(String.fromCharCode(0x30+~~(Math.random()*74)),px,py);
   }
 
   // Vignette
@@ -306,11 +289,9 @@ function render(){
   cx.fillStyle='rgba(0,0,0,0.025)';
   for(var y=0;y<H;y+=3)cx.fillRect(0,y,W,1);
 
-  // Progress bar
-  var lineDur=4500;
+  // Progress
   var elapsed=t-sceneStartTime;
-  var prog=Math.min(1,elapsed/lineDur);
-  document.getElementById('progress').style.width=(prog*100)+'%';
+  document.getElementById('progress').style.width=Math.min(100,elapsed/50*100)+'%';
 
   // HUD
   var now=new Date();
@@ -320,12 +301,9 @@ function render(){
 }
 render();
 
-// Auto next line based on duration (fallback if voice ends early)
 setInterval(function(){
-  if(speaking&&Date.now()-sceneStartTime>6000){
-    speaking=false;
-    document.getElementById('subtitle').style.display='none';
-    nextScene();
+  if(speaking&&Date.now()-sceneStartTime>7000){
+    speaking=false;document.getElementById('subtitle').style.display='none';nextScene();
   }
 },500);
 </script>
