@@ -69,63 +69,26 @@ var lines=[
 ];
 var lineIdx=0,speaking=false,sceneStart=0;
 
-// Photos for static scenes
-var photosURLs=[
-  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=900&q=80",
-  "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=900&q=80",
-  "https://images.unsplash.com/photo-1589492477829-5e65395b66cc?w=900&q=80",
-  "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=900&q=80",
-  "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=900&q=80",
-  "https://images.unsplash.com/photo-1593784991095-a205069470b6?w=900&q=80",
-  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=900&q=80",
-  "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=900&q=80",
-  "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=900&q=80",
-  "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?w=900&q=80",
-  "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=900&q=80",
-  "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&q=80",
-  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=900&q=80",
-  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=900&q=80",
-  "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=900&q=80"
-];
-var photos=[];
-var photosReady=false;
-function loadPhotos(){
-  var loaded=0;
-  photosURLs.forEach(function(url,i){
-    var img=new Image();img.crossOrigin='anonymous';
-    img.onload=function(){photos[i]=img;loaded++;if(loaded>=photosURLs.length-1)photosReady=true};
-    img.onerror=function(){loaded++;if(loaded>=photosURLs.length-1)photosReady=true};
-    img.src=url;
-  });
-}
-loadPhotos();
-
 // Music
 var ac=null,musicStarted=false;
 function initMusic(){
   if(!ac)try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}
   if(!ac||musicStarted)return;musicStarted=true;
-  var master=ac.createGain();master.gain.value=0.25;master.connect(ac.destination);
+  var master=ac.createGain();master.gain.value=0.22;master.connect(ac.destination);
   var reverb=ac.createConvolver();var rL=ac.sampleRate*2;var rB=ac.createBuffer(2,rL,ac.sampleRate);
   for(var ch=0;ch<2;ch++){var d=rB.getChannelData(ch);for(var i=0;i<rL;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/rL,3)}
   reverb.buffer=rB;var revG=ac.createGain();revG.gain.value=0.2;
-
   var pad1=ac.createOscillator();pad1.type='sawtooth';pad1.frequency.value=55;
   var pad2=ac.createOscillator();pad2.type='sine';pad2.frequency.value=82.5;
-  var padG=ac.createGain();padG.gain.value=0.07;
-  var padF=ac.createBiquadFilter();padF.type='lowpass';padF.frequency.value=250;
+  var padG=ac.createGain();padG.gain.value=0.06;var padF=ac.createBiquadFilter();padF.type='lowpass';padF.frequency.value=250;
   pad1.connect(padF);pad2.connect(padF);padF.connect(padG);padG.connect(master);
-  var lfo=ac.createOscillator();lfo.type='sine';lfo.frequency.value=0.08;
-  var lfoG=ac.createGain();lfoG.gain.value=20;lfo.connect(lfoG);lfoG.connect(pad1.frequency);
-
-  var bass=ac.createOscillator();bass.type='sine';bass.frequency.value=40;
-  var bassG=ac.createGain();bassG.gain.value=0;bass.connect(bassG);bassG.connect(master);
-  function pulseBass(){var n=ac.currentTime;bassG.gain.cancelScheduledValues(n);bassG.gain.setValueAtTime(0.12,n);bassG.gain.exponentialRampToValueAtTime(0.001,n+0.28);setTimeout(pulseBass,60/128*4*1000)}
-  function playKick(){var n=ac.currentTime;var o=ac.createOscillator();o.type='sine';o.frequency.setValueAtTime(150,n);o.frequency.exponentialRampToValueAtTime(30,n+0.15);var g=ac.createGain();g.gain.setValueAtTime(0.2,n);g.gain.exponentialRampToValueAtTime(0.001,n+0.3);o.connect(g);g.connect(master);o.start(n);o.stop(n+0.3)}
+  var lfo=ac.createOscillator();lfo.type='sine';lfo.frequency.value=0.08;var lfoG=ac.createGain();lfoG.gain.value=20;lfo.connect(lfoG);lfoG.connect(pad1.frequency);
+  var bass=ac.createOscillator();bass.type='sine';bass.frequency.value=40;var bassG=ac.createGain();bassG.gain.value=0;bass.connect(bassG);bassG.connect(master);
+  function pulseBass(){var n=ac.currentTime;bassG.gain.cancelScheduledValues(n);bassG.gain.setValueAtTime(0.1,n);bassG.gain.exponentialRampToValueAtTime(0.001,n+0.28);setTimeout(pulseBass,60/128*4*1000)}
+  function playKick(){var n=ac.currentTime;var o=ac.createOscillator();o.type='sine';o.frequency.setValueAtTime(150,n);o.frequency.exponentialRampToValueAtTime(30,n+0.15);var g=ac.createGain();g.gain.setValueAtTime(0.18,n);g.gain.exponentialRampToValueAtTime(0.001,n+0.3);o.connect(g);g.connect(master);o.start(n);o.stop(n+0.3)}
   function kickLoop(){playKick();setTimeout(kickLoop,60/128*1000)}
-  function playHat(){var b=ac.createBuffer(1,ac.sampleRate*0.04,ac.sampleRate);var d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,8);var s=ac.createBufferSource();s.buffer=b;var f=ac.createBiquadFilter();f.type='highpass';f.frequency.value=8000;var g=ac.createGain();g.gain.value=0.05;s.connect(f);f.connect(g);g.connect(master);s.start()}
+  function playHat(){var b=ac.createBuffer(1,ac.sampleRate*0.04,ac.sampleRate);var d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,8);var s=ac.createBufferSource();s.buffer=b;var f=ac.createBiquadFilter();f.type='highpass';f.frequency.value=8000;var g=ac.createGain();g.gain.value=0.04;s.connect(f);f.connect(g);g.connect(master);s.start()}
   var hc=0;function hatLoop(){hc++;if(hc%2===0)playHat();else if(Math.random()>0.4)playHat();setTimeout(hatLoop,60/128/2*1000)}
-
   padG.connect(reverb);reverb.connect(revG);revG.connect(master);
   var n=ac.currentTime;pad1.start(n);pad2.start(n);lfo.start(n);bass.start(n);
   setTimeout(function(){pulseBass();kickLoop();hatLoop()},500);
@@ -134,14 +97,10 @@ function initMusic(){
 // Voice
 var audioBuffers={voiceReady:false};
 function loadVoices(){
-  var loaded=0;
-  lines.forEach(function(l){
-    fetch('tiktok_voices/'+l.id+'.mp3').then(function(r){return r.arrayBuffer()}).then(function(b){return ac.decodeAudioData(b)}).then(function(d){audioBuffers[l.id]=d;loaded++;if(loaded===lines.length)audioBuffers.voiceReady=true}).catch(function(){loaded++});
-  });
+  var loaded=0;lines.forEach(function(l){fetch('tiktok_voices/'+l.id+'.mp3').then(function(r){return r.arrayBuffer()}).then(function(b){return ac.decodeAudioData(b)}).then(function(d){audioBuffers[l.id]=d;loaded++;if(loaded===lines.length)audioBuffers.voiceReady=true}).catch(function(){loaded++})});
 }
 function playVoice(id,cb){
-  if(!audioBuffers[id])return;
-  var src=ac.createBufferSource();src.buffer=audioBuffers[id];src.playbackRate.value=1.0;
+  if(!audioBuffers[id])return;var src=ac.createBufferSource();src.buffer=audioBuffers[id];src.playbackRate.value=1.0;
   var comp=ac.createDynamicsCompressor();comp.threshold.value=-18;comp.ratio.value=3;
   var eq1=ac.createBiquadFilter();eq1.type='peaking';eq1.frequency.value=200;eq1.gain.value=3;eq1.Q.value=1;
   var eq2=ac.createBiquadFilter();eq2.type='peaking';eq2.frequency.value=400;eq2.gain.value=-2;eq2.Q.value=1;
@@ -151,268 +110,441 @@ function playVoice(id,cb){
   src.connect(comp);comp.connect(eq1);eq1.connect(eq2);eq2.connect(eq3);eq3.connect(dry);dry.connect(out);eq3.connect(vRev);vRev.connect(wet);wet.connect(out);out.connect(ac.destination);
   src.onended=cb||function(){};src.start();
 }
-
 function speak(text,id){
-  if(!ac)return;speaking=true;
-  var sub=document.getElementById('subtitle');sub.textContent=text;sub.style.display='block';
+  if(!ac)return;speaking=true;var sub=document.getElementById('subtitle');sub.textContent=text;sub.style.display='block';
   setTimeout(function(){sub.style.opacity='1'},30);
   playVoice(id,function(){setTimeout(function(){speaking=false;sub.style.opacity='0';setTimeout(function(){sub.style.display='none';nextScene()},500)},400)});
 }
-
 function nextScene(){lineIdx++;if(lineIdx>=lines.length)lineIdx=0;sceneStart=Date.now();playLine()}
 function nextLine(){if(!speaking)return;speaking=false;document.getElementById('subtitle').style.display='none';nextScene()}
 function playLine(){speak(lines[lineIdx].t,lines[lineIdx].id)}
+function start(){document.getElementById('startScreen').style.display='none';initMusic();if(!audioBuffers.voiceReady){loadVoices();var w=setInterval(function(){if(audioBuffers.voiceReady){clearInterval(w);lineIdx=0;sceneStart=Date.now();playLine()}},300)}else{lineIdx=0;sceneStart=Date.now();playLine()}}
 
-function start(){
-  document.getElementById('startScreen').style.display='none';
-  initMusic();
-  if(!audioBuffers.voiceReady){loadVoices();var w=setInterval(function(){if(audioBuffers.voiceReady){clearInterval(w);lineIdx=0;sceneStart=Date.now();playLine()}},300)}
-  else{lineIdx=0;sceneStart=Date.now();playLine()}
-}
+// === ALL 15 ANIMATED SCENES ===
 
-// === SCENE TYPES ===
-// Odd scenes (0,2,4,6,8,10,12,14) = animated video-style
-// Even scenes (1,3,5,7,9,11,13) = photo with Ken Burns
-
-// Animated scenes (canvas-based, look like video)
-function drawAnimScene(t,idx){
-  var elapsed=t-sceneStart;
-  switch(idx){
-    case 0: // Password cracking - matrix + progress
-      cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
-      // Falling code
-      cx.font='10px Courier New';
-      for(var i=0;i<80;i++){
-        var x=(i*W/80);
-        var y=((t*0.03+i*37)%H);
-        cx.fillStyle='rgba(0,220,180,'+(0.05+Math.random()*0.1)+')';
-        cx.fillText(String.fromCharCode(0x30+~~(Math.random()*74)),x,y);
-      }
-      // Big percentage
-      var prog=Math.min(0.93,elapsed/5000);
-      cx.fillStyle='rgba(255,40,40,0.8)';cx.font='bold '+Math.min(80,W*0.2)+'px Courier New';
-      cx.fillText(Math.round(prog*93)+'%',W*0.1,H*0.35);
-      cx.fillStyle='rgba(255,255,255,0.3)';cx.font='14px Courier New';
-      cx.fillText('CRACKÉS EN 6H',W*0.1,H*0.45);
-      // Progress bar
-      cx.fillStyle='rgba(255,255,255,0.1)';cx.fillRect(W*0.1,H*0.52,W*0.8,25);
-      cx.fillStyle='rgba(0,220,180,0.6)';cx.fillRect(W*0.1,H*0.52,W*0.8*prog,25);
-      // Cracked passwords flash
-      var pwds=['admin','password','123456','qwerty','letmein','dragon','monkey'];
-      for(var i=0;i<pwds.length;i++){
-        if(Math.sin(t*0.005+i*0.8)>0.3){
-          cx.fillStyle='rgba(255,40,40,0.4)';cx.font='11px Courier New';
-          cx.fillText('✗ '+pwds[i],W*0.1,H*0.65+i*H*0.04);
-        }
-      }
-      break;
-
-    case 2: // Phone tracking - pulsing dot + data
-      cx.fillStyle='#060810';cx.fillRect(0,0,W,H);
-      // Grid
-      cx.strokeStyle='rgba(0,220,180,0.04)';cx.lineWidth=0.5;
-      for(var gx=0;gx<W;gx+=25){cx.beginPath();cx.moveTo(gx,0);cx.lineTo(gx,H);cx.stroke()}
-      for(var gy=0;gy<H;gy+=25){cx.beginPath();cx.moveTo(0,gy);cx.lineTo(W,gy);cx.stroke()}
-      // Pulsing location
-      var pr=10+Math.sin(t*0.005)*5;
-      cx.fillStyle='rgba(255,40,40,0.15)';cx.beginPath();cx.arc(W/2,H*0.4,pr+25,0,Math.PI*2);cx.fill();
-      cx.fillStyle='rgba(255,40,40,0.7)';cx.beginPath();cx.arc(W/2,H*0.4,8,0,Math.PI*2);cx.fill();
-      cx.fillStyle='#fff';cx.beginPath();cx.arc(W/2,H*0.4,3,0,Math.PI*2);cx.fill();
-      // Ripple rings
-      for(var r=0;r<3;r++){
-        var ringR=20+r*20+Math.sin(t*0.003+r)*5;
-        cx.strokeStyle='rgba(255,40,40,'+(0.2-r*0.05)+')';cx.lineWidth=1;
-        cx.beginPath();cx.arc(W/2,H*0.4,ringR,0,Math.PI*2);cx.stroke();
-      }
-      cx.fillStyle='rgba(255,255,255,0.5)';cx.font='12px Courier New';
-      cx.fillText('LOCALISÉ',W*0.35,H*0.55);
-      var secs=~~((t/1000)%30);cx.fillStyle='rgba(255,40,40,0.5)';cx.font='11px Courier New';
-      cx.fillText('Tracké il y a '+secs+'s',W*0.3,H*0.6);
-      break;
-
-    case 4: // Door opening
-      cx.fillStyle='#080a10';cx.fillRect(0,0,W,H);
-      var doorW=W*0.5,doorH=H*0.7,doorX=W*0.25,doorY=H*0.15;
-      cx.fillStyle='#1a1814';cx.fillRect(doorX,doorY,doorW,doorH);
-      // Door opening animation
-      var openAmt=Math.min(1,elapsed/3000)*0.4;
-      cx.fillStyle='#050810';
-      cx.save();cx.translate(doorX+doorW,doorY);cx.transform(1,0,-openAmt,1,0,0);
-      cx.fillRect(-doorW,0,doorW,doorH);cx.restore();
-      // Green glow from behind
-      var gg=cx.createRadialGradient(doorX+doorW*0.8,doorY+doorH/2,5,doorX+doorW*0.8,doorY+doorH/2,doorW*0.4);
-      gg.addColorStop(0,'rgba(0,220,180,0.2)');gg.addColorStop(1,'transparent');
-      cx.fillStyle=gg;cx.fillRect(doorX,doorY,doorW,doorH);
-      // Knock animation
-      if(elapsed<2000){
-        var knockOff=Math.sin(elapsed*0.02)*5;
-        cx.fillStyle='rgba(255,255,255,0.15)';
-        cx.beginPath();cx.arc(doorX+doorW*0.3+knockOff,doorY+doorH*0.4,12,0,Math.PI*2);cx.fill();
-      }
-      cx.fillStyle='rgba(0,220,180,0.5)';cx.font='12px Courier New';
-      cx.fillText("IL TE DEMANDE D'OUVRIR",W*0.15,H*0.9);
-      break;
-
-    case 6: // Same password everywhere - scrolling list
-      cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
-      cx.fillStyle='rgba(255,40,40,0.7)';cx.font='bold '+Math.min(60,W*0.15)+'px Courier New';
-      cx.fillText('98%',W*0.1,H*0.2);
-      cx.fillStyle='rgba(255,255,255,0.25)';cx.font='12px Courier New';
-      cx.fillText('MÊME MOT DE PASSE',W*0.1,H*0.28);
-      var sites=['Gmail','Facebook','Instagram','Twitter','Netflix','Amazon','GitHub','Bank'];
-      for(var i=0;i<sites.length;i++){
-        var sy=H*0.34+i*H*0.07;
-        var flash=Math.sin(t*0.004+i*0.6)>0.2;
-        cx.fillStyle=flash?'rgba(255,40,40,0.15)':'rgba(255,255,255,0.05)';
-        cx.fillRect(W*0.08,sy,W*0.84,H*0.055);
-        cx.fillStyle='rgba(0,220,180,0.4)';cx.font='10px Courier New';cx.fillText(sites[i],W*0.1,sy+H*0.035);
-        cx.fillStyle='rgba(255,40,40,0.5)';cx.fillText('password123',W*0.55,sy+H*0.035);
-        if(flash){cx.fillStyle='rgba(255,40,40,0.6)';cx.fillText('🔓',W*0.82,sy+H*0.035)}
-      }
-      break;
-
-    case 8: // SIM swap - animated transfer
-      cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
-      // Left phone
-      cx.fillStyle='#1a1a1a';cx.fillRect(W*0.05,H*0.2,W*0.35,H*0.5);
-      cx.fillStyle='rgba(0,220,180,0.2)';cx.font='9px Courier New';cx.fillText('VICTIME',W*0.1,H*0.25);
-      cx.fillStyle='rgba(255,40,40,0.4)';cx.font='11px Courier New';cx.fillText('PERDU',W*0.15,H*0.5);
-      // Right phone
-      cx.fillStyle='#1a1a1a';cx.fillRect(W*0.6,H*0.2,W*0.35,H*0.5);
-      cx.fillStyle='rgba(255,40,40,0.3)';cx.font='9px Courier New';cx.fillText('HACKER',W*0.65,H*0.25);
-      cx.fillStyle='rgba(0,220,180,0.4)';cx.font='11px Courier New';cx.fillText('VOLÉ',W*0.72,H*0.5);
-      // Animated data transfer
-      var transferProg=Math.min(1,elapsed/3000);
-      cx.fillStyle='rgba(255,40,40,0.3)';cx.fillRect(W*0.42,H*0.42,W*0.16*transferProg,4);
-      if(transferProg>0.5){
-        cx.fillStyle='rgba(0,220,180,0.5)';cx.font='10px Courier New';cx.fillText('TRANSFÉRÉ',W*0.38,H*0.55);
-      }
-      break;
-
-    case 10: // IP tracking - animated map
-      cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
-      cx.strokeStyle='rgba(0,220,180,0.04)';cx.lineWidth=0.5;
-      for(var gx=0;gx<W;gx+=20){cx.beginPath();cx.moveTo(gx,0);cx.lineTo(gx,H);cx.stroke()}
-      for(var gy=0;gy<H;gy+=20){cx.beginPath();cx.moveTo(0,gy);cx.lineTo(W,gy);cx.stroke()}
-      // Location pin
-      var pPulse=8+Math.sin(t*0.005)*4;
-      cx.fillStyle='rgba(255,40,40,0.15)';cx.beginPath();cx.arc(W/2,H*0.4,pPulse+20,0,Math.PI*2);cx.fill();
-      cx.fillStyle='rgba(255,40,40,0.7)';cx.beginPath();cx.arc(W/2,H*0.4,8,0,Math.PI*2);cx.fill();
-      cx.fillStyle='#fff';cx.beginPath();cx.arc(W/2,H*0.4,3,0,Math.PI*2);cx.fill();
-      // Data appearing
-      var data=['IP: 86.214.xxx.xxx','ISP: Orange France','Paris, France','48.8566° N, 2.3522° E'];
-      for(var i=0;i<data.length;i++){
-        if(elapsed>i*400){
-          cx.fillStyle='rgba(0,220,180,0.5)';cx.font='11px Courier New';cx.fillText(data[i],W*0.1,H*0.6+i*H*0.06);
-        }
-      }
-      break;
-
-    case 12: // Hacker vision - scanning effect
-      cx.fillStyle='#060810';cx.fillRect(0,0,W,H);
-      cx.fillStyle='#0e1018';cx.fillRect(W*0.1,H*0.1,W*0.35,H*0.25);
-      cx.fillStyle='#0e1018';cx.fillRect(W*0.55,H*0.1,W*0.35,H*0.25);
-      cx.fillStyle='#0e1018';cx.fillRect(W*0.25,H*0.45,W*0.5,H*0.3);
-      // Vulnerabilities appearing one by one
-      if(elapsed>500){cx.strokeStyle='rgba(255,40,40,0.5)';cx.lineWidth=1.5;cx.strokeRect(W*0.1,H*0.1,W*0.35,H*0.25);cx.fillStyle='rgba(255,40,40,0.5)';cx.font='9px Courier New';cx.fillText('FAILLE: SQL INJECTION',W*0.12,H*0.14)}
-      if(elapsed>1500){cx.strokeStyle='rgba(255,200,60,0.5)';cx.strokeRect(W*0.55,H*0.1,W*0.35,H*0.25);cx.fillStyle='rgba(255,200,60,0.5)';cx.fillText('PORT: 22/SSH',W*0.57,H*0.14)}
-      if(elapsed>2500){cx.strokeStyle='rgba(255,40,40,0.5)';cx.strokeRect(W*0.25,H*0.45,W*0.5,H*0.3);cx.fillStyle='rgba(255,40,40,0.5)';cx.fillText('MDP: admin/admin',W*0.27,H*0.49)}
-      // Scanning line
-      var scanY=(t*0.06)%H;cx.strokeStyle='rgba(0,220,180,0.15)';cx.lineWidth=0.5;cx.beginPath();cx.moveTo(0,scanY);cx.lineTo(W,scanY);cx.stroke();
-      break;
-
-    case 14: // Everything connected - spreading red
-      cx.fillStyle='#060810';cx.fillRect(0,0,W,H);
-      var devs=[{x:W*0.5,y:H*0.15,n:'📱'},{x:W*0.2,y:H*0.3,n:'💻'},{x:W*0.8,y:H*0.3,n:'🖥️'},{x:W*0.15,y:H*0.55,n:'📺'},{x:W*0.5,y:H*0.5,n:'🏠'},{x:W*0.85,y:H*0.55,n:'🚗'},{x:W*0.3,y:H*0.75,n:'⌚'},{x:W*0.7,y:H*0.75,n:'🔊'},{x:W*0.5,y:H*0.85,n:'📷'}];
-      var spread=elapsed/4000;
-      for(var i=0;i<devs.length;i++){
-        var d=devs[i];var compromised=i/devs.length<spread;
-        if(compromised){cx.fillStyle='rgba(255,40,40,0.15)';cx.beginPath();cx.arc(d.x,d.y,20,0,Math.PI*2);cx.fill()}
-        cx.font='18px Arial';cx.fillText(d.n,d.x-9,d.y+6);
-        cx.fillStyle=compromised?'rgba(255,40,40,0.5)':'rgba(0,220,180,0.2)';cx.font='7px Courier New';
-        cx.fillText(compromised?'COMPROMIS':'●',d.x-15,d.y+22);
-      }
-      break;
-  }
-}
-
-// Photo scenes with Ken Burns
-function drawPhotoScene(img,t){
-  if(!img){cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);return}
-  var elapsed=(t-sceneStart)*0.00006;
-  var scale=1+elapsed*0.1;
-  var iw=img.width,ih=img.height;
-  var canvasRatio=W/H;var imgRatio=iw/ih;
-  var drawW,drawH;
-  if(imgRatio>canvasRatio){drawH=H*scale;drawW=drawH*imgRatio}else{drawW=W*scale;drawH=drawW/imgRatio}
-  cx.drawImage(img,0,0,iw,ih,(W-drawW)/2,(H-drawH)/2,drawW,drawH);
-}
-
-// Glitch effect
-function drawGlitch(t){
-  if(Math.random()>0.97){glitchAmt=0.3+Math.random()*0.5;glitchDur=5+~~(Math.random()*10)}
-  if(glitchDur>0){
-    glitchDur--;
-    for(var i=0;i<3;i++){
-      var gy=Math.random()*H;
-      cx.fillStyle='rgba(0,220,180,'+(glitchAmt*0.2)+')';cx.fillRect(0,gy,W,1+Math.random()*4);
+// 1: PASSWORD CRACKING - matrix rain + cracking animation
+function s01(t,e){
+  cx.fillStyle='#060810';cx.fillRect(0,0,W,H);
+  // Matrix columns
+  for(var col=0;col<Math.floor(W/14);col++){
+    var x=col*14;var speed=0.02+col*0.001;
+    for(var row=0;row<25;row++){
+      var y=((t*speed+row*20+col*7)%H);
+      var ch=String.fromCharCode(0x30+~~(Math.random()*74));
+      var a=row===0?0.9:0.1+row*0.03;
+      cx.fillStyle='rgba(0,220,180,'+a+')';cx.font='12px Courier New';cx.fillText(ch,x,y);
     }
-    // RGB shift
-    if(glitchAmt>0.3){
-      cx.globalCompositeOperation='screen';cx.globalAlpha=glitchAmt*0.1;
-      cx.drawImage(c,3,0);cx.drawImage(c,-3,0);
-      cx.globalCompositeOperation='source-over';cx.globalAlpha=1;
+  }
+  // Big cracking text
+  var prog=Math.min(0.93,e/5000);
+  cx.fillStyle='rgba(0,0,0,0.7)';cx.fillRect(W*0.1,H*0.3,W*0.8,H*0.35);
+  cx.fillStyle='rgba(255,40,40,0.9)';cx.font='bold '+Math.min(70,W*0.18)+'px Courier New';
+  cx.fillText(Math.round(prog*93)+'%',W*0.12,H*0.48);
+  cx.fillStyle='rgba(255,255,255,0.4)';cx.font='13px Courier New';cx.fillText('DES MOTS DE PASSE CRACKÉS',W*0.12,H*0.55);
+  // Progress bar
+  cx.fillStyle='rgba(255,255,255,0.08)';cx.fillRect(W*0.12,H*0.6,W*0.76,18);
+  cx.fillStyle='rgba(0,220,180,0.7)';cx.fillRect(W*0.12,H*0.6,W*0.76*prog,18);
+  // Flashing cracked passwords
+  var pwds=['admin','password','123456','qwerty','letmein'];
+  for(var i=0;i<pwds.length;i++){
+    if(Math.sin(t*0.006+i)>0){
+      cx.fillStyle='rgba(255,40,40,0.6)';cx.font='10px Courier New';
+      cx.fillText('✗ '+pwds[i]+' CRACKÉ',W*0.12,H*0.7+i*H*0.035);
     }
   }
 }
+
+// 2: CAMERA SURVEILLANCE - multiple camera feeds switching
+function s02(t,e){
+  cx.fillStyle='#080a10';cx.fillRect(0,0,W,H);
+  // 4 camera grid
+  var grid=[[0,0],[W/2,0],[0,H/2],[W/2,H/2]];
+  for(var i=0;i<4;i++){
+    var gx=grid[i][0],gy=grid[i][1];
+    // Feed
+    cx.fillStyle=i===~~(t*0.001)%4?'#0c1020':'#0a0c14';
+    cx.fillRect(gx+2,gy+2,W/2-4,H/2-4);
+    // Buildings silhouette
+    for(var b=0;b<5;b++){
+      var bh=20+Math.sin(b*3+i)*15;
+      cx.fillStyle='#141820';cx.fillRect(gx+5+b*(W/2/5),gy+H/4-bh,W/2/6,bh);
+    }
+    // Camera label
+    cx.fillStyle='rgba(0,220,180,0.4)';cx.font='8px Courier New';
+    cx.fillText('CAM-'+(1000+i*273)+' // LIVE',gx+8,gy+14);
+    // Red dot
+    if(i===~~(t*0.001)%4){
+      cx.fillStyle='rgba(255,40,40,0.7)';cx.beginPath();cx.arc(gx+W/2-15,gy+12,3,0,Math.PI*2);cx.fill();
+    }
+    // Grid lines
+    cx.strokeStyle='rgba(0,220,180,0.05)';cx.lineWidth=0.5;
+    cx.strokeRect(gx+2,gy+2,W/2-4,H/2-4);
+  }
+  // Center text
+  cx.fillStyle='rgba(0,0,0,0.6)';cx.fillRect(W*0.25,H*0.45,W*0.5,H*0.1);
+  cx.fillStyle='rgba(0,220,180,0.6)';cx.font='11px Courier New';
+  cx.fillText("PORT D'ENTRÉE DÉTECTÉE",W*0.28,H*0.52);
+}
+
+// 3: PHONE TRACKING - phone with pulsing GPS
+function s03(t,e){
+  cx.fillStyle='#060810';cx.fillRect(0,0,W,H);
+  // Grid
+  cx.strokeStyle='rgba(0,220,180,0.03)';cx.lineWidth=0.5;
+  for(var gx=0;gx<W;gx+=30){cx.beginPath();cx.moveTo(gx,0);cx.lineTo(gx,H);cx.stroke()}
+  for(var gy=0;gy<H;gy+=30){cx.beginPath();cx.moveTo(0,gy);cx.lineTo(W,gy);cx.stroke()}
+  // Phone outline
+  cx.strokeStyle='rgba(0,220,180,0.15)';cx.lineWidth=1;
+  cx.strokeRect(W*0.3,H*0.15,W*0.4,H*0.55);
+  // Pulsing dot
+  var pr=8+Math.sin(t*0.005)*4;
+  cx.fillStyle='rgba(255,40,40,0.1)';cx.beginPath();cx.arc(W/2,H*0.4,pr+30,0,Math.PI*2);cx.fill();
+  cx.fillStyle='rgba(255,40,40,0.2)';cx.beginPath();cx.arc(W/2,H*0.4,pr+15,0,Math.PI*2);cx.fill();
+  cx.fillStyle='rgba(255,40,40,0.8)';cx.beginPath();cx.arc(W/2,H*0.4,8,0,Math.PI*2);cx.fill();
+  cx.fillStyle='#fff';cx.beginPath();cx.arc(W/2,H*0.4,3,0,Math.PI*2);cx.fill();
+  // Data
+  cx.fillStyle='rgba(0,220,180,0.4)';cx.font='10px Courier New';
+  cx.fillText('📍 GPS: ACTIVE',W*0.33,H*0.2);
+  cx.fillText('📡 BLUETOOTH: ON',W*0.33,H*0.75);
+  var secs=~~((t/1000)%30);
+  cx.fillStyle='rgba(255,40,40,0.5)';cx.font='11px Courier New';
+  cx.fillText('Tracké il y a '+secs+'s',W*0.3,H*0.85);
+}
+
+// 4: WIFI PUBLIC - data streams being intercepted
+function s04(t,e){
+  cx.fillStyle='#060810';cx.fillRect(0,0,W,H);
+  // WiFi symbol
+  cx.strokeStyle='rgba(0,220,180,0.3)';cx.lineWidth=2;
+  for(var i=1;i<=4;i++){
+    cx.beginPath();cx.arc(W/2,H*0.3,i*25,Math.PI*1.2,Math.PI*1.8);cx.stroke();
+  }
+  // Data streams from multiple devices
+  for(var d=0;d<5;d++){
+    var dx=W*0.15+d*W*0.17;
+    cx.fillStyle='#0e1018';cx.fillRect(dx-8,H*0.55,16,20);
+    cx.fillStyle='rgba(0,220,180,0.3)';cx.font='7px Courier New';cx.fillText('PC',dx-5,H*0.55+13);
+    // Data going up (being intercepted)
+    var dataY=H*0.55-((t*0.05+d*30)%H*0.3);
+    cx.fillStyle='rgba(0,220,180,0.4)';cx.fillRect(dx-1,dataY,2,8);
+    // Intercepted!
+    if(Math.sin(t*0.003+d)>0.5){
+      cx.fillStyle='rgba(255,40,40,0.4)';cx.font='7px Courier New';cx.fillText('INTERCEPTÉ',dx-15,dataY-8);
+      cx.strokeStyle='rgba(255,40,40,0.2)';cx.lineWidth=0.5;
+      cx.beginPath();cx.moveTo(dx,dataY);cx.lineTo(W/2,H*0.2);cx.stroke();
+    }
+  }
+  cx.fillStyle='rgba(255,40,40,0.4)';cx.font='10px Courier New';
+  cx.fillText('EVIL TWIN: FREE_WIFI_PUBLIC',W*0.2,H*0.9);
+}
+
+// 5: DOOR - knocking then opening
+function s05(t,e){
+  cx.fillStyle='#080a10';cx.fillRect(0,0,W,H);
+  var dw=W*0.5,dh=H*0.7,dx=W*0.25,dy=H*0.15;
+  // Door frame
+  cx.fillStyle='#1a1814';cx.fillRect(dx-8,dy-8,dw+16,dh+8);
+  // Door opening
+  var openAmt=Math.min(0.5,e/4000)*0.5;
+  cx.fillStyle='#14120e';
+  cx.save();cx.translate(dx+dw,dy);cx.transform(1,0,-openAmt,1,0,0);cx.fillRect(-dw,0,dw,dh);cx.restore();
+  // Green glow behind
+  if(openAmt>0.05){
+    var gg=cx.createRadialGradient(dx+dw*0.9,dy+dh/2,5,dx+dw*0.9,dy+dh/2,dw*openAmt*2);
+    gg.addColorStop(0,'rgba(0,220,180,0.25)');gg.addColorStop(1,'transparent');
+    cx.fillStyle=gg;cx.fillRect(dx,dy,dw,dh);
+  }
+  // Knocking hand (first 2 seconds)
+  if(e<2000){
+    var kx=dx+dw*0.3+Math.sin(e*0.02)*4;
+    cx.fillStyle='rgba(255,255,255,0.12)';cx.beginPath();cx.arc(kx,dy+dh*0.4,14,0,Math.PI*2);cx.fill();
+    for(var f=0;f<4;f++)cx.fillRect(kx+f*5-8,dy+dh*0.4-16,4,10);
+    // Knock rings
+    for(var r=0;r<3;r++){cx.strokeStyle='rgba(255,255,255,'+(0.08-r*0.02)+')';cx.lineWidth=1;cx.beginPath();cx.arc(kx,dy+dh*0.4,20+r*10,0,Math.PI*2);cx.stroke()}
+  }
+  // Door handle
+  cx.fillStyle='#2a2418';cx.fillRect(dx+dw*0.82,dy+dh*0.45,10,5);
+  cx.fillStyle='rgba(0,220,180,0.4)';cx.font='11px Courier New';
+  cx.fillText("IL TE DEMANDE D'OUVRIR",W*0.15,H*0.9);
+}
+
+// 6: SMART TV - listening waves
+function s06(t,e){
+  cx.fillStyle='#050508';cx.fillRect(0,0,W,H);
+  // TV
+  var tvx=W*0.1,tvy=H*0.15,tvw=W*0.8,tvh=H*0.4;
+  cx.fillStyle='#0a0a0a';cx.fillRect(tvx,tvy,tvw,tvh);
+  cx.strokeStyle='rgba(255,255,255,0.03)';cx.lineWidth=1;cx.strokeRect(tvx,tvy,tvw,tvh);
+  // Sound waves emanating FROM the TV
+  for(var i=0;i<10;i++){
+    var waveY=tvy+tvh+5+i*8;
+    var waveW=tvw*0.2+Math.sin(t*0.004+i*0.6)*tvw*0.08;
+    var a=0.25-i*0.02;
+    cx.strokeStyle='rgba(255,40,40,'+a+')';cx.lineWidth=1;
+    cx.beginPath();cx.moveTo(W/2-waveY+waveY,waveY);cx.lineTo(W/2+waveY-waveY,waveY);cx.stroke();
+  }
+  // Mic icon pulsing
+  var micPulse=Math.sin(t*0.005)>0;
+  cx.fillStyle=micPulse?'rgba(255,40,40,0.6)':'rgba(255,40,40,0.2)';
+  cx.font='24px Arial';cx.fillText('🎤',W*0.44,H*0.7);
+  cx.fillStyle='rgba(255,40,40,0.4)';cx.font='10px Courier New';
+  cx.fillText('MIC: TOUJOURS ACTIF',W*0.28,H*0.78);
+  // Red recording dot
+  if(micPulse){cx.fillStyle='rgba(255,40,40,0.8)';cx.beginPath();cx.arc(W*0.48,H*0.85,5,0,Math.PI*2);cx.fill()}
+}
+
+// 7: 98% SAME PASSWORD - sites flashing
+function s07(t,e){
+  cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
+  cx.fillStyle='rgba(255,40,40,0.8)';cx.font='bold '+Math.min(65,W*0.16)+'px Courier New';
+  cx.fillText('98%',W*0.1,H*0.18);
+  cx.fillStyle='rgba(255,255,255,0.25)';cx.font='11px Courier New';
+  cx.fillText('MÊME MOT DE PASSE PARTOUT',W*0.1,H*0.25);
+  var sites=['Gmail','Facebook','Instagram','Twitter','Netflix','Amazon','GitHub','Bank'];
+  for(var i=0;i<sites.length;i++){
+    var sy=H*0.3+i*H*0.07;
+    var active=~~(t*0.003)%sites.length===i;
+    cx.fillStyle=active?'rgba(255,40,40,0.2)':'rgba(255,255,255,0.04)';
+    cx.fillRect(W*0.08,sy,W*0.84,H*0.055);
+    cx.fillStyle=active?'rgba(0,220,180,0.7)':'rgba(0,220,180,0.3)';cx.font='10px Courier New';
+    cx.fillText(sites[i],W*0.1,sy+H*0.035);
+    cx.fillStyle=active?'rgba(255,40,40,0.8)':'rgba(255,40,40,0.4)';
+    cx.fillText('password123',W*0.55,sy+H*0.035);
+    if(active){cx.fillStyle='rgba(255,40,40,0.7)';cx.fillText('🔓 COMPROMIS',W*0.78,sy+H*0.035)}
+  }
+}
+
+// 8: DARK WEB - scrolling marketplace
+function s08(t,e){
+  cx.fillStyle='#050508';cx.fillRect(0,0,W,H);
+  cx.fillStyle='rgba(200,50,50,0.5)';cx.font='12px Courier New';
+  cx.fillText('.onion // DARK WEB MARKETPLACE',W*0.08,H*0.08);
+  var items=[
+    {n:'Database VPN - 50K users',p:'$2,400'},
+    {n:'Zero-Day iOS 18 exploit',p:'$250,000'},
+    {n:'CC Dumps - 10K cards',p:'$800'},
+    {n:'Ransomware-as-a-Service',p:'$199/mois'},
+    {n:'DDoS Botnet Rental',p:'$50/jour'},
+    {n:'Fake Passport Template',p:'$3,000'},
+    {n:'Social Engineering Kit',p:'$450'}
+  ];
+  for(var i=0;i<items.length;i++){
+    var iy=H*0.12+i*H*0.11;
+    var flash=Math.sin(t*0.003+i*0.7)>0.3;
+    cx.fillStyle=flash?'rgba(200,50,50,0.12)':'rgba(255,255,255,0.03)';
+    cx.fillRect(W*0.05,iy,W*0.9,H*0.09);
+    cx.fillStyle=flash?'rgba(200,50,50,0.7)':'rgba(200,50,50,0.35)';cx.font='10px Courier New';
+    cx.fillText(items[i].n,W*0.08,iy+H*0.035);
+    cx.fillStyle='rgba(0,220,180,0.4)';cx.fillText(items[i].p,W*0.08,iy+H*0.065);
+  }
+  cx.fillStyle='rgba(0,220,180,0.3)';cx.font='10px Courier New';
+  cx.fillText("C'EST LE MÊME, SANS FILTRE",W*0.12,H*0.93);
+}
+
+// 9: SIM SWAP - transfer animation
+function s09(t,e){
+  cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
+  // Left phone (victim)
+  cx.fillStyle='#141414';cx.fillRect(W*0.05,H*0.2,W*0.35,H*0.5);
+  cx.strokeStyle='rgba(0,220,180,0.1)';cx.lineWidth=1;cx.strokeRect(W*0.05,H*0.2,W*0.35,H*0.5);
+  cx.fillStyle='rgba(0,220,180,0.3)';cx.font='9px Courier New';cx.fillText('VICTIME',W*0.1,H*0.25);
+  cx.fillStyle='rgba(255,40,40,0.5)';cx.font='12px Courier New';cx.fillText('PERDU',W*0.15,H*0.48);
+  // Right phone (hacker)
+  cx.fillStyle='#141414';cx.fillRect(W*0.6,H*0.2,W*0.35,H*0.5);
+  cx.strokeStyle='rgba(255,40,40,0.1)';cx.lineWidth=1;cx.strokeRect(W*0.6,H*0.2,W*0.35,H*0.5);
+  cx.fillStyle='rgba(255,40,40,0.3)';cx.font='9px Courier New';cx.fillText('HACKER',W*0.65,H*0.25);
+  cx.fillStyle='rgba(0,220,180,0.5)';cx.font='12px Courier New';cx.fillText('VOLÉ',W*0.72,H*0.48);
+  // Animated data transfer arrow
+  var prog=Math.min(1,e/3000);
+  cx.fillStyle='rgba(255,40,40,0.4)';cx.fillRect(W*0.42,H*0.44,W*0.16*prog,4);
+  // Moving packet
+  if(prog<1){
+    var px=W*0.42+W*0.16*prog;
+    cx.fillStyle='rgba(0,220,180,0.7)';cx.fillRect(px-3,H*0.42,6,8);
+  }else{
+    cx.fillStyle='rgba(0,220,180,0.5)';cx.font='10px Courier New';cx.fillText('TRANSFÉRÉ',W*0.38,H*0.55);
+  }
+  cx.fillStyle='rgba(255,40,40,0.3)';cx.font='9px Courier New';
+  cx.fillText('EN 12 MINUTES',W*0.35,H*0.85);
+}
+
+// 10: PHISHING PSYCHOLOGY - brain with manipulation techniques
+function s10(t,e){
+  cx.fillStyle='#0c0e14';cx.fillRect(0,0,W,H);
+  // Brain outline
+  cx.strokeStyle='rgba(0,220,180,0.15)';cx.lineWidth=1;
+  cx.beginPath();cx.arc(W/2,H*0.4,50,0,Math.PI*2);cx.stroke();
+  // Techniques pointing to brain
+  var tricks=['URGENCE','PEUR','CURIOSITÉ','AIDE','AUTORITÉ'];
+  for(var i=0;i<tricks.length;i++){
+    var angle=Math.PI*2*i/5-Math.PI/2;
+    var tx=W/2+Math.cos(angle)*W*0.35;
+    var ty=H*0.4+Math.sin(angle)*H*0.25;
+    var active=~~(t*0.002)%tricks.length===i;
+    cx.fillStyle=active?'rgba(255,40,40,0.7)':'rgba(255,255,255,0.15)';
+    cx.font=(active?'bold ':'')+' 10px Courier New';
+    cx.fillText(tricks[i],tx-25,ty);
+    // Line to brain
+    cx.strokeStyle=active?'rgba(255,40,40,0.4)':'rgba(255,255,255,0.05)';
+    cx.lineWidth=active?1.5:0.5;
+    cx.beginPath();cx.moveTo(tx,ty);cx.lineTo(W/2,H*0.4);cx.stroke();
+  }
+  cx.fillStyle='rgba(0,220,180,0.3)';cx.font='10px Courier New';
+  cx.fillText('C\'EST DE LA PSYCHOLOGIE',W*0.2,H*0.85);
+}
+
+// 11: IP TRACKING - map with pin
+function s11(t,e){
+  cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
+  // Grid map
+  cx.strokeStyle='rgba(0,220,180,0.04)';cx.lineWidth=0.5;
+  for(var gx=0;gx<W;gx+=20){cx.beginPath();cx.moveTo(gx,0);cx.lineTo(gx,H);cx.stroke()}
+  for(var gy=0;gy<H;gy+=20){cx.beginPath();cx.moveTo(0,gy);cx.lineTo(W,gy);cx.stroke()}
+  // Pulsing pin
+  var pr=8+Math.sin(t*0.005)*4;
+  cx.fillStyle='rgba(255,40,40,0.1)';cx.beginPath();cx.arc(W/2,H*0.35,pr+25,0,Math.PI*2);cx.fill();
+  cx.fillStyle='rgba(255,40,40,0.3)';cx.beginPath();cx.arc(W/2,H*0.35,pr+10,0,Math.PI*2);cx.fill();
+  cx.fillStyle='rgba(255,40,40,0.8)';cx.beginPath();cx.arc(W/2,H*0.35,8,0,Math.PI*2);cx.fill();
+  cx.fillStyle='#fff';cx.beginPath();cx.arc(W/2,H*0.35,3,0,Math.PI*2);cx.fill();
+  // Data appearing line by line
+  var data=['IP: 86.214.xxx.xxx','ISP: Orange France','Paris, France','48.8566° N, 2.3522° E','OS: Windows 10','Browser: Firefox'];
+  for(var i=0;i<data.length;i++){
+    if(e>i*300){
+      var a=Math.min(1,(e-i*300)/500);
+      cx.fillStyle='rgba(0,220,180,'+(0.5*a)+')';cx.font='10px Courier New';
+      cx.fillText(data[i],W*0.1,H*0.55+i*H*0.055);
+    }
+  }
+}
+
+// 12: PASSKEY VS PASSWORD - tombstone + rising passkey
+function s12(t,e){
+  cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
+  // Left: tombstone
+  cx.fillStyle='#1a1814';
+  cx.fillRect(W*0.1,H*0.4,W*0.3,H*0.45);
+  cx.beginPath();cx.moveTo(W*0.1,H*0.4);cx.lineTo(W*0.25,H*0.25);cx.lineTo(W*0.4,H*0.4);cx.fill();
+  cx.fillStyle='rgba(255,255,255,0.2)';cx.font='9px Courier New';
+  cx.fillText('MOTS DE PASSE',W*0.12,H*0.33);cx.fillText('2004-2025',W*0.15,H*0.55);cx.fillText('RIP',W*0.22,H*0.65);
+  // Right: passkey rising with glow
+  var riseY=H*0.8-e*0.03;
+  cx.fillStyle='rgba(0,220,180,0.1)';cx.beginPath();cx.arc(W*0.7,H*0.4,30+Math.sin(t*0.003)*5,0,Math.PI*2);cx.fill();
+  cx.fillStyle='rgba(0,220,180,0.6)';cx.font='14px Courier New';cx.fillText('PASSKEY',W*0.6,H*0.4);
+  cx.fillStyle='rgba(0,220,180,0.3)';cx.font='10px Courier New';
+  cx.fillText('→ Biométrie',W*0.58,H*0.5);cx.fillText('→ Jamais sur serveur',W*0.58,H*0.56);
+  cx.fillText('→ Impossible à cracker',W*0.58,H*0.62);
+}
+
+// 13: HACKER VISION - scanning for vulnerabilities
+function s13(t,e){
+  cx.fillStyle='#060810';cx.fillRect(0,0,W,H);
+  // Objects to scan
+  cx.fillStyle='#0e1018';cx.fillRect(W*0.08,H*0.08,W*0.38,H*0.28);
+  cx.fillStyle='#0e1018';cx.fillRect(W*0.54,H*0.08,W*0.38,H*0.28);
+  cx.fillStyle='#0e1018';cx.fillRect(W*0.25,H*0.45,W*0.5,H*0.3);
+  // Scanning line
+  var scanY=(t*0.06)%H;
+  cx.strokeStyle='rgba(0,220,180,0.3)';cx.lineWidth=2;cx.beginPath();cx.moveTo(0,scanY);cx.lineTo(W,scanY);cx.stroke();
+  // Vulnerabilities appearing
+  if(e>600){cx.strokeStyle='rgba(255,40,40,0.6)';cx.lineWidth=2;cx.strokeRect(W*0.08,H*0.08,W*0.38,H*0.28);cx.fillStyle='rgba(255,40,40,0.6)';cx.font='bold 9px Courier New';cx.fillText('⚠ FAILLE: SQL INJECTION',W*0.1,H*0.13)}
+  if(e>1800){cx.strokeStyle='rgba(255,200,60,0.6)';cx.lineWidth=2;cx.strokeRect(W*0.54,H*0.08,W*0.38,H*0.28);cx.fillStyle='rgba(255,200,60,0.6)';cx.font='bold 9px Courier New';cx.fillText('⚠ PORT: 22/SSH OUVERTE',W*0.56,H*0.13)}
+  if(e>3000){cx.strokeStyle='rgba(255,40,40,0.6)';cx.lineWidth=2;cx.strokeRect(W*0.25,H*0.45,W*0.5,H*0.3);cx.fillStyle='rgba(255,40,40,0.6)';cx.font='bold 9px Courier New';cx.fillText('⚠ MDP: admin/admin',W*0.27,H*0.5)}
+}
+
+// 14: MINDSET - brain with pulsing connections
+function s14(t,e){
+  cx.fillStyle='#0a0e14';cx.fillRect(0,0,W,H);
+  // Neural network
+  var nodes=[];
+  for(var i=0;i<20;i++){
+    var angle=Math.PI*2*i/20;
+    var r=Math.min(W,H)*0.25;
+    nodes.push({x:W/2+Math.cos(angle+Math.sin(t*0.001)*0.3)*r*(0.5+Math.sin(i*0.5)*0.5),y:H*0.4+Math.sin(angle+Math.cos(t*0.001)*0.3)*r*0.6*(0.5+Math.cos(i*0.7)*0.5)});
+  }
+  // Connections
+  for(var i=0;i<nodes.length;i++){
+    for(var j=i+1;j<nodes.length;j++){
+      var dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y;
+      if(Math.sqrt(dx*dx+dy*dy)<150){
+        cx.strokeStyle='rgba(0,220,180,'+(0.05+Math.sin(t*0.002+i+j)*0.03)+')';
+        cx.lineWidth=0.5;cx.beginPath();cx.moveTo(nodes[i].x,nodes[i].y);cx.lineTo(nodes[j].x,nodes[j].y);cx.stroke();
+      }
+    }
+  }
+  // Nodes
+  for(var i=0;i<nodes.length;i++){
+    var pulse=2+Math.sin(t*0.003+i)*1;
+    cx.fillStyle='rgba(0,220,180,'+(0.3+Math.sin(t*0.004+i)*0.15)+')';
+    cx.beginPath();cx.arc(nodes[i].x,nodes[i].y,pulse,0,Math.PI*2);cx.fill();
+  }
+  // Active word
+  var words=['VIGILANCE','ANALYSE','PRÉVENTION','RÉPONSE','ADAPTATION'];
+  var active=~~(t*0.002)%words.length;
+  cx.fillStyle='rgba(0,220,180,0.7)';cx.font='bold 16px Courier New';
+  cx.fillText(words[active],W*0.3,H*0.4);
+}
+
+// 15: EVERYTHING COMPROMISED - spreading red infection
+function s15(t,e){
+  cx.fillStyle='#060810';cx.fillRect(0,0,W,H);
+  var devs=[{x:W*0.5,y:H*0.12,n:'📱'},{x:W*0.2,y:H*0.28,n:'💻'},{x:W*0.8,y:H*0.28,n:'🖥️'},{x:W*0.12,y:H*0.5,n:'📺'},{x:W*0.5,y:H*0.45,n:'🏠'},{x:W*0.88,y:H*0.5,n:'🚗'},{x:W*0.25,y:H*0.72,n:'⌚'},{x:W*0.75,y:H*0.72,n:'🔊'},{x:W*0.5,y:H*0.85,n:'📷'}];
+  var spread=e/4000;
+  // Connections
+  for(var i=0;i<devs.length;i++){
+    for(var j=i+1;j<devs.length;j++){
+      var dx=devs[i].x-devs[j].x,dy=devs[i].y-devs[j].y;
+      if(Math.sqrt(dx*dx+dy*dy)<250){
+        var compromised=Math.min(i,j)/devs.length<spread;
+        cx.strokeStyle=compromised?'rgba(255,40,40,0.2)':'rgba(0,220,180,0.05)';
+        cx.lineWidth=0.5;cx.beginPath();cx.moveTo(devs[i].x,devs[i].y);cx.lineTo(devs[j].x,devs[j].y);cx.stroke();
+      }
+    }
+  }
+  // Devices
+  for(var i=0;i<devs.length;i++){
+    var d=devs[i];var compromised=i/devs.length<spread;
+    if(compromised){
+      cx.fillStyle='rgba(255,40,40,0.15)';cx.beginPath();cx.arc(d.x,d.y,22,0,Math.PI*2);cx.fill();
+      // Pulse
+      var pr=22+Math.sin(t*0.005+i)*3;
+      cx.strokeStyle='rgba(255,40,40,0.15)';cx.lineWidth=0.5;cx.beginPath();cx.arc(d.x,d.y,pr,0,Math.PI*2);cx.stroke();
+    }
+    cx.font='18px Arial';cx.fillText(d.n,d.x-9,d.y+6);
+    cx.fillStyle=compromised?'rgba(255,40,40,0.6)':'rgba(0,220,180,0.2)';cx.font='7px Courier New';
+    cx.fillText(compromised?'COMPROMIS':'SAFE',d.x-15,d.y+24);
+  }
+  var count=0;for(var i=0;i<devs.length;i++){if(i/devs.length<spread)count++}
+  cx.fillStyle='rgba(255,40,40,0.5)';cx.font='bold 13px Courier New';
+  cx.fillText(count+'/'+devs.length+' COMPROMIS',W*0.28,H*0.95);
+}
+
+var scenes=[s01,s02,s03,s04,s05,s06,s07,s08,s09,s10,s11,s12,s13,s14,s15];
+
+// Glitch
 var glitchAmt=0,glitchDur=0;
+function drawGlitch(){
+  if(Math.random()>0.97){glitchAmt=0.2+Math.random()*0.4;glitchDur=4+~~(Math.random()*8)}
+  if(glitchDur>0){glitchDur--;for(var i=0;i<2;i++){var gy=Math.random()*H;cx.fillStyle='rgba(0,220,180,'+(glitchAmt*0.15)+')';cx.fillRect(0,gy,W,1+Math.random()*3)}}
+}
 
 function render(){
   var t=Date.now();
+  var e=t-sceneStart;
   cx.clearRect(0,0,W,H);
-
-  // Alternate: even=animated, odd=photo
-  if(lineIdx%2===0){
-    drawAnimScene(t,lineIdx);
-  }else{
-    drawPhotoScene(photos[lineIdx],t);
-  }
-
-  // Dark overlay
-  cx.fillStyle='rgba(0,0,0,0.3)';cx.fillRect(0,0,W,H);
-
-  // Glitch
-  drawGlitch(t);
-
-  // Scan line
-  var scanY=(t*0.08)%H;cx.fillStyle='rgba(0,220,180,0.02)';cx.fillRect(0,scanY-1,W,3);
-
-  // Particles
-  cx.fillStyle='rgba(0,220,180,0.1)';cx.font='8px Courier New';
-  for(var i=0;i<12;i++){
-    var px=(Math.sin(t*0.0002+i*1.7)*0.5+0.5)*W;
-    var py=(Math.cos(t*0.00015+i*2.3)*0.5+0.5)*H;
-    cx.fillText(String.fromCharCode(0x30+~~(Math.random()*74)),px,py);
-  }
-
+  if(scenes[lineIdx])scenes[lineIdx](t,e);
+  drawGlitch();
   // Vignette
   var vig=cx.createRadialGradient(W/2,H/2,W*0.15,W/2,H/2,W*0.65);
-  vig.addColorStop(0,'transparent');vig.addColorStop(1,'rgba(0,0,0,0.55)');
+  vig.addColorStop(0,'transparent');vig.addColorStop(1,'rgba(0,0,0,0.5)');
   cx.fillStyle=vig;cx.fillRect(0,0,W,H);
-
   // Scan lines
-  cx.fillStyle='rgba(0,0,0,0.025)';
-  for(var y=0;y<H;y+=3)cx.fillRect(0,y,W,1);
-
+  cx.fillStyle='rgba(0,0,0,0.025)';for(var y=0;y<H;y+=3)cx.fillRect(0,y,W,1);
   // Progress
-  document.getElementById('progress').style.width=Math.min(100,(t-sceneStart)/50*100)+'%';
-
-  var now=new Date();
-  document.getElementById('hudTime').textContent=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+':'+('0'+now.getSeconds()).slice(-2);
+  document.getElementById('progress').style.width=Math.min(100,e/50*100)+'%';
+  var now=new Date();document.getElementById('hudTime').textContent=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+':'+('0'+now.getSeconds()).slice(-2);
   requestAnimationFrame(render);
 }
 render();
-
 setInterval(function(){if(speaking&&Date.now()-sceneStart>7000){speaking=false;document.getElementById('subtitle').style.display='none';nextScene()}},500);
 </script>
 </body>
