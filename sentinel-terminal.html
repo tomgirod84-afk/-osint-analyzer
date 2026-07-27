@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel Terminal v2.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'JetBrains Mono',monospace;background:#0a0a0a;color:#00ff88;min-height:100vh;overflow:hidden}
+        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#0a0a0a}::-webkit-scrollbar-thumb{background:#00ff8833;border-radius:2px}
+
+        #boot-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0a0a;z-index:1000;display:flex;align-items:center;justify-content:center;flex-direction:column}
+        #boot-screen .logo-text{font-size:2em;color:#00ff88;margin-bottom:20px;text-shadow:0 0 20px #00ff8866}
+        #boot-bar{width:300px;height:3px;background:#111;border-radius:2px;overflow:hidden;margin-top:15px}
+        #boot-bar-fill{height:100%;width:0;background:#00ff88;transition:width 0.3s;border-radius:2px}
+        #boot-status{color:#00ff8866;font-size:0.7em;margin-top:10px;min-height:1.2em}
+        #boot-screen.done{opacity:0;pointer-events:none;transition:opacity 0.5s}
+
+        #scanlines{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:500;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px)}
+
+        #main{display:none;flex-direction:column;height:100vh}
+        #main.active{display:flex}
+
+        #topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 15px;background:#0d0d0d;border-bottom:1px solid #1a1a1a;font-size:0.7em;color:#00ff8866}
+        #topbar .left{display:flex;align-items:center;gap:15px}
+        #topbar .right{display:flex;gap:15px}
+        .status-dot{width:6px;height:6px;background:#00ff88;border-radius:50%;animation:blink 2s infinite;display:inline-block}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+        #content{flex:1;overflow:hidden;display:flex;flex-direction:column"}
+        #terminal{flex:1;overflow-y:auto;padding:15px;font-size:0.82em;line-height:1.7}
+        #input-line{display:flex;align-items:center;padding:10px 15px;border-top:1px solid #1a1a1a;background:#0d0d0d}
+        #prompt{color:#00ff88;white-space:nowrap;margin-right:8px;font-size:0.85em}
+        #cmd-input{flex:1;background:transparent;border:none;color:#00ff88;font-family:inherit;font-size:0.85em;outline:none;caret-color:#00ff88}
+        #cursor-blink{display:inline-block;width:8px;height:16px;background:#00ff88;animation:curblink 1s step-end infinite;vertical-align:middle;margin-left:2px}
+        @keyframes curblink{50%{opacity:0}}
+
+        .line{white-space:pre-wrap;word-break:break-all}
+        .line.system{color:#00ff8866}
+        .line.error{color:#ff3355}
+        .line.warn{color:#ffaa00}
+        .line.info{color:#00ccff}
+        .line.success{color:#00ff88}
+        .line.header{color:#00ff88;font-weight:700;text-shadow:0 0 10px #00ff8844}
+        .line.ascii{color:#00ff88;line-height:1.2}
+        .line.red{color:#ff3355}
+        .line.blue{color:#00ccff}
+        .line.yellow{color:#ffaa00}
+        .line.purple{color:#aa66ff}
+
+        .progress-line{display:flex;align-items:center;gap:8px;margin:2px 0}
+        .progress-bar-outer{width:200px;height:10px;background:#111;border:1px solid #1a1a1a;border-radius:2px;overflow:hidden}
+        .progress-bar-inner{height:100%;background:#00ff88;transition:width 0.1s;border-radius:2px}
+        .progress-text{font-size:0.8em;color:#00ff8866}
+
+        #sidebar{position:fixed;right:0;top:30px;width:240px;background:rgba(10,10,10,0.95);border-left:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;padding:15px;font-size:0.72em;z-index:100;transform:translateX(100%);transition:transform 0.3s}
+        #sidebar.open{transform:translateX(0)}
+        #sidebar h3{color:#00ff88;margin-bottom:10px;font-size:0.9em}
+        #sidebar .mission{padding:6px 0;border-bottom:1px solid #111}
+        #sidebar .mission.done{opacity:0.4;text-decoration:line-through}
+        #sidebar .mission .mname{color:#00ff88}
+        #sidebar .mission .mdesc{color:#00ff8844;font-size:0.9em}
+
+        .glow{animation:glow 2s ease-in-out infinite alternate}
+        @keyframes glow{from{text-shadow:0 0 5px #00ff8833}to{text-shadow:0 0 15px #00ff8866}}
+
+        #mini-map{position:fixed;left:15px;bottom:50px;width:160px;height:100px;border:1px solid #1a1a1a;background:rgba(10,10,10,0.9);z-index:100;display:none;border-radius:4px;overflow:hidden}
+        #mini-map canvas{width:100%;height:100%}
+
+        @media(max-width:768px){
+            #sidebar{width:100%;top:auto;bottom:40px;border:none}
+            #terminal{font-size:0.72em}
+        }
+    </style>
+</head>
+<body>
+    <div id="scanlines"></div>
+    <div id="boot-screen">
+        <div class="logo-text glow">SENTINEL OS v2.0</div>
+        <div style="color:#00ff8844;font-size:0.75em">SafeGuard Security Terminal</div>
+        <div id="boot-bar"><div id="boot-bar-fill"></div></div>
+        <div id="boot-status"></div>
+    </div>
+
+    <div id="main">
+        <div id="topbar">
+            <div class="left">
+                <span><span class="status-dot"></span> CONNECTED</span>
+                <span>SENTINEL v2.0</span>
+                <span id="clock"></span>
+            </div>
+            <div class="right">
+                <span id="threat-level">THREAT: <span style="color:#ffaa00">MODERATE</span></span>
+                <span onclick="toggleSidebar()" style="cursor:pointer;color:#00ff88">[MISSIONS]</span>
+            </div>
+        </div>
+        <div id="content">
+            <div id="terminal"></div>
+            <div id="input-line">
+                <span id="prompt">sentinel@osint:~$</span>
+                <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false">
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebar">
+        <h3>&#9733; MISSIONS</h3>
+        <div id="missions"></div>
+    </div>
+
+    <div id="mini-map"><canvas id="map-canvas"></canvas></div>
+
+    <script>
+    const term=document.getElementById('terminal');
+    const input=document.getElementById('cmd-input');
+    let cmdHistory=[];let histIdx=-1;
+
+    const missions=[
+        {id:'scan',name:'Network Scan',desc:'Lance un scan réseau',done:false},
+        {id:'crack',name:'Password Crack',desc:'Craque un hash MD5',done:false},
+        {id:'exploit',name:'Exploit Target',desc:'Exploite la cible',done:false},
+        {id:'exfil',name:'Data Exfil',desc:'Extrait les données',done:false},
+        {id:'cover',name:'Cover Tracks',desc:'Efface les logs',done:false},
+    ];
+
+    function renderMissions(){
+        const el=document.getElementById('missions');
+        el.innerHTML=missions.map(m=>`<div class="mission ${m.done?'done':''}"><div class="mname">${m.done?'&#10003;':'&#9675;'} ${m.name}</div><div class="mdesc">${m.desc}</div></div>`).join('');
+    }
+    renderMissions();
+
+    function completeMission(id){
+        const m=missions.find(x=>x.id===id);
+        if(m&&!m.done){m.done=true;renderMissions();
+            print(`<span class="line success">&#9733; MISSION COMPLÉTÉE: ${m.name}</span>`);
+        }
+    }
+
+    function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
+
+    // Clock
+    setInterval(()=>{const d=new Date();document.getElementById('clock').textContent=d.toTimeString().split(' ')[0]},1000);
+
+    // Boot sequence
+    const bootMsgs=[
+        '[BOOT] Initialisation du kernel SentinelOS...',
+        '[BOOT] Chargement des modules de sécurité...',
+        '[BOOT] Initialisation du chiffrement AES-256...',
+        '[BOOT] Connexion au serveur C2...',
+        '[BOOT] Chargement des bases de données OSINT...',
+        '[BOOT] Initialisation du pare-feu...',
+        '[BOOT] Vérification de l\'intégrité du système...',
+        '[BOOT] Chargement du module de reconnaissance...',
+        '[BOOT] Démarrage du keylogger detector...',
+        '[BOOT] Activation du mode furtif...',
+        '[SYSTEM] Tous les systèmes opérationnels',
+        '[SYSTEM] Terminal prêt — tapez "help" pour commencer',
+    ];
+
+    async function boot(){
+        const bar=document.getElementById('boot-bar-fill');
+        const status=document.getElementById('boot-status');
+        for(let i=0;i<bootMsgs.length;i++){
+            status.textContent=bootMsgs[i];
+            bar.style.width=((i+1)/bootMsgs.length*100)+'%';
+            await sleep(300+Math.random()*200);
+        }
+        await sleep(500);
+        document.getElementById('boot-screen').classList.add('done');
+        document.getElementById('main').classList.add('active');
+        input.focus();
+        await sleep(300);
+        showWelcome();
+    }
+
+    function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+    async function typeText(text,cls='system',delay=20){
+        const line=document.createElement('div');line.className=`line ${cls}`;
+        term.appendChild(line);
+        for(let i=0;i<text.length;i++){
+            line.textContent+=text[i];
+            term.scrollTop=term.scrollHeight;
+            await sleep(delay+Math.random()*10);
+        }
+    }
+
+    function print(html){
+        const d=document.createElement('div');d.innerHTML=html;
+        term.appendChild(d);
+        term.scrollTop=term.scrollHeight;
+    }
+
+    async function showWelcome(){
+        print(`<span class="line ascii">
+ ███████╗███████╗███╗   ██╗██╗███████╗███████╗████████╗ █████╗ ████████╗
+ ██╔════╝██╔════╝████╗  ██║██║██╔════╝██╔════╝╚══██╔══╝██╔══██╗╚══██╔══╝
+ ███████╗█████╗  ██╔██╗ ██║██║███████╗███████╗   ██║   ███████║   ██║
+ ╚════██║██╔══╝  ██║╚██╗██║██║╚════██║╚════██║   ██║   ██╔══██║   ██║
+ ███████║███████╗██║ ╚████║██║███████║███████║   ██║   ██║  ██║   ██║
+ ╚══════╝╚══════╝╚═╝  ╚═══╝╚═╝╚══════╝╚══════╝   ╚═╝   ╚═╝  ╚═╝   ╚═╝</span>`);
+        await sleep(200);
+        print(`<span class="line info">  SafeGuard Sentinel Terminal v2.0 — OSINT & Cybersecurity Training Platform</span>`);
+        print(`<span class="line system">  ─────────────────────────────────────────────────────────────────────</span>`);
+        print(`<span class="line system">  Tapez <span class="line success">help</span> pour voir les commandes disponibles</span>`);
+        print(`<span class="line system">  Tapez <span class="line success">missions</span> pour voir les missions à accomplir</span>`);
+        print(`<span class="line system">  Tapez <span class="line success">demo</span> pour une démonstration interactive</span>`);
+        print(`<span class="line system">  ─────────────────────────────────────────────────────────────────────</span>`);
+        print('');
+    }
+
+    // Commands
+    const commands={
+        help:()=>{
+            print(`<span class="line header">╔══════════════════════════════════════════╗</span>`);
+            print(`<span class="line header">║         COMMANDES DISPONIBLES           ║</span>`);
+            print(`<span class="line header">╚══════════════════════════════════════════╝</span>`);
+            print(`<span class="line success">  help</span>        <span class="line system">Affiche ce menu</span>`);
+            print(`<span class="line success">  scan &lt;ip&gt;</span>   <span class="line system">Scan réseau d'une cible</span>`);
+            print(`<span class="line success">  ping &lt;ip&gt;</span>   <span class="line system">Ping une adresse IP</span>`);
+            print(`<span class="line success">  crack &lt;hash&gt;</span><span class="line system">Identifie et craque un hash</span>`);
+            print(`<span class="line success">  exploit</span>     <span class="line system">Lance une attaque sur la cible</span>`);
+            print(`<span class="line success">  exfil</span>       <span class="line system">Extrait les données du serveur</span>`);
+            print(`<span class="line success">  cover</span>       <span class="line system">Efface les traces</span>`);
+            print(`<span class="line success">  network</span>     <span class="line system">Visualisation du réseau</span>`);
+            print(`<span class="line success">  decrypt &lt;txt&gt;</span><span class="line system">Déchiffre du Base64</span>`);
+            print(`<span class="line success">  encode &lt;txt&gt;</span> <span class="line system">Encode en Base64</span>`);
+            print(`<span class="line success">  whoami</span>      <span class="line system">Infos sur le système</span>`);
+            print(`<span class="line success">  missions</span>    <span class="line system">Liste des missions</span>`);
+            print(`<span class="line success">  demo</span>        <span class="line system">Démo interactive</span>`);
+            print(`<span class="line success">  matrix</span>      <span class="line system">Mode Matrix</span>`);
+            print(`<span class="line success">  clear</span>       <span class="line system">Efface l'écran</span>`);
+            print(`<span class="line success">  exit</span>        <span class="line system">Déconnecte le terminal</span>`);
+            print('');
+        },
+
+        scan:async(args)=>{
+            const ip=args[0]||'192.168.1.'+Math.floor(Math.random()*254+1);
+            print(`<span class="line info">[*] Démarrage du scan sur ${ip}...</span>`);
+            await sleep(500);
+
+            const ports=[21,22,23,25,53,80,110,135,139,143,443,445,993,3306,3389,5432,8080,8444];
+            const services={21:'FTP',22:'SSH',23:'Telnet',25:'SMTP',53:'DNS',80:'HTTP',110:'POP3',135:'RPC',139:'NetBIOS',143:'IMAP',443:'HTTPS',445:'SMB',993:'IMAPS',3306:'MySQL',3389:'RDP',5432:'PostgreSQL',8080:'HTTP-Alt',8444:'Alt-HTTPS'};
+
+            const found=[];
+            for(let i=0;i<ports.length;i++){
+                const open=Math.random()>0.55;
+                const pct=Math.round((i+1)/ports.length*100);
+                const bar='█'.repeat(Math.round(pct/5))+'░'.repeat(20-Math.round(pct/5));
+                print(`<span class="progress-line"><span class="progress-bar-outer"><span class="progress-bar-inner" style="width:${pct}%"></span></span><span class="progress-text">${pct}% ${bar} Port ${ports[i]}</span></span>`);
+                term.scrollTop=term.scrollHeight;
+                if(open)found.push({port:ports[i],service:services[ports[i]]});
+                await sleep(150+Math.random()*100);
+            }
+
+            print(`<span class="line success">[+] Scan terminé — ${found.length} port(s) ouvert(s)</span>`);
+            found.forEach(f=>{
+                const risk=f.service==='SSH'||f.service==='RDP'||f.service==='SMB'||f.service==='Telnet'?'&#9888;':'&#9679;';
+                print(`<span class="line ${f.service==='Telnet'||f.service==='SMB'?'red':'info'}">    ${risk} ${f.port}/tcp  ${f.service}  OPEN</span>`);
+            });
+            print(`<span class="line system">[i] ${ip} — ${found.length} services exposés</span>`);
+            if(found.some(f=>f.port===3389))print(`<span class="line warn">[!] ATTENTION: RDP exposé — risque de brute force!</span>`);
+            if(found.some(f=>f.port===445))print(`<span class="line warn">[!] ATTENTION: SMB exposé — risque d'EternalBlue!</span>`);
+            print('');
+            completeMission('scan');
+        },
+
+        ping:async(args)=>{
+            const ip=args[0]||'8.8.8.8';
+            print(`<span class="line info">[*] PING ${ip} — 64 bytes</span>`);
+            for(let i=1;i<=4;i++){
+                const time=(Math.random()*50+5).toFixed(1);
+                const ttl=Math.floor(Math.random()*30+30);
+                print(`<span class="line success">    64 bytes from ${ip}: icmp_seq=${i} ttl=${ttl} time=${time}ms</span>`);
+                await sleep(400+Math.random()*300);
+            }
+            const avg=(Math.random()*30+10).toFixed(1);
+            print(`<span class="line info">    --- ${ip} ping statistics ---</span>`);
+            print(`<span class="line info">    4 packets transmitted, 4 received, 0% loss</span>`);
+            print(`<span class="line info">    avg ${avg}ms</span>`);
+            print('');
+        },
+
+        crack:async(args)=>{
+            const hash=args[0]||'5d41402abc4b2a76b9719d911017c592';
+            print(`<span class="line info">[*] Analyse du hash: ${hash}</span>`);
+            await sleep(300);
+
+            const len=hash.length;
+            let type='Inconnu';
+            if(len===32&&/^[a-f0-9]+$/i.test(hash))type='MD5';
+            else if(len===40&&/^[a-f0-9]+$/i.test(hash))type='SHA-1';
+            else if(len===64&&/^[a-f0-9]+$/i.test(hash))type='SHA-256';
+            else if(hash.startsWith('$2'))type='bcrypt';
+
+            print(`<span class="line success">[+] Type détecté: ${type} (${len} caractères)</span>`);
+            print(`<span class="line info">[*] Démarrage du brute force...</span>`);
+            await sleep(500);
+
+            const words=['password','123456','admin','letmein','hello','world','test','qwerty','dragon','master','love','secret','trustno1','shadow','sunshine','princess','football','batman','access','superman'];
+            let found=false;
+            for(let i=0;i<words.length;i++){
+                const pct=Math.round((i+1)/words.length*100);
+                const checked=i+1;
+                print(`<span class="progress-line"><span class="progress-bar-outer"><span class="progress-bar-inner" style="width:${pct}%;background:${i>words.length*0.8?'#ffaa00':'#00ff88'}"></span></span><span class="progress-text">${pct}% — Test: ${words[i]}</span></span>`);
+                term.scrollTop=term.scrollHeight;
+                if(i===words.indexOf('hello')&&hash==='5d41402abc4b2a76b9719d911017c592'){
+                    await sleep(300);
+                    print(`<span class="line success">[!!!] HASH CRACKÉ EN ${i+1} TENTATIVES!</span>`);
+                    print(`<span class="line success">[+] Hash:  ${hash}</span>`);
+                    print(`<span class="line success">[+] Mot:   hello</span>`);
+                    print(`<span class="line success">[+] Temps: ${(Math.random()*2+0.5).toFixed(2)}s</span>`);
+                    found=true;
+                    completeMission('crack');
+                    break;
+                }
+                await sleep(100+Math.random()*80);
+            }
+            if(!found&&hash!=='5d41402abc4b2a76b9719d911017c592'){
+                print(`<span class="line success">[+] HASH CRACKÉ!</span>`);
+                print(`<span class="line success">[+] Mot trouvé: ${words[Math.floor(Math.random()*words.length)]}</span>`);
+                completeMission('crack');
+            }
+            print('');
+        },
+
+        exploit:async()=>{
+            print(`<span class="line warn">[!] PRÉPARATION DE L'EXPLOIT...</span>`);
+            await sleep(300);
+            print(`<span class="line info">[*] Chargement du payload...</span>`);
+
+            const payloads=['reverse_shell','meterpreter','cmd_exec','bind_shell','web_delivery'];
+            const payload=payloads[Math.floor(Math.random()*payloads.length)];
+            await sleep(400);
+            print(`<span class="line system">[i] Payload: ${payload}</span>`);
+            print(`<span class="line system">[i] Target: 192.168.1.${Math.floor(Math.random()*254+1)}</span>`);
+
+            const stages=['Envoi du payload...','Payload reçu','Exécution en cours','Bypass ASLR...','Bypass DEP...','Shell obtenue!'];
+            for(const s of stages){
+                print(`<span class="line info">    ▸ ${s}</span>`);
+                await sleep(400+Math.random()*300);
+            }
+            print(`<span class="line success">[+] EXPLOIT RÉUSSI — SESSION SHELL OUVERTE</span>`);
+            print(`<span class="line success">    Meterpreter > sysinfo</span>`);
+            print(`<span class="line info">    Computer:   TARGET-PC</span>`);
+            print(`<span class="line info">    OS:         Windows 10 (Build 19041)</span>`);
+            print(`<span class="line info">    Architecture: x64</span>`);
+            print(`<span class="line info">    Meterpreter: x64/windows</span>`);
+            print('');
+            completeMission('exploit');
+        },
+
+        exfil:async()=>{
+            print(`<span class="line warn">[!] EXTRACTION DES DONNÉES...</span>`);
+            await sleep(300);
+
+            const files=[
+                {name:'/etc/passwd',size:'2.4KB',content:'root:x:0:0:root:/root:/bin/bash'},
+                {name:'/etc/shadow',size:'1.1KB',content:'root:$6$xxxx:18000:0:99999:7:::'},
+                {name:'/var/log/auth.log',size:'340KB',content:'sshd[1234]: Accepted password'},
+                {name:'/home/user/.ssh/id_rsa',size:'3.2KB',content:'-----BEGIN RSA PRIVATE KEY-----'},
+                {name:'/etc/hosts',size:'0.3KB',content:'127.0.0.1 localhost'},
+                {name:'C:\\Users\\admin\\Desktop\\passwords.txt',size:'0.8KB',content:'admin:SuperSecret123!'},
+                {name:'C:\\Users\\admin\\Documents\\flag.txt',size:'0.1KB',content:'FLAG{you_hacked_me_congrats}'},
+            ];
+
+            let totalSize=0;
+            for(const f of files){
+                const pct=Math.round((files.indexOf(f)+1)/files.length*100);
+                print(`<span class="progress-line"><span class="progress-bar-outer"><span class="progress-bar-inner" style="width:${pct}%;background:#ff3355"></span></span><span class="progress-text">${pct}% — ${f.name} (${f.size})</span></span>`);
+                term.scrollTop=term.scrollHeight;
+                await sleep(250+Math.random()*200);
+            }
+
+            print(`<span class="line success">[+] EXTRACTION TERMINÉE — ${files.length} fichiers récupérés</span>`);
+            print(`<span class="line info">    Taille totale: ${(Math.random()*50+10).toFixed(1)}MB</span>`);
+            print(`<span class="line warn">[!] Données chiffrées et stockées dans /loot/</span>`);
+            print('');
+            completeMission('exfil');
+        },
+
+        cover:async()=>{
+            print(`<span class="line warn">[!] EFFACAGE DES TRACES...</span>`);
+            const steps=[
+                {name:'Suppression des logs d\'accès',pct:20},
+                {name:'Effacement des commandes historiques',pct:40},
+                {name:'Nettoyage des fichiers temporaires',pct:60},
+                {name:'Suppression des artefacts d\'exploitation',pct:80},
+                {name:'Obfuscation des timestamps',pct:100},
+            ];
+            for(const s of steps){
+                print(`<span class="line info">    ▸ ${s.name} [${s.pct}%]</span>`);
+                await sleep(300+Math.random()*200);
+            }
+            print(`<span class="line success">[+] TRACES EFFACÉES — aucune preuve numérique restante</span>`);
+            print(`<span class="line system">[i] Dernière connexion: jamais</span>`);
+            print('');
+            completeMission('cover');
+        },
+
+        network:async()=>{
+            print(`<span class="line ascii">
+                          ┌──────────────┐
+                          │   INTERNET   │
+                          │  ◉ 8.8.8.8  │
+                          └──────┬───────┘
+                                 │
+                          ┌──────┴───────┐
+                          │   ROUTER     │
+                          │ 192.168.1.1  │
+                          └──────┬───────┘
+                    ┌────────────┼────────────┐
+                    │            │            │
+             ┌──────┴──────┐ ┌──┴────────┐ ┌─┴──────────┐
+             │   SERVER    │ │  WORKSTN1 │ │  WORKSTN2  │
+             │ .1.10:22    │ │ .1.100    │ │ .1.101     │
+             │ .1.10:80    │ │ OPEN      │ │ OPEN       │
+             │ .1.10:443   │ │           │ │            │
+             │ .1.10:3306  │ └───────────┘ └────────────┘
+             └─────────────┘</span>`);
+            print(`<span class="line system">[i] Réseau local: 3 appareils détectés</span>`);
+            print(`<span class="line info">[i] Vulnérabilités: Server (port 3306 MySQL exposé), WORKSTN1 (SMB activé)</span>`);
+            print('');
+        },
+
+        decrypt:async(args)=>{
+            const txt=args.join(' ');
+            if(!txt)return print(`<span class="line error">[-] Usage: decrypt &lt;base64_string&gt;</span>`);
+            try{
+                const decoded=atob(txt);
+                print(`<span class="line success">[+] Déchiffré: ${decoded}</span>`);
+            }catch(e){
+                print(`<span class="line error">[-] Impossible de déchiffrer — format invalide</span>`);
+            }
+            print('');
+        },
+
+        encode:async(args)=>{
+            const txt=args.join(' ');
+            if(!txt)return print(`<span class="line error">[-] Usage: encode &lt;text&gt;</span>`);
+            print(`<span class="line success">[+] Base64: ${btoa(txt)}</span>`);
+            print('');
+        },
+
+        whoami:()=>{
+            print(`<span class="line info">  User:     sentinel@osint</span>`);
+            print(`<span class="line info">  UID:      1337</span>`);
+            print(`<span class="line info">  Group:    hacker</span>`);
+            print(`<span class="line info">  OS:       SentinelOS 2.0</span>`);
+            print(`<span class="line info">  Kernel:   5.15.0-sentinel</span>`);
+            print(`<span class="line info">  Uptime:   ${Math.floor(Math.random()*24)}h ${Math.floor(Math.random()*60)}m</span>`);
+            print(`<span class="line info">  IP:       10.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}</span>`);
+            print(`<span class="line info">  Skills:   OSINT, Exploitation, Social Engineering</span>`);
+            print(`<span class="line info">  Status:   <span class="line success">OPERATIONAL</span></span>`);
+            print('');
+        },
+
+        missions:()=>{
+            print(`<span class="line header">╔══════════════════════════════════════════╗</span>`);
+            print(`<span class="line header">║           MISSIONS EN COURS             ║</span>`);
+            print(`<span class="line header">╚══════════════════════════════════════════╝</span>`);
+            missions.forEach(m=>{
+                print(`<span class="line ${m.done?'success':'warn'}">  ${m.done?'&#10003;':'&#9675;'} ${m.name} — ${m.desc}</span>`);
+            });
+            const done=missions.filter(m=>m.done).length;
+            print(`<span class="line info">  ─────────────────────────────────────</span>`);
+            print(`<span class="line info">  Progression: ${done}/${missions.length}</span>`);
+            if(done===missions.length)print(`<span class="line success" style="font-size:1.2em">  &#9733; TOUTES LES MISSIONS COMPLÉTÉES! &#9733;</span>`);
+            print('');
+        },
+
+        demo:async()=>{
+            print(`<span class="line header">╔══════════════════════════════════════════╗</span>`);
+            print(`<span class="line header">║      DÉMONSTRATION INTERACTIVE          ║</span>`);
+            print(`<span class="line header">╚══════════════════════════════════════════╝</span>`);
+            print('');
+            await sleep(300);
+
+            // Phase 1: Recon
+            print(`<span class="line purple">═══ PHASE 1: RECONNAISSANCE ═══</span>`);
+            await sleep(200);
+            await commands.ping(['192.168.1.1']);
+            await commands.scan(['192.168.1.10']);
+
+            // Phase 2: Exploit
+            print(`<span class="line purple">═══ PHASE 2: EXPLOITATION ═══</span>`);
+            await sleep(200);
+            await commands.crack(['5d41402abc4b2a76b9719d911017c592']);
+            await commands.exploit([]);
+
+            // Phase 3: Post-exploitation
+            print(`<span class="line purple">═══ PHASE 3: POST-EXPLOITATION ═══</span>`);
+            await sleep(200);
+            await commands.exfil([]);
+
+            // Phase 4: Cover
+            print(`<span class="line purple">═══ PHASE 4: NETTOYAGE ═══</span>`);
+            await sleep(200);
+            await commands.cover([]);
+
+            print(`<span class="line header">══════════════════════════════════════════</span>`);
+            print(`<span class="line success" style="font-size:1.1em">  DÉMO TERMINÉE — Toutes les missions complétées!</span>`);
+            print(`<span class="line header">══════════════════════════════════════════</span>`);
+            print('');
+        },
+
+        matrix:async()=>{
+            print(`<span class="line system">[*] Activation du mode Matrix...</span>`);
+            await sleep(500);
+            const chars='01アイウエオカキクケコ';
+            for(let i=0;i<20;i++){
+                let line='';
+                for(let j=0;j<60;j++)line+=chars[Math.floor(Math.random()*chars.length)];
+                const colors=['success','info','system'][Math.floor(Math.random()*3)];
+                print(`<span class="line ${colors}">${line}</span>`);
+                await sleep(80);
+            }
+            print(`<span class="line system">[i] Fin du mode Matrix</span>`);
+            print('');
+        },
+
+        clear:()=>{term.innerHTML=''},
+        exit:()=>{
+            print(`<span class="line warn">[*] Déconnexion...</span>`);
+            setTimeout(()=>{
+                document.getElementById('main').style.display='none';
+                document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#00ff88;font-family:JetBrains Mono,monospace;font-size:1.2em;text-shadow:0 0 20px #00ff8844">CONNECTION TERMINATED</div>';
+            },1000);
+        }
+    };
+
+    input.addEventListener('keydown',async(e)=>{
+        if(e.key==='Enter'){
+            const cmd=input.value.trim();
+            input.value='';
+            print(`<span class="line success">sentinel@osint:~$ ${escapeHtml(cmd)}</span>`);
+            if(!cmd)return;
+
+            cmdHistory.push(cmd);histIdx=cmdHistory.length;
+
+            const parts=cmd.split(/\s+/);
+            const name=parts[0].toLowerCase();
+            const args=parts.slice(1);
+
+            if(commands[name]){
+                await commands[name](args);
+            }else{
+                print(`<span class="line error">[-] Commande inconnue: ${name}</span>`);
+                print(`<span class="line system">[i] Tapez "help" pour voir les commandes</span>`);
+                print('');
+            }
+        }else if(e.key==='ArrowUp'){
+            e.preventDefault();
+            if(histIdx>0){histIdx--;input.value=cmdHistory[histIdx]}
+        }else if(e.key==='ArrowDown'){
+            e.preventDefault();
+            if(histIdx<cmdHistory.length-1){histIdx++;input.value=cmdHistory[histIdx]}else{histIdx=cmdHistory.length;input.value=''}
+        }else if(e.key==='l'&&e.ctrlKey){
+            e.preventDefault();commands.clear();
+        }else if(e.key==='c'&&e.ctrlKey){
+            e.preventDefault();
+            print(`<span class="line system">sentinel@osint:~$ ${escapeHtml(input.value)}^C</span>`);
+            input.value='';
+        }
+    });
+
+    document.addEventListener('click',()=>input.focus());
+
+    function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+    // Auto-start boot
+    boot();
+    </script>
+</body>
+</html>
